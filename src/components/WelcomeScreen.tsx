@@ -15,9 +15,10 @@ import heroImage from "@/assets/hero-bg.jpg";
 
 interface WelcomeScreenProps {
   onStartGame: () => void;
+  onStartSetup: (gameIdea?: string) => void;
 }
 
-export function WelcomeScreen({ onStartGame }: WelcomeScreenProps) {
+export function WelcomeScreen({ onStartGame, onStartSetup }: WelcomeScreenProps) {
   const [gameIdea, setGameIdea] = useState('');
 
   const quickStartOptions = [
@@ -115,11 +116,11 @@ export function WelcomeScreen({ onStartGame }: WelcomeScreenProps) {
                 />
                 <Button 
                   variant="mystical" 
-                  onClick={onStartGame}
+                  onClick={() => onStartSetup(gameIdea)}
                   className="px-8"
                 >
                   <PlayCircle className="w-4 h-4 mr-2" />
-                  Start Playing
+                  Setup Game
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
@@ -134,7 +135,7 @@ export function WelcomeScreen({ onStartGame }: WelcomeScreenProps) {
               <Card 
                 key={index} 
                 className="p-6 hover:shadow-xl transition-all duration-300 cursor-pointer group bg-card/50 backdrop-blur-sm border-border hover:border-primary/50"
-                onClick={onStartGame}
+                onClick={() => onStartSetup(option.description)}
               >
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold group-hover:text-primary transition-colors">

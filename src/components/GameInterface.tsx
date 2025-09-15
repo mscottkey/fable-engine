@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
 import { 
   Dice6, 
   Send, 
@@ -15,7 +16,8 @@ import {
   Eye, 
   EyeOff,
   ScrollText,
-  Sparkles
+  Sparkles,
+  User
 } from "lucide-react";
 
 interface Message {
@@ -23,6 +25,10 @@ interface Message {
   role: 'player' | 'gm' | 'system';
   content: string;
   timestamp: Date;
+  character?: {
+    name: string;
+    playerName: string;
+  };
   mechanics?: {
     roll?: string;
     outcome?: 'fail' | 'tie' | 'success' | 'success-with-style';
@@ -30,39 +36,45 @@ interface Message {
 }
 
 interface Character {
-  name: string;
-  concept: string;
+  id: string;
+  playerName: string;
+  characterName: string;
+  highConcept: string;
   trouble: string;
-  signature: string;
+  signatureTrait: string;
 }
 
-export function GameInterface() {
+interface GameInterfaceProps {
+  characters?: Character[];
+  gameIdea?: string;
+}
+
+export function GameInterface({ characters = [], gameIdea = "Epic Fantasy Adventure" }: GameInterfaceProps) {
+  const [activeCharacter, setActiveCharacter] = useState(characters[0]?.id || '');
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      role: 'system',
-      content: 'Welcome to RoleplAI GM! Ready to start your adventure?',
+      role: 'gm',
+      content: `Welcome to ${gameIdea}! ${characters.length > 0 ? `${characters.map(c => c.characterName).join(', ')}, you` : 'You'} find yourselves at the beginning of an epic adventure. The world awaits your choices. What do you do?`,
       timestamp: new Date()
     }
   ]);
   
   const [inputValue, setInputValue] = useState('');
   const [showMechanics, setShowMechanics] = useState(false);
-  const [character, setCharacter] = useState<Character>({
-    name: '',
-    concept: '',
-    trouble: '',
-    signature: ''
-  });
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;
+    
+    const activeChar = characters.find(c => c.id === activeCharacter);
+    const characterName = activeChar ? activeChar.characterName : 'Unknown';
     
     const newMessage: Message = {
       id: Date.now().toString(),
       role: 'player',
       content: inputValue,
-      timestamp: new Date()
+      timestamp: new Date(),
+      character: activeChar ? { name: characterName, playerName: activeChar.playerName } : undefined
     };
     
     setMessages(prev => [...prev, newMessage]);
@@ -73,10 +85,10 @@ export function GameInterface() {
       const gmResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: 'gm',
-        content: `The shadows shift as you ${inputValue.toLowerCase()}. The ancient door creaks open, revealing a corridor lined with glowing runes. The air hums with magical energy. What do you do next?`,
+        content: `The world responds to ${characterName}'s actions. A new challenge emerges, testing your resolve and creativity. The story continues to unfold based on your choices. What happens next?`,
         timestamp: new Date(),
         mechanics: showMechanics ? {
-          roll: '4dF+3 vs 2',
+          roll: '4dF+2 vs Difficulty 2',
           outcome: 'success'
         } : undefined
       };
@@ -91,10 +103,17 @@ export function GameInterface() {
   const getMessageIcon = (role: string) => {
     switch (role) {
       case 'gm': return <Sparkles className="w-4 h-4 text-primary" />;
-      case 'player': return <Users className="w-4 h-4 text-accent" />;
+      case 'player': return <User className="w-4 h-4 text-accent" />;
       default: return <ScrollText className="w-4 h-4 text-muted-foreground" />;
     }
   };
+
+  const quickSuggestions = [
+    "I search for clues",
+    "I approach carefully", 
+    "I use my abilities",
+    "I talk to someone"
+  ];
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-background via-background to-card">
@@ -110,7 +129,7 @@ export function GameInterface() {
               </div>
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-                  RoleplAI GM
+                  {gameIdea}
                 </h1>
                 <p className="text-sm text-muted-foreground">Story First, Rules Invisible</p>
               </div>
@@ -142,30 +161,20 @@ export function GameInterface() {
                         <div>
                           <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
                             <Users className="w-4 h-4" />
-                            Character
+                            Characters
                           </h4>
-                          <div className="space-y-2">
-                            <Input
-                              placeholder="Character Name"
-                              value={character.name}
-                              onChange={(e) => setCharacter(prev => ({...prev, name: e.target.value}))}
-                            />
-                            <Input
-                              placeholder="High Concept"
-                              value={character.concept}
-                              onChange={(e) => setCharacter(prev => ({...prev, concept: e.target.value}))}
-                            />
-                            <Input
-                              placeholder="Trouble"
-                              value={character.trouble}
-                              onChange={(e) => setCharacter(prev => ({...prev, trouble: e.target.value}))}
-                            />
-                            <Input
-                              placeholder="Signature Trait"
-                              value={character.signature}
-                              onChange={(e) => setCharacter(prev => ({...prev, signature: e.target.value}))}
-                            />
-                          </div>
+                          {characters.length > 0 ? characters.map((character) => (
+                            <div key={character.id} className="p-3 bg-card/50 rounded-lg border border-border mb-2">
+                              <div className="font-medium">{character.characterName}</div>
+                              <div className="text-sm text-muted-foreground">{character.highConcept}</div>
+                              <div className="text-xs text-muted-foreground">Player: {character.playerName}</div>
+                              {character.trouble && (
+                                <div className="text-xs text-destructive mt-1">{character.trouble}</div>
+                              )}
+                            </div>
+                          )) : (
+                            <div className="text-sm text-muted-foreground">No characters set up</div>
+                          )}
                         </div>
                         
                         <Separator />
@@ -176,9 +185,9 @@ export function GameInterface() {
                             Story Elements
                           </h4>
                           <div className="space-y-2">
-                            <Badge variant="outline">Ancient Ruins</Badge>
-                            <Badge variant="outline">Glowing Runes</Badge>
-                            <Badge variant="outline">Magical Energy</Badge>
+                            <Badge variant="outline">Adventure Beginning</Badge>
+                            <Badge variant="outline">Character Actions</Badge>
+                            <Badge variant="outline">World Building</Badge>
                           </div>
                         </div>
                         
@@ -229,7 +238,9 @@ export function GameInterface() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-medium capitalize">
-                          {message.role === 'gm' ? 'Game Master' : message.role}
+                          {message.role === 'gm' ? 'Game Master' : 
+                           message.character ? `${message.character.name} (${message.character.playerName})` : 
+                           'Player'}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {formatTimestamp(message.timestamp)}
@@ -255,9 +266,32 @@ export function GameInterface() {
         {/* Input Area */}
         <div className="p-4 border-t border-border bg-card/50 backdrop-blur-sm">
           <div className="max-w-4xl mx-auto">
+            {characters.length > 0 && (
+              <div className="mb-3">
+                <Label className="text-sm text-muted-foreground mb-2 block">Acting as:</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {characters.map((character) => (
+                    <Button
+                      key={character.id}
+                      variant={activeCharacter === character.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setActiveCharacter(character.id)}
+                      className="text-xs"
+                    >
+                      <User className="w-3 h-3 mr-1" />
+                      {character.characterName}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="flex gap-2">
               <Input
-                placeholder="Describe what you want to do..."
+                placeholder={characters.length > 0 && activeCharacter ? 
+                  `What does ${characters.find(c => c.id === activeCharacter)?.characterName} do?` : 
+                  "Describe what you want to do..."
+                }
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -269,27 +303,17 @@ export function GameInterface() {
             </div>
             
             <div className="mt-2 flex gap-2 flex-wrap">
-              <Button
-                variant="ethereal"
-                size="sm"
-                onClick={() => setInputValue("I search for clues")}
-              >
-                Search for clues
-              </Button>
-              <Button
-                variant="ethereal"
-                size="sm"
-                onClick={() => setInputValue("I approach carefully")}
-              >
-                Approach carefully
-              </Button>
-              <Button
-                variant="ethereal"
-                size="sm"
-                onClick={() => setInputValue("I cast a spell")}
-              >
-                Cast a spell
-              </Button>
+              {quickSuggestions.map((suggestion, index) => (
+                <Button
+                  key={index}
+                  variant="ethereal"
+                  size="sm"
+                  onClick={() => setInputValue(suggestion)}
+                  className="text-xs"
+                >
+                  {suggestion}
+                </Button>
+              ))}
             </div>
           </div>
         </div>
