@@ -7,9 +7,7 @@ interface Character {
   id: string;
   playerName: string;
   characterName: string;
-  highConcept: string;
-  trouble: string;
-  signatureTrait: string;
+  concept: string;
 }
 
 const Index = () => {

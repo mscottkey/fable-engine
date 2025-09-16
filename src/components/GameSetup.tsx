@@ -18,9 +18,7 @@ interface Character {
   id: string;
   playerName: string;
   characterName: string;
-  highConcept: string;
-  trouble: string;
-  signatureTrait: string;
+  concept: string;
 }
 
 interface GameSetupProps {
@@ -41,17 +39,13 @@ export function GameSetup({ onStartGame, onBack, initialGameIdea = '' }: GameSet
       id: '1',
       playerName: '',
       characterName: '',
-      highConcept: '',
-      trouble: '',
-      signatureTrait: ''
+      concept: ''
     },
     {
       id: '2', 
       playerName: '',
       characterName: '',
-      highConcept: '',
-      trouble: '',
-      signatureTrait: ''
+      concept: ''
     }
   ]);
 
@@ -72,9 +66,7 @@ export function GameSetup({ onStartGame, onBack, initialGameIdea = '' }: GameSet
           id: String(i + 1),
           playerName: '',
           characterName: '',
-          highConcept: '',
-          trouble: '',
-          signatureTrait: ''
+          concept: ''
         });
       }
       setCharacters(newChars);
@@ -85,7 +77,7 @@ export function GameSetup({ onStartGame, onBack, initialGameIdea = '' }: GameSet
 
   const canProceedToStep2 = gameIdea.trim().length > 0;
   const canStartGame = characters.every(char => 
-    char.playerName.trim() && char.characterName.trim() && char.highConcept.trim()
+    char.playerName.trim() && char.characterName.trim() && char.concept.trim()
   );
 
   const handleStartGame = () => {
@@ -221,32 +213,12 @@ export function GameSetup({ onStartGame, onBack, initialGameIdea = '' }: GameSet
                     </div>
                     
                     <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor={`concept-${character.id}`}>High Concept *</Label>
+                      <Label htmlFor={`concept-${character.id}`}>Character Concept *</Label>
                       <Input
                         id={`concept-${character.id}`}
-                        placeholder="Cybernetic Street Samurai, Bookish Wizard, etc."
-                        value={character.highConcept}
-                        onChange={(e) => updateCharacter(character.id, 'highConcept', e.target.value)}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor={`trouble-${character.id}`}>Trouble</Label>
-                      <Input
-                        id={`trouble-${character.id}`}
-                        placeholder="What gets this character into problems?"
-                        value={character.trouble}
-                        onChange={(e) => updateCharacter(character.id, 'trouble', e.target.value)}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor={`trait-${character.id}`}>Signature Trait</Label>
-                      <Input
-                        id={`trait-${character.id}`}
-                        placeholder="What makes this character unique?"
-                        value={character.signatureTrait}
-                        onChange={(e) => updateCharacter(character.id, 'signatureTrait', e.target.value)}
+                        placeholder="Cybernetic Street Samurai, Bookish Wizard, Rogue Space Pilot..."
+                        value={character.concept}
+                        onChange={(e) => updateCharacter(character.id, 'concept', e.target.value)}
                       />
                     </div>
                   </div>

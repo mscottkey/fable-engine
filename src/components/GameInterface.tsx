@@ -39,9 +39,7 @@ interface Character {
   id: string;
   playerName: string;
   characterName: string;
-  highConcept: string;
-  trouble: string;
-  signatureTrait: string;
+  concept: string;
 }
 
 interface GameInterfaceProps {
@@ -164,14 +162,11 @@ export function GameInterface({ characters = [], gameIdea = "Epic Fantasy Advent
                             Characters
                           </h4>
                           {characters.length > 0 ? characters.map((character) => (
-                            <div key={character.id} className="p-3 bg-card/50 rounded-lg border border-border mb-2">
-                              <div className="font-medium">{character.characterName}</div>
-                              <div className="text-sm text-muted-foreground">{character.highConcept}</div>
-                              <div className="text-xs text-muted-foreground">Player: {character.playerName}</div>
-                              {character.trouble && (
-                                <div className="text-xs text-destructive mt-1">{character.trouble}</div>
-                              )}
-                            </div>
+                             <div key={character.id} className="p-3 bg-card/50 rounded-lg border border-border mb-2">
+                               <div className="font-medium">{character.characterName}</div>
+                               <div className="text-sm text-muted-foreground">{character.concept}</div>
+                               <div className="text-xs text-muted-foreground">Player: {character.playerName}</div>
+                             </div>
                           )) : (
                             <div className="text-sm text-muted-foreground">No characters set up</div>
                           )}
