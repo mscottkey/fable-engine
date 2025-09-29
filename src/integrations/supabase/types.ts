@@ -14,7 +14,122 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      campaign_seeds: {
+        Row: {
+          created_at: string
+          difficulty_desc: string
+          difficulty_label: Database["public"]["Enums"]["difficulty_label"]
+          genre: Database["public"]["Enums"]["genre"]
+          hooks: Json
+          id: string
+          name: string
+          notable_locations: Json
+          scenario_description: string
+          scenario_title: string
+          seed: number
+          setting: string
+          tone_levers: Json
+          tone_vibe: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          difficulty_desc: string
+          difficulty_label: Database["public"]["Enums"]["difficulty_label"]
+          genre: Database["public"]["Enums"]["genre"]
+          hooks: Json
+          id?: string
+          name: string
+          notable_locations: Json
+          scenario_description: string
+          scenario_title: string
+          seed: number
+          setting: string
+          tone_levers: Json
+          tone_vibe: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          difficulty_desc?: string
+          difficulty_label?: Database["public"]["Enums"]["difficulty_label"]
+          genre?: Database["public"]["Enums"]["genre"]
+          hooks?: Json
+          id?: string
+          name?: string
+          notable_locations?: Json
+          scenario_description?: string
+          scenario_title?: string
+          seed?: number
+          setting?: string
+          tone_levers?: Json
+          tone_vibe?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      games: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          seed_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          seed_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          seed_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_seed_id_fkey"
+            columns: ["seed_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_seeds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          default_pronouns: string | null
+          default_voice_uri: string | null
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_pronouns?: string | null
+          default_voice_uri?: string | null
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_pronouns?: string | null
+          default_voice_uri?: string | null
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +138,16 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      difficulty_label: "Easy" | "Standard" | "Hard"
+      genre:
+        | "Fantasy"
+        | "Sci-Fi"
+        | "Modern"
+        | "Horror"
+        | "Historical"
+        | "Post-Apocalyptic"
+        | "Space Opera"
+        | "Urban Fantasy"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +274,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      difficulty_label: ["Easy", "Standard", "Hard"],
+      genre: [
+        "Fantasy",
+        "Sci-Fi",
+        "Modern",
+        "Horror",
+        "Historical",
+        "Post-Apocalyptic",
+        "Space Opera",
+        "Urban Fantasy",
+      ],
+    },
   },
 } as const
