@@ -3,7 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlayCircle, Sparkles, Sword, Heart, Zap, Crown, Shield, Skull } from "lucide-react";
+import { PlayCircle, Sparkles, Dice6 } from "lucide-react";
+import { Genre, GENRE_SCENARIOS, randomScenarioFor, type Scenario } from "@/data/genres";
+import { detectGenreFromText } from "@/data/gm-quotes";
+import { AIGMAvatar } from "@/components/AIGMAvatar";
 
 interface Character {
   id: string;
@@ -18,59 +21,46 @@ interface AdventureStarterProps {
 
 export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
   const [gameIdea, setGameIdea] = useState("");
+  const [detectedGenre, setDetectedGenre] = useState<Genre | 'generic'>('generic');
+  
+  // Initialize with random scenario for each genre
+  const [genreScenarios, setGenreScenarios] = useState<Record<Genre, Scenario>>(() => {
+    const initial: Record<Genre, Scenario> = {} as Record<Genre, Scenario>;
+    Object.values(Genre).forEach(genre => {
+      initial[genre] = randomScenarioFor(genre);
+    });
+    return initial;
+  });
 
-  const quickStartOptions = [
-    {
-      title: "Neon-Fantasy Heist",
-      description: "High-tech magic meets criminal underworld in a cyberpunk metropolis",
-      tags: ["Cyberpunk", "Fantasy", "Crime"],
-      icon: Zap,
-      color: "text-purple-400",
-    },
-    {
-      title: "Royal Court Intrigue",
-      description: "Navigate deadly politics and ancient secrets in a medieval kingdom",
-      tags: ["Medieval", "Politics", "Mystery"],
-      icon: Crown,
-      color: "text-amber-400",
-    },
-    {
-      title: "Apocalypse Survivors", 
-      description: "Band together to survive in a world overrun by supernatural threats",
-      tags: ["Horror", "Survival", "Modern"],
-      icon: Skull,
-      color: "text-red-400",
-    },
-    {
-      title: "Space Station Crisis",
-      description: "Solve mysteries and prevent disaster aboard a remote space outpost",
-      tags: ["Sci-Fi", "Mystery", "Space"],
-      icon: Shield,
-      color: "text-blue-400",
-    },
-    {
-      title: "Dungeon Delvers",
-      description: "Classic fantasy adventure in ancient ruins filled with treasure and danger",
-      tags: ["Fantasy", "Adventure", "Classic"],
-      icon: Sword,
-      color: "text-green-400",
-    },
-    {
-      title: "Romantic Adventure",
-      description: "Love blooms amid danger in a swashbuckling tale of adventure",
-      tags: ["Romance", "Adventure", "Drama"],
-      icon: Heart,
-      color: "text-pink-400",
-    },
-  ];
+  const regenerateScenario = (genre: Genre) => {
+    const currentScenario = genreScenarios[genre];
+    const newScenario = randomScenarioFor(genre, currentScenario.title);
+    setGenreScenarios(prev => ({
+      ...prev,
+      [genre]: newScenario
+    }));
+  };
 
-  const handleQuickStart = (option: typeof quickStartOptions[0]) => {
+  // Detect genre from user input
+  const handleGameIdeaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setGameIdea(value);
+    
+    if (value.length > 3) {
+      const detected = detectGenreFromText(value);
+      setDetectedGenre(detected);
+    } else {
+      setDetectedGenre('generic');
+    }
+  };
+
+  const handleQuickStart = (scenario: Scenario) => {
     // For quick start, create default characters
     const defaultCharacters: Character[] = [
       { id: "1", playerName: "Player 1", characterName: "Character 1", concept: "Determined hero" },
       { id: "2", playerName: "Player 2", characterName: "Character 2", concept: "Clever ally" },
     ];
-    onStartGame(defaultCharacters, option.description);
+    onStartGame(defaultCharacters, scenario.description);
   };
 
   const handleCustomStart = () => {
@@ -110,12 +100,18 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
               Describe any game idea and we'll create a custom experience for you
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            {/* AI GM Avatar with Speech Bubble */}
+            <div className="flex justify-center">
+              <AIGMAvatar genre={detectedGenre} className="max-w-md" />
+            </div>
+            
+            {/* Input and Button */}
             <div className="flex gap-3">
               <Input
                 placeholder="I want to play a space detective mystery..."
                 value={gameIdea}
-                onChange={(e) => setGameIdea(e.target.value)}
+                onChange={handleGameIdeaChange}
                 className="flex-1 text-center"
               />
               <Button 
@@ -142,33 +138,58 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {quickStartOptions.map((option, index) => (
-              <Card
-                key={index}
-                className="cursor-pointer transition-all duration-300 hover:scale-105 border-border bg-card/50 backdrop-blur-sm hover:bg-card/70 hover:border-primary/50"
-                onClick={() => handleQuickStart(option)}
-              >
-                <CardHeader>
-                  <div className="flex items-center justify-between mb-2">
-                    <option.icon className={`w-6 h-6 ${option.color}`} />
-                    <div className="flex gap-1">
-                      {option.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {Object.values(Genre).map((genre) => {
+              const scenario = genreScenarios[genre];
+              return (
+                <Card
+                  key={genre}
+                  className="cursor-pointer transition-all duration-300 hover:scale-105 border-border bg-card/50 backdrop-blur-sm hover:bg-card/70 hover:border-primary/50"
+                >
+                  <CardHeader>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-semibold text-primary">
+                        {genre}
+                      </h3>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          regenerateScenario(genre);
+                        }}
+                        className="h-8 w-8 hover:bg-primary/10"
+                        title="Regenerate scenario"
+                      >
+                        <Dice6 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <CardTitle className="text-md">{scenario.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <CardDescription className="leading-relaxed text-sm">
+                      {scenario.description}
+                    </CardDescription>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {scenario.tags.map((tag, tagIndex) => (
+                        <Badge key={tagIndex} variant="secondary" className="text-xs">
                           {tag}
                         </Badge>
                       ))}
                     </div>
-                  </div>
-                  <CardTitle className="text-lg">{option.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="leading-relaxed">
-                    {option.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
+                    
+                    <Button
+                      variant="outline"
+                      className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                      onClick={() => handleQuickStart(scenario)}
+                    >
+                      Start Adventure
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </div>
