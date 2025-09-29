@@ -14,6 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_events: {
+        Row: {
+          cache_hit: boolean
+          completion_chars: number
+          completion_hash: string
+          cost_usd: number
+          created_at: string
+          error_code: string | null
+          feature: string
+          game_id: string | null
+          http_status: number | null
+          id: string
+          input_tokens: number
+          latency_ms: number
+          model: string
+          output_tokens: number
+          phase: string
+          pricing_id: string | null
+          prompt_chars: number
+          prompt_hash: string
+          provider: string
+          response_mode: string
+          retry_count: number
+          seed_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          cache_hit?: boolean
+          completion_chars?: number
+          completion_hash: string
+          cost_usd?: number
+          created_at?: string
+          error_code?: string | null
+          feature: string
+          game_id?: string | null
+          http_status?: number | null
+          id?: string
+          input_tokens?: number
+          latency_ms?: number
+          model: string
+          output_tokens?: number
+          phase: string
+          pricing_id?: string | null
+          prompt_chars?: number
+          prompt_hash: string
+          provider: string
+          response_mode: string
+          retry_count?: number
+          seed_id?: string | null
+          status: string
+          user_id: string
+        }
+        Update: {
+          cache_hit?: boolean
+          completion_chars?: number
+          completion_hash?: string
+          cost_usd?: number
+          created_at?: string
+          error_code?: string | null
+          feature?: string
+          game_id?: string | null
+          http_status?: number | null
+          id?: string
+          input_tokens?: number
+          latency_ms?: number
+          model?: string
+          output_tokens?: number
+          phase?: string
+          pricing_id?: string | null
+          prompt_chars?: number
+          prompt_hash?: string
+          provider?: string
+          response_mode?: string
+          retry_count?: number
+          seed_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_events_pricing_id_fkey"
+            columns: ["pricing_id"]
+            isOneToOne: false
+            referencedRelation: "model_pricing"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_seeds: {
         Row: {
           constraints: Json | null
@@ -120,6 +209,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      model_pricing: {
+        Row: {
+          created_at: string
+          effective_from: string
+          id: string
+          input_rate: number
+          model: string
+          output_rate: number
+          provider: string
+        }
+        Insert: {
+          created_at?: string
+          effective_from?: string
+          id?: string
+          input_rate: number
+          model: string
+          output_rate: number
+          provider: string
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string
+          id?: string
+          input_rate?: number
+          model?: string
+          output_rate?: number
+          provider?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
