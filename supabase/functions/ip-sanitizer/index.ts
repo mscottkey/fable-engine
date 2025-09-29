@@ -175,6 +175,67 @@ Return STRICT JSON per schema. No extra text.`;
       });
     }
 
+    // Log AI usage
+    try {
+      const { logAIEvent } = await import('../../src/lib/ai-usage-logger.ts');
+      const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+      
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') || '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+      );
+
+      const systemPrompt = `You are an IP-Safety Rewriter for a tabletop RPG setup tool.
+
+Your job: 
+1) Detect protected intellectual property references in a user's game idea. 
+2) Return a sanitized version that preserves ROLE, GENRE, TONE, and PREMISE but removes protected names, worlds, and distinctive terms. 
+3) Convert "in the style of <creator/franchise>" into neutral stylistic attributes.
+
+Rules:
+- No copyrighted proper nouns, titles, places, factions, or unique terms in the sanitized text.
+- Replace with generic equivalents (e.g., "Jedi" → "an ancient knightly order of mystics").
+- Preserve user intent concisely (1–3 sentences).
+- Do not add extra lore, factions, or names.
+- Output must strictly conform to the JSON schema provided.`;
+
+      const userPrompt = `USER_IDEA:
+${userText}
+
+CONTEXT:
+- If a genre was selected or inferred, it is: ${genre || 'unknown'}.
+- Your job is ONLY to detect IP and rewrite to generic language while preserving the user's intended role, genre, tone, and premise.
+- Do not invent proper nouns. Keep it concise (1–3 sentences).
+- Convert "in the style of <X>" into neutral stylistic attributes.
+
+Return STRICT JSON per schema. No extra text.`;
+
+      const fullPrompt = systemPrompt + '\n\n' + userPrompt;
+      const responseText = JSON.stringify(result);
+
+      await logAIEvent({
+        supabaseClient,
+        user_id: null, // Anonymous usage for now
+        feature: 'ip_sanitizer',
+        phase: 'phase0',
+        provider: 'google',
+        model: 'gemini-2.5-flash-lite',
+        response_mode: 'json',
+        cache_hit: false,
+        retry_count: 0,
+        input_tokens: Math.ceil(fullPrompt.length / 4), // Rough estimate
+        output_tokens: Math.ceil(responseText.length / 4), // Rough estimate
+        prompt_text: fullPrompt,
+        completion_text: responseText,
+        latency_ms: 0, // Would need to track this properly
+        http_status: response.status,
+        error_code: null,
+        status: 'success'
+      });
+    } catch (logError) {
+      console.warn('Failed to log AI usage:', logError);
+    }
+
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
