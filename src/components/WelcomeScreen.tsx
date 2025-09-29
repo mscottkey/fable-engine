@@ -12,6 +12,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import heroImage from "@/assets/hero-bg-branded.jpg";
+import { Genre, GENRE_SCENARIOS, randomScenarioFor, type Scenario } from "@/data/genres";
 
 interface WelcomeScreenProps {
   onStartGame: () => void;
@@ -20,29 +21,24 @@ interface WelcomeScreenProps {
 
 export function WelcomeScreen({ onStartGame, onStartSetup }: WelcomeScreenProps) {
   const [gameIdea, setGameIdea] = useState('');
+  
+  // Initialize with random scenario for each genre
+  const [genreScenarios, setGenreScenarios] = useState<Record<Genre, Scenario>>(() => {
+    const initial: Record<Genre, Scenario> = {} as Record<Genre, Scenario>;
+    Object.values(Genre).forEach(genre => {
+      initial[genre] = randomScenarioFor(genre);
+    });
+    return initial;
+  });
 
-  const quickStartOptions = [
-    {
-      title: "Neon Fantasy Heist",
-      description: "Cyberpunk magic meets fantasy thieves in a glittering metropolis",
-      tags: ["Modern", "Magic", "Heist"]
-    },
-    {
-      title: "Haunted Manor Mystery", 
-      description: "Victorian investigators explore a supernatural mansion",
-      tags: ["Horror", "Investigation", "Victorian"]
-    },
-    {
-      title: "Space Station Crisis",
-      description: "Sci-fi survival aboard a failing orbital facility",
-      tags: ["Sci-Fi", "Survival", "Space"]
-    },
-    {
-      title: "Medieval Kingdom Quest",
-      description: "Classic fantasy adventure in a troubled realm",
-      tags: ["Fantasy", "Adventure", "Medieval"]
-    }
-  ];
+  const regenerateScenario = (genre: Genre) => {
+    const currentScenario = genreScenarios[genre];
+    const newScenario = randomScenarioFor(genre, currentScenario.title);
+    setGenreScenarios(prev => ({
+      ...prev,
+      [genre]: newScenario
+    }));
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-card/20 to-primary/5">
@@ -129,35 +125,59 @@ export function WelcomeScreen({ onStartGame, onStartSetup }: WelcomeScreenProps)
             </div>
           </Card>
 
-          {/* Quick Start Options */}
+          {/* Genre Cards */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {quickStartOptions.map((option, index) => (
-              <Card 
-                key={index} 
-                className="p-6 hover:shadow-xl transition-all duration-300 cursor-pointer group bg-card/50 backdrop-blur-sm border-border hover:border-primary/50"
-                onClick={() => onStartSetup(option.description)}
-              >
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold group-hover:text-primary transition-colors">
-                    {option.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {option.description}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {option.tags.map((tag, tagIndex) => (
-                      <Badge key={tagIndex} variant="secondary" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
+            {Object.values(Genre).map((genre) => {
+              const scenario = genreScenarios[genre];
+              return (
+                <Card 
+                  key={genre} 
+                  className="p-6 hover:shadow-xl transition-all duration-300 group bg-card/50 backdrop-blur-sm border-border hover:border-primary/50"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-primary">
+                        {genre}
+                      </h3>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => regenerateScenario(genre)}
+                        className="h-8 w-8 hover:bg-primary/10"
+                        title="Regenerate scenario"
+                      >
+                        <Dice6 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    
+                    <h4 className="text-md font-medium group-hover:text-primary transition-colors">
+                      {scenario.title}
+                    </h4>
+                    
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {scenario.description}
+                    </p>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {scenario.tags.map((tag, tagIndex) => (
+                        <Badge key={tagIndex} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                      onClick={() => onStartSetup(scenario.description)}
+                    >
+                      Start Adventure
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
                   </div>
-                  <div className="flex items-center text-sm text-primary group-hover:translate-x-1 transition-transform">
-                    Start Adventure
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
 
           {/* Features Section */}
