@@ -1,6 +1,7 @@
 import { User } from "@supabase/supabase-js";
-import { Home, Sparkles, Settings, LogOut, Dice6 } from "lucide-react";
+import { Home, Settings, LogOut, Dice6 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import logoSvg from "@/assets/logo.svg";
 import { useToast } from "@/hooks/use-toast";
 import {
   Sidebar,
@@ -67,8 +68,8 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
     <Sidebar className={open ? "w-64" : "w-16"}>
       <SidebarHeader className="border-b border-border p-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-primary-foreground" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+            <img src={logoSvg} alt="RoleplAI GM Logo" className="w-6 h-6" />
           </div>
           {!open && (
             <div>
