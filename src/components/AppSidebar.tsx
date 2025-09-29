@@ -66,15 +66,15 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
 
   return (
     <Sidebar className={open ? "w-64" : "w-16"}>
-      <SidebarHeader className="border-b border-border p-4">
+      <SidebarHeader className="border-b border-sidebar-border p-4 bg-sidebar">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-sidebar-accent">
             <img src={logoSvg} alt="RoleplAI GM Logo" className="w-6 h-6" />
           </div>
           {!open && (
             <div>
-              <h2 className="font-semibold text-foreground">RoleplAI GM</h2>
-              <p className="text-xs text-muted-foreground">
+              <h2 className="font-semibold text-sidebar-foreground">RoleplAI GM</h2>
+              <p className="text-xs text-sidebar-foreground/70">
                 {user.user_metadata?.display_name || user.email}
               </p>
             </div>
@@ -83,9 +83,9 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
         {!open && <SidebarTrigger className="ml-auto" />}
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="bg-sidebar">
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/80">Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -94,7 +94,7 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
                     onClick={item.onClick}
                     isActive={item.active}
                     disabled={item.disabled}
-                    className={`${item.active ? "bg-primary/10 text-primary" : ""} ${
+                    className={`${item.active ? "bg-sidebar-primary/10 text-sidebar-primary border-sidebar-primary/20" : "text-sidebar-foreground hover:bg-sidebar-accent"} ${
                       item.disabled ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                   >
@@ -108,11 +108,11 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-sidebar-foreground/80">Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton>
+                <SidebarMenuButton className="text-sidebar-foreground hover:bg-sidebar-accent">
                   <Settings className="w-4 h-4" />
                   {!open && <span>Settings</span>}
                 </SidebarMenuButton>
@@ -122,11 +122,11 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-4 bg-sidebar">
         <Button
           variant="ghost"
           onClick={handleSignOut}
-          className="w-full justify-start"
+          className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
         >
           <LogOut className="w-4 h-4" />
           {!open && <span className="ml-2">Sign Out</span>}
