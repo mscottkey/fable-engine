@@ -75,5 +75,52 @@ For dangerous or irreversible actions:
 
 ---
 
+## AI Flow Overview (Provider-Agnostic)
+
+This project calls LLMs directly through a small router layer instead of Genkit. The methodology (schemas → prompts → flows) is unchanged; only the runtime changed.
+
+### Architecture
+
+- **Schemas**: Zod (same as before) for IO validation
+- **Prompts**: Handlebars/TS template strings (same as before)
+- **Flows**: Plain server-side TS functions that:
+  1. Render prompt
+  2. Call `callLlm()` (provider-agnostic)
+  3. Parse/validate JSON output via Zod
+  4. Return typed results
+
+### Directory Layout
+
+```
+src/
+├── ai/
+│   ├── flows/       # orchestration per task (unchanged)
+│   ├── prompts/     # text templates (unchanged)
+│   ├── schemas/     # zod schemas (unchanged)
+│   └── llm/         # NEW: provider-agnostic LLM layer
+│       ├── providers/   # openai.ts, anthropic.ts, google.ts, groq.ts
+│       ├── router.ts    # Provider selection logic
+│       ├── types.ts     # Type definitions
+│       ├── usage.ts     # Usage tracking
+│       └── index.ts     # Main exports
+```
+
+### Provider Selection
+
+Each flow can specify a **policy**:
+- Default provider/model
+- Capabilities required (JSON schema, long context, parallel calls)
+- Hard/soft tokens limit
+
+`callLlm()` chooses the best available provider/model or uses your explicit choice.
+
+### Error Handling & Retries
+
+- Automatic **429/5xx** backoff with jitter
+- **Schema re-ask**: if JSON parse fails, router asks the model to correct the shape (optional)
+- Normalized usage metrics across vendors
+
+---
+
 *Last Updated: 2025-01-29*
 *For RoleplAI GM Project*
