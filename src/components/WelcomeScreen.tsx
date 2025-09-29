@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import heroImage from "@/assets/hero-bg-branded.jpg";
 import { Genre, GENRE_SCENARIOS, randomScenarioFor, type Scenario } from "@/data/genres";
+import { detectGenreFromText } from "@/data/gm-quotes";
+import { AIGMAvatar } from "@/components/AIGMAvatar";
 
 interface WelcomeScreenProps {
   onStartGame: () => void;
@@ -21,6 +23,7 @@ interface WelcomeScreenProps {
 
 export function WelcomeScreen({ onStartGame, onStartSetup }: WelcomeScreenProps) {
   const [gameIdea, setGameIdea] = useState('');
+  const [detectedGenre, setDetectedGenre] = useState<Genre | 'generic'>('generic');
   
   // Initialize with random scenario for each genre
   const [genreScenarios, setGenreScenarios] = useState<Record<Genre, Scenario>>(() => {
@@ -38,6 +41,19 @@ export function WelcomeScreen({ onStartGame, onStartSetup }: WelcomeScreenProps)
       ...prev,
       [genre]: newScenario
     }));
+  };
+
+  // Detect genre from user input
+  const handleGameIdeaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setGameIdea(value);
+    
+    if (value.length > 3) {
+      const detected = detectGenreFromText(value);
+      setDetectedGenre(detected);
+    } else {
+      setDetectedGenre('generic');
+    }
   };
 
   return (
@@ -99,15 +115,24 @@ export function WelcomeScreen({ onStartGame, onStartSetup }: WelcomeScreenProps)
             </p>
           </div>
 
-          {/* Custom Game Input */}
+          {/* Custom Game Input with AI GM Avatar */}
           <Card className="p-8 mb-8 bg-card/70 backdrop-blur-sm border-primary/20">
-            <div className="text-center space-y-4">
-              <h3 className="text-xl font-semibold">Create Your Own Adventure</h3>
+            <div className="space-y-6">
+              <div className="text-center">
+                <h3 className="text-xl font-semibold">Create Your Own Adventure</h3>
+              </div>
+              
+              {/* AI GM Avatar with Speech Bubble */}
+              <div className="flex justify-center">
+                <AIGMAvatar genre={detectedGenre} className="max-w-md" />
+              </div>
+              
+              {/* Input and Button */}
               <div className="flex gap-3 max-w-2xl mx-auto">
                 <Input
                   placeholder="I want to play a neon-fantasy heist..."
                   value={gameIdea}
-                  onChange={(e) => setGameIdea(e.target.value)}
+                  onChange={handleGameIdeaChange}
                   className="flex-1 text-center"
                 />
                 <Button 
@@ -119,7 +144,7 @@ export function WelcomeScreen({ onStartGame, onStartSetup }: WelcomeScreenProps)
                   Setup Game
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground text-center">
                 The AI will create a world, characters, and opening scene based on your idea
               </p>
             </div>
