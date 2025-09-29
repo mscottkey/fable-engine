@@ -90,18 +90,61 @@ src/
 - [ ] Create adventure templates
 - [ ] Add file upload for character sheets
 
-## API Integration
+## AI Architecture & Integration
+
+### AI Flow Overview (Provider-Agnostic)
+
+The project implements a three-part methodology for AI integration: **schemas → prompts → flows**.
+
+#### Architecture Components
+- **Schemas**: Zod for IO validation and type safety
+- **Prompts**: Handlebars/TS template strings for dynamic content generation
+- **Flows**: Server-side TypeScript functions that:
+  1. Render prompts with context
+  2. Call `callLlm()` (provider-agnostic layer)
+  3. Parse/validate JSON output via Zod schemas
+  4. Return strongly typed results
+
+#### Directory Structure
+```
+src/
+├── ai/
+│   ├── flows/       # Orchestration per AI task
+│   ├── prompts/     # Text templates for AI interactions
+│   ├── schemas/     # Zod schemas for validation
+│   └── llm/         # Provider-agnostic LLM layer
+│       ├── providers/   # openai.ts, anthropic.ts, google.ts, groq.ts
+│       ├── router.ts    # Provider selection logic
+│       ├── types.ts     # LLM type definitions
+│       ├── usage.ts     # Usage tracking
+│       └── index.ts     # Main exports
+```
+
+#### Provider Selection
+Each AI flow can specify a **policy** including:
+- Default provider/model preferences
+- Required capabilities (JSON schema, long context, parallel calls)
+- Token limits (hard/soft boundaries)
+
+The `callLlm()` function automatically selects the best available provider/model based on requirements.
+
+#### Error Handling & Reliability
+- **Automatic retries**: 429/5xx errors with exponential backoff and jitter
+- **Schema re-ask**: If JSON parsing fails, router requests format correction
+- **Normalized metrics**: Consistent usage tracking across all providers
+- **Graceful degradation**: Fallback to alternative providers when needed
 
 ### Lovable AI Gateway
-Available models for AI features:
-- `google/gemini-2.5-pro` - Best for complex reasoning and multimodal
-- `google/gemini-2.5-flash` - Balanced performance
-- `openai/gpt-5` - Excellent reasoning and context
-- `openai/gpt-5-mini` - Cost-effective option
+Primary integration for AI features:
+- `google/gemini-2.5-pro` - Complex reasoning and multimodal tasks
+- `google/gemini-2.5-flash` - Balanced performance (default)
+- `openai/gpt-5` - Premium reasoning and context understanding
+- `openai/gpt-5-mini` - Cost-effective general purpose
 
 ### External APIs
 - Google OAuth for authentication
-- (Add other integrations as they're implemented)
+- Multiple LLM providers via abstraction layer
+- (Additional integrations to be documented as implemented)
 
 ## Testing Guidelines
 - Test authentication flows thoroughly
