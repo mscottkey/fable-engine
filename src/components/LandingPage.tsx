@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, Users, Zap } from "lucide-react";
-import heroImage from "@/assets/hero-landing.jpg";
+import heroImage from "@/assets/hero-bg-new.jpg";
 
 interface LandingPageProps {
   onShowAuth: () => void;
@@ -14,7 +14,10 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-primary">RoleplAI GM</h1>
+              <div className="flex items-center">
+                <img src="/logo.png" alt="RoleplAI GM" className="w-8 h-8 mr-2" />
+                <h1 className="text-xl font-bold text-primary">RoleplAI GM</h1>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <Button variant="ghost" onClick={onShowAuth}>
