@@ -292,7 +292,7 @@ export function GameInterface({ characters = [], gameIdea = "Epic Fantasy Advent
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 className="flex-1"
               />
-              <Button onClick={handleSendMessage} variant="mystical">
+              <Button onClick={handleSendMessage} variant="crimson">
                 <Send className="w-4 h-4" />
               </Button>
             </div>

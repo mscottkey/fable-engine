@@ -134,7 +134,7 @@ export function GameSetup({ onStartGame, onBack, initialGameIdea = '' }: GameSet
                   Back
                 </Button>
                 <Button 
-                  variant="mystical" 
+                  variant="crimson" 
                   onClick={() => setStep(2)}
                   disabled={!canProceedToStep2}
                 >
@@ -232,7 +232,7 @@ export function GameSetup({ onStartGame, onBack, initialGameIdea = '' }: GameSet
                 Back
               </Button>
               <Button 
-                variant="mystical" 
+                variant="crimson" 
                 onClick={handleStartGame}
                 disabled={!canStartGame}
               >

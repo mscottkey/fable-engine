@@ -9,14 +9,14 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 mystical-glow",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90 crimson-glow",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline: "border border-border bg-card/50 backdrop-blur-sm hover:bg-card hover:border-primary/50",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent/20 hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        mystical: "bg-gradient-to-r from-primary to-primary-glow text-primary-foreground hover:shadow-2xl hover:shadow-primary/50 transform hover:scale-105",
-        golden: "bg-gradient-to-r from-accent to-yellow-400 text-accent-foreground font-semibold golden-glow hover:shadow-2xl hover:shadow-accent/50 transform hover:scale-105",
+        crimson: "bg-gradient-to-r from-primary to-primary-glow text-primary-foreground hover:shadow-2xl hover:shadow-primary/50 transform hover:scale-105",
+        golden: "bg-gradient-to-r from-accent to-amber-400 text-accent-foreground font-semibold golden-glow hover:shadow-2xl hover:shadow-accent/50 transform hover:scale-105",
         ethereal: "bg-card/30 backdrop-blur-md border border-primary/30 text-foreground hover:bg-card/50 hover:border-primary/60 transition-all duration-500",
       },
       size: {

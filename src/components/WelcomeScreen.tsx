@@ -11,7 +11,7 @@ import {
   PlayCircle,
   ArrowRight
 } from "lucide-react";
-import heroImage from "@/assets/hero-bg.jpg";
+import heroImage from "@/assets/hero-bg-branded.jpg";
 
 interface WelcomeScreenProps {
   onStartGame: () => void;
@@ -115,7 +115,7 @@ export function WelcomeScreen({ onStartGame, onStartSetup }: WelcomeScreenProps)
                   className="flex-1 text-center"
                 />
                 <Button 
-                  variant="mystical" 
+                  variant="crimson" 
                   onClick={() => onStartSetup(gameIdea)}
                   className="px-8"
                 >
