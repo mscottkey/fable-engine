@@ -71,7 +71,7 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
           <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-sidebar-accent">
             <img src={logoSvg} alt="RoleplAI GM Logo" className="w-full h-full object-contain" />
           </div>
-          {!open && (
+          {open && (
             <div>
               <h2 className="font-semibold text-sidebar-foreground">RoleplAI GM</h2>
               <p className="text-xs text-sidebar-foreground/70">
@@ -80,7 +80,7 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
             </div>
           )}
         </div>
-        {!open && <SidebarTrigger className="ml-auto" />}
+        <SidebarTrigger className="ml-auto" />
       </SidebarHeader>
 
       <SidebarContent className="bg-sidebar">
@@ -98,8 +98,8 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
                       item.disabled ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                   >
-                    <item.icon className="w-4 h-4" />
-                    {!open && <span>{item.title}</span>}
+                    <item.icon className="w-5 h-5" />
+                    {open && <span>{item.title}</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -113,8 +113,8 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton className="text-sidebar-foreground hover:bg-sidebar-accent">
-                  <Settings className="w-4 h-4" />
-                  {!open && <span>Settings</span>}
+                  <Settings className="w-5 h-5" />
+                  {open && <span>Settings</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -128,8 +128,8 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
           onClick={handleSignOut}
           className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
         >
-          <LogOut className="w-4 h-4" />
-          {!open && <span className="ml-2">Sign Out</span>}
+          <LogOut className="w-5 h-5" />
+          {open && <span className="ml-2">Sign Out</span>}
         </Button>
       </SidebarFooter>
     </Sidebar>
