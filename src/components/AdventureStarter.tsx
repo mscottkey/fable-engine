@@ -1,11 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlayCircle, Sparkles, Dice6 } from "lucide-react";
+import { PlayCircle, Sparkles, Dice6, X } from "lucide-react";
 import { Genre, GENRE_SCENARIOS, randomScenarioFor, type Scenario } from "@/data/genres";
 import { detectGenreFromText } from "@/data/gm-quotes";
+import { detectGenreFromKeywords } from "@/data/keywords-to-genre";
+import { extractConstraintsFromPrompt, type PromptConstraints } from "@/data/prompt-constraints";
+import { buildSeedFromPrompt } from "@/services/promptSeedBuilder";
 import { AIGMAvatar } from "@/components/AIGMAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { buildCampaignSeed } from "@/services/campaignBuilder";
@@ -20,6 +23,14 @@ interface AdventureStarterProps {
 export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
   const [gameIdea, setGameIdea] = useState("");
   const [detectedGenre, setDetectedGenre] = useState<Genre | 'generic'>('generic');
+  const [inferredGenre, setInferredGenre] = useState<Genre | null>(null);
+  const [selectedGenre, setSelectedGenre] = useState<Genre | null>(null);
+  const [constraints, setConstraints] = useState<PromptConstraints>({
+    vibeHints: [],
+    tagHints: [],
+    namedNouns: [],
+    requiredFragments: []
+  });
   const [hoveredGenre, setHoveredGenre] = useState<Genre | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,7 +51,7 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
 
     return () => subscription.unsubscribe();
   }, []);
-  
+
   // Initialize with random scenario for each genre
   const [genreScenarios, setGenreScenarios] = useState<Record<Genre, Scenario>>(() => {
     const initial: Record<Genre, Scenario> = {} as Record<Genre, Scenario>;
@@ -59,17 +70,48 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
     }));
   };
 
-  // Detect genre from user input
-  const handleGameIdeaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Detect genre and constraints from user input
+  const handleGameIdeaChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setGameIdea(value);
     
     if (value.length > 3) {
+      // Extract constraints
+      const newConstraints = extractConstraintsFromPrompt(value);
+      setConstraints(newConstraints);
+      
+      // Detect genre from keywords
+      const keywordGenre = detectGenreFromKeywords(value);
+      setInferredGenre(keywordGenre);
+      
+      // Fallback to original genre detection for GM quotes
       const detected = detectGenreFromText(value);
       setDetectedGenre(detected);
+      
+      // Auto-select genre if confidently detected
+      if (keywordGenre && !selectedGenre) {
+        setSelectedGenre(keywordGenre);
+      }
     } else {
+      setConstraints({
+        vibeHints: [],
+        tagHints: [],
+        namedNouns: [],
+        requiredFragments: []
+      });
+      setInferredGenre(null);
       setDetectedGenre('generic');
+      setSelectedGenre(null);
     }
+  }, [selectedGenre]);
+
+  const toggleConstraintHint = (type: 'vibeHints' | 'tagHints', hint: string) => {
+    setConstraints(prev => ({
+      ...prev,
+      [type]: prev[type].includes(hint)
+        ? prev[type].filter(h => h !== hint)
+        : [...prev[type], hint]
+    }));
   };
 
   const handleQuickStart = async (scenario: Scenario, genre: Genre) => {
@@ -136,21 +178,55 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
       return;
     }
 
+    // Ensure a genre is selected
+    const finalGenre = selectedGenre || inferredGenre;
+    if (!finalGenre) {
+      toast({
+        title: "Genre Required",
+        description: "Please select a genre for your adventure.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      // Map detected genre to database enum
-      const dbGenre = detectedGenre === 'generic' ? 'Modern' as DatabaseGenre : detectedGenre as DatabaseGenre;
-      
-      // Create campaign seed
-      const campaignData = buildCampaignSeed(
-        dbGenre,
-        "Custom Adventure",
-        gameIdea,
-        Date.now()
-      );
+      // Build seed from prompt using constraints
+      const campaignData = buildSeedFromPrompt({
+        userText: gameIdea,
+        genre: finalGenre,
+        constraints,
+        seed: Date.now()
+      });
 
-      // Save to database
-      const seedId = await saveCampaignSeed(campaignData);
+      // Save to database with custom prompt info
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('campaign_seeds')
+        .insert({
+          user_id: user.id,
+          genre: campaignData.genre,
+          scenario_title: campaignData.scenarioTitle,
+          scenario_description: campaignData.scenarioDescription,
+          seed: campaignData.seed,
+          name: campaignData.name,
+          setting: campaignData.setting,
+          notable_locations: campaignData.notableLocations,
+          tone_vibe: campaignData.toneVibe,
+          tone_levers: campaignData.toneLevers,
+          difficulty_label: campaignData.difficultyLabel,
+          difficulty_desc: campaignData.difficultyDesc,
+          hooks: campaignData.hooks,
+          source_type: 'custom_prompt',
+          user_prompt: gameIdea,
+          constraints: constraints
+        })
+        .select('id')
+        .single();
+
+      if (error) throw error;
       
       // Create default characters
       const defaultCharacters: Character[] = [
@@ -159,7 +235,7 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
       ];
 
       // Create game
-      const gameId = await createGame(seedId, "Custom Adventure", defaultCharacters);
+      const gameId = await createGame(data.id, campaignData.name, defaultCharacters);
       
       toast({
         title: "Adventure Started!",
@@ -235,22 +311,75 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
             </div>
             
             {/* Input and Button */}
-            <div className="flex gap-3">
-              <Input
-                placeholder="I want to play a space detective mystery..."
-                value={gameIdea}
-                onChange={handleGameIdeaChange}
-                className="flex-1 text-center"
-              />
-              <Button 
-                variant="crimson" 
-                onClick={handleCustomStart}
-                disabled={!gameIdea.trim() || loading}
-                className="px-8"
-              >
-                <PlayCircle className="w-4 h-4 mr-2" />
-                {loading ? "Starting..." : "Start Game"}
-              </Button>
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <Input
+                  placeholder="I want to play a space detective mystery..."
+                  value={gameIdea}
+                  onChange={handleGameIdeaChange}
+                  className="flex-1 text-center"
+                />
+                <Button 
+                  variant="crimson" 
+                  onClick={handleCustomStart}
+                  disabled={!gameIdea.trim() || loading}
+                  className="px-8"
+                >
+                  <PlayCircle className="w-4 h-4 mr-2" />
+                  {loading ? "Starting..." : "Start Game"}
+                </Button>
+              </div>
+
+              {/* Genre Selection */}
+              {gameIdea.length > 3 && !inferredGenre && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Choose a genre:</label>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.values(Genre).slice(0, 6).map((genre) => (
+                      <Button
+                        key={genre}
+                        variant={selectedGenre === genre ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedGenre(genre)}
+                        className="text-xs"
+                      >
+                        {genre}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Constraint Chips */}
+              {(constraints.vibeHints.length > 0 || constraints.tagHints.length > 0) && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Detected themes (click to toggle):</label>
+                  <div className="flex flex-wrap gap-2">
+                    {constraints.vibeHints.map((vibe) => (
+                      <Badge
+                        key={vibe}
+                        variant="secondary"
+                        className="cursor-pointer hover:bg-primary/20 text-xs"
+                        onClick={() => toggleConstraintHint('vibeHints', vibe)}
+                      >
+                        {vibe}
+                        <X className="w-3 h-3 ml-1" />
+                      </Badge>
+                    ))}
+                    {constraints.tagHints.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className="cursor-pointer hover:bg-accent/20 text-xs"
+                        onClick={() => toggleConstraintHint('tagHints', tag)}
+                      >
+                        {tag}
+                        <X className="w-3 h-3 ml-1" />
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

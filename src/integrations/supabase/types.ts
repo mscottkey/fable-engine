@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       campaign_seeds: {
         Row: {
+          constraints: Json | null
           created_at: string
           difficulty_desc: string
           difficulty_label: Database["public"]["Enums"]["difficulty_label"]
@@ -28,11 +29,14 @@ export type Database = {
           scenario_title: string
           seed: number
           setting: string
+          source_type: string | null
           tone_levers: Json
           tone_vibe: string
           user_id: string
+          user_prompt: string | null
         }
         Insert: {
+          constraints?: Json | null
           created_at?: string
           difficulty_desc: string
           difficulty_label: Database["public"]["Enums"]["difficulty_label"]
@@ -45,11 +49,14 @@ export type Database = {
           scenario_title: string
           seed: number
           setting: string
+          source_type?: string | null
           tone_levers: Json
           tone_vibe: string
           user_id: string
+          user_prompt?: string | null
         }
         Update: {
+          constraints?: Json | null
           created_at?: string
           difficulty_desc?: string
           difficulty_label?: Database["public"]["Enums"]["difficulty_label"]
@@ -62,9 +69,11 @@ export type Database = {
           scenario_title?: string
           seed?: number
           setting?: string
+          source_type?: string | null
           tone_levers?: Json
           tone_vibe?: string
           user_id?: string
+          user_prompt?: string | null
         }
         Relationships: []
       }
