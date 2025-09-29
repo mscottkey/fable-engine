@@ -65,7 +65,7 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
   ];
 
   return (
-    <Sidebar className={open ? "w-64" : "w-16"} collapsible="icon">
+    <Sidebar className={open ? "w-72" : "w-16"} collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4 bg-sidebar">
         <div className="flex items-center gap-3">
           <div className={`${open ? "w-12 h-12" : "w-8 h-8"} rounded-lg flex items-center justify-center bg-sidebar-accent`}>
