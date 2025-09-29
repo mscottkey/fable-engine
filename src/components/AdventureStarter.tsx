@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlayCircle, Sparkles, Dice6, X } from "lucide-react";
+import { PlayCircle, Sparkles, Dice6, X, Info } from "lucide-react";
 import { Genre, GENRE_SCENARIOS, randomScenarioFor, type Scenario } from "@/data/genres";
 import { detectGenreFromText } from "@/data/gm-quotes";
 import { detectGenreFromKeywords } from "@/data/keywords-to-genre";
 import { extractConstraintsFromPrompt, type PromptConstraints } from "@/data/prompt-constraints";
 import { buildSeedFromPrompt } from "@/services/promptSeedBuilder";
+import { sanitizeUserPrompt, type SanitizationResult } from "@/services/ipSanitizer";
 import { AIGMAvatar } from "@/components/AIGMAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { buildCampaignSeed } from "@/services/campaignBuilder";
@@ -31,6 +32,8 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
     namedNouns: [],
     requiredFragments: []
   });
+  const [sanitizationResult, setSanitizationResult] = useState<SanitizationResult | null>(null);
+  const [showSanitizationNote, setShowSanitizationNote] = useState(false);
   const [hoveredGenre, setHoveredGenre] = useState<Genre | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -191,38 +194,59 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
 
     setLoading(true);
     try {
-      // Build seed from prompt using constraints
+      // Step 1: Sanitize the user prompt for IP content
+      const sanitizationResult = await sanitizeUserPrompt(gameIdea, finalGenre);
+      
+      // Show notification if IP was detected
+      if (sanitizationResult.had_ip) {
+        setSanitizationResult(sanitizationResult);
+        setShowSanitizationNote(true);
+        toast({
+          title: "Content Adjusted",
+          description: "We rephrased your idea to keep it original.",
+        });
+      }
+
+      // Use sanitized text for seed building
+      const textToUse = sanitizationResult.sanitized_text || gameIdea;
+      
+      // Step 2: Build seed from prompt using constraints
       const campaignData = buildSeedFromPrompt({
-        userText: gameIdea,
+        userText: textToUse,
         genre: finalGenre,
         constraints,
         seed: Date.now()
       });
 
-      // Save to database with custom prompt info
+      // Step 3: Save to database with sanitization info
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      const insertData = {
+        user_id: user.id,
+        genre: campaignData.genre as any, // Type assertion for database enum
+        scenario_title: campaignData.scenarioTitle,
+        scenario_description: campaignData.scenarioDescription,
+        seed: campaignData.seed,
+        name: campaignData.name,
+        setting: campaignData.setting,
+        notable_locations: campaignData.notableLocations as any, // JSON type
+        tone_vibe: campaignData.toneVibe,
+        tone_levers: campaignData.toneLevers as any, // JSON type
+        difficulty_label: campaignData.difficultyLabel as any, // Type assertion for database enum
+        difficulty_desc: campaignData.difficultyDesc,
+        hooks: campaignData.hooks as any, // JSON type
+        source_type: 'custom_prompt',
+        user_prompt: gameIdea,
+        original_user_prompt: sanitizationResult.had_ip ? gameIdea : null,
+        sanitized_user_prompt: sanitizationResult.had_ip ? sanitizationResult.sanitized_text : null,
+        sanitization_report: sanitizationResult.had_ip ? (sanitizationResult as any) : null,
+        constraints: constraints as any // JSON type
+      };
+
       const { data, error } = await supabase
         .from('campaign_seeds')
-        .insert({
-          user_id: user.id,
-          genre: campaignData.genre,
-          scenario_title: campaignData.scenarioTitle,
-          scenario_description: campaignData.scenarioDescription,
-          seed: campaignData.seed,
-          name: campaignData.name,
-          setting: campaignData.setting,
-          notable_locations: campaignData.notableLocations,
-          tone_vibe: campaignData.toneVibe,
-          tone_levers: campaignData.toneLevers,
-          difficulty_label: campaignData.difficultyLabel,
-          difficulty_desc: campaignData.difficultyDesc,
-          hooks: campaignData.hooks,
-          source_type: 'custom_prompt',
-          user_prompt: gameIdea,
-          constraints: constraints
-        })
+        .insert(insertData)
         .select('id')
         .single();
 
@@ -346,6 +370,38 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
                         {genre}
                       </Button>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Sanitization Notice */}
+              {showSanitizationNote && sanitizationResult?.had_ip && (
+                <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm text-primary font-medium">Content Adjusted</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        We rephrased your idea to keep it original while preserving your intent.
+                      </p>
+                      {sanitizationResult.detections.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {sanitizationResult.detections.map((detection, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {detection.span} → {detection.suggested_generic}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowSanitizationNote(false)}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
                   </div>
                 </div>
               )}

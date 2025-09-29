@@ -1,1 +1,4 @@
 project_id = "drqbvxrouedaohmwfvdj"
+
+[functions.ip-sanitizer]
+verify_jwt = false

@@ -25,6 +25,9 @@ export type Database = {
           id: string
           name: string
           notable_locations: Json
+          original_user_prompt: string | null
+          sanitization_report: Json | null
+          sanitized_user_prompt: string | null
           scenario_description: string
           scenario_title: string
           seed: number
@@ -45,6 +48,9 @@ export type Database = {
           id?: string
           name: string
           notable_locations: Json
+          original_user_prompt?: string | null
+          sanitization_report?: Json | null
+          sanitized_user_prompt?: string | null
           scenario_description: string
           scenario_title: string
           seed: number
@@ -65,6 +71,9 @@ export type Database = {
           id?: string
           name?: string
           notable_locations?: Json
+          original_user_prompt?: string | null
+          sanitization_report?: Json | null
+          sanitized_user_prompt?: string | null
           scenario_description?: string
           scenario_title?: string
           seed?: number
