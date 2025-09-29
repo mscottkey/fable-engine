@@ -65,10 +65,10 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
   ];
 
   return (
-    <Sidebar className={open ? "w-64" : "w-16"}>
+    <Sidebar className={open ? "w-64" : "w-16"} collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4 bg-sidebar">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-sidebar-accent">
+          <div className={`${open ? "w-12 h-12" : "w-8 h-8"} rounded-lg flex items-center justify-center bg-sidebar-accent`}>
             <img src={logoSvg} alt="RoleplAI GM Logo" className="w-full h-full object-contain" />
           </div>
           {open && (
@@ -80,12 +80,13 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
             </div>
           )}
         </div>
-        <SidebarTrigger className="ml-auto" />
+        {open && <SidebarTrigger className="ml-auto" />}
+        {!open && <SidebarTrigger className="mx-auto mt-2" />}
       </SidebarHeader>
 
       <SidebarContent className="bg-sidebar">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/80">Navigation</SidebarGroupLabel>
+          {open && <SidebarGroupLabel className="text-sidebar-foreground/80">Navigation</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -108,7 +109,7 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/80">Account</SidebarGroupLabel>
+          {open && <SidebarGroupLabel className="text-sidebar-foreground/80">Account</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
