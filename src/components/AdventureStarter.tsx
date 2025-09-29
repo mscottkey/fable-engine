@@ -22,6 +22,7 @@ interface AdventureStarterProps {
 export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
   const [gameIdea, setGameIdea] = useState("");
   const [detectedGenre, setDetectedGenre] = useState<Genre | 'generic'>('generic');
+  const [hoveredGenre, setHoveredGenre] = useState<Genre | null>(null);
   
   // Initialize with random scenario for each genre
   const [genreScenarios, setGenreScenarios] = useState<Record<Genre, Scenario>>(() => {
@@ -103,7 +104,7 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
           <CardContent className="space-y-6">
             {/* AI GM Avatar with Speech Bubble */}
             <div className="flex justify-center">
-              <AIGMAvatar genre={detectedGenre} className="max-w-md" />
+              <AIGMAvatar genre={hoveredGenre || detectedGenre} className="max-w-md" />
             </div>
             
             {/* Input and Button */}
@@ -145,6 +146,8 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
                 <Card
                   key={genre}
                   className="cursor-pointer transition-all duration-300 hover:scale-105 border-border bg-card/50 backdrop-blur-sm hover:bg-card/70 hover:border-primary/50"
+                  onMouseEnter={() => setHoveredGenre(genre)}
+                  onMouseLeave={() => setHoveredGenre(null)}
                 >
                   <CardHeader>
                     <div className="flex items-center justify-between mb-2">
