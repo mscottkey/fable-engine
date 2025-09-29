@@ -104,7 +104,9 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
           <CardContent className="space-y-6">
             {/* AI GM Avatar with Speech Bubble */}
             <div className="flex justify-center">
-              <AIGMAvatar genre={hoveredGenre || detectedGenre} className="max-w-md" />
+              <div className="h-32 w-full max-w-md flex items-center justify-center">
+                <AIGMAvatar genre={hoveredGenre || detectedGenre} className="max-w-md" />
+              </div>
             </div>
             
             {/* Input and Button */}
