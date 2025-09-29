@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -19,6 +19,8 @@ import {
   Sparkles,
   User
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Character } from "@/types/database";
 
 interface Message {
   id: string;
@@ -35,31 +37,77 @@ interface Message {
   };
 }
 
-interface Character {
-  id: string;
-  playerName: string;
-  characterName: string;
-  concept: string;
-}
-
 interface GameInterfaceProps {
-  characters?: Character[];
-  gameIdea?: string;
+  gameId: string;
 }
 
-export function GameInterface({ characters = [], gameIdea = "Epic Fantasy Adventure" }: GameInterfaceProps) {
-  const [activeCharacter, setActiveCharacter] = useState(characters[0]?.id || '');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'gm',
-      content: `Welcome to ${gameIdea}! ${characters.length > 0 ? `${characters.map(c => c.characterName).join(', ')}, you` : 'You'} find yourselves at the beginning of an epic adventure. The world awaits your choices. What do you do?`,
-      timestamp: new Date()
-    }
-  ]);
-  
+export function GameInterface({ gameId }: GameInterfaceProps) {
+  const [characters, setCharacters] = useState<Character[]>([]);
+  const [gameIdea, setGameIdea] = useState("Loading...");
+  const [gameData, setGameData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeCharacter, setActiveCharacter] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [showMechanics, setShowMechanics] = useState(false);
+
+  useEffect(() => {
+    loadGameData();
+  }, [gameId]);
+
+  const loadGameData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('games')
+        .select(`
+          *,
+          campaign_seeds (*)
+        `)
+        .eq('id', gameId)
+        .single();
+
+      if (error) throw error;
+
+      setGameData(data);
+      setGameIdea(data.name || "Epic Adventure");
+      
+      // Create default characters for now - later we'll load from database
+      const defaultCharacters: Character[] = [
+        { id: "1", playerName: "Player 1", characterName: "Character 1", concept: "Determined hero" },
+        { id: "2", playerName: "Player 2", characterName: "Character 2", concept: "Clever ally" },
+      ];
+      
+      setCharacters(defaultCharacters);
+      setActiveCharacter(defaultCharacters[0]?.id || '');
+      
+      // Set initial GM message
+      setMessages([
+        {
+          id: '1',
+          role: 'gm',
+          content: `Welcome to ${data.name}! ${defaultCharacters.map(c => c.characterName).join(', ')}, you find yourselves at the beginning of an epic adventure. The world awaits your choices. What do you do?`,
+          timestamp: new Date()
+        }
+      ]);
+      
+    } catch (error) {
+      console.error('Failed to load game data:', error);
+      setGameIdea("Failed to load game");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <Dice6 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+          <p>Loading adventure...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSendMessage = () => {
     if (!inputValue.trim()) return;

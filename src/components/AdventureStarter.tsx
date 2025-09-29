@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,22 +7,39 @@ import { PlayCircle, Sparkles, Dice6 } from "lucide-react";
 import { Genre, GENRE_SCENARIOS, randomScenarioFor, type Scenario } from "@/data/genres";
 import { detectGenreFromText } from "@/data/gm-quotes";
 import { AIGMAvatar } from "@/components/AIGMAvatar";
-
-interface Character {
-  id: string;
-  playerName: string;
-  characterName: string;
-  concept: string;
-}
+import { supabase } from "@/integrations/supabase/client";
+import { buildCampaignSeed } from "@/services/campaignBuilder";
+import { saveCampaignSeed, createGame } from "@/services/campaignService";
+import { useToast } from "@/hooks/use-toast";
+import type { Genre as DatabaseGenre, Character } from "@/types/database";
 
 interface AdventureStarterProps {
-  onStartGame: (characters: Character[], gameIdea: string) => void;
+  onStartGame: (gameId: string) => void;
 }
 
 export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
   const [gameIdea, setGameIdea] = useState("");
   const [detectedGenre, setDetectedGenre] = useState<Genre | 'generic'>('generic');
   const [hoveredGenre, setHoveredGenre] = useState<Genre | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Check initial auth state
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setIsAuthenticated(!!session);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
   
   // Initialize with random scenario for each genre
   const [genreScenarios, setGenreScenarios] = useState<Record<Genre, Scenario>>(() => {
@@ -55,24 +72,111 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
     }
   };
 
-  const handleQuickStart = (scenario: Scenario) => {
-    // For quick start, create default characters
-    const defaultCharacters: Character[] = [
-      { id: "1", playerName: "Player 1", characterName: "Character 1", concept: "Determined hero" },
-      { id: "2", playerName: "Player 2", characterName: "Character 2", concept: "Clever ally" },
-    ];
-    onStartGame(defaultCharacters, scenario.description);
+  const handleQuickStart = async (scenario: Scenario, genre: Genre) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to start an adventure.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Map Genre enum to database enum - direct mapping since they match
+      const dbGenre = genre as DatabaseGenre;
+      
+      // Create campaign seed
+      const campaignData = buildCampaignSeed(
+        dbGenre,
+        scenario.title,
+        scenario.description,
+        Date.now()
+      );
+
+      // Save to database
+      const seedId = await saveCampaignSeed(campaignData);
+      
+      // Create default characters
+      const defaultCharacters: Character[] = [
+        { id: "1", playerName: "Player 1", characterName: "Character 1", concept: "Determined hero" },
+        { id: "2", playerName: "Player 2", characterName: "Character 2", concept: "Clever ally" },
+      ];
+
+      // Create game
+      const gameId = await createGame(seedId, scenario.title, defaultCharacters);
+      
+      toast({
+        title: "Adventure Started!",
+        description: `Created "${scenario.title}" adventure`,
+      });
+
+      onStartGame(gameId);
+    } catch (error) {
+      console.error('Failed to start adventure:', error);
+      toast({
+        title: "Failed to Start Adventure",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleCustomStart = () => {
+  const handleCustomStart = async () => {
     if (!gameIdea.trim()) return;
-    
-    // For custom start, create default characters
-    const defaultCharacters: Character[] = [
-      { id: "1", playerName: "Player 1", characterName: "Character 1", concept: "Determined hero" },
-      { id: "2", playerName: "Player 2", characterName: "Character 2", concept: "Clever ally" },
-    ];
-    onStartGame(defaultCharacters, gameIdea);
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required", 
+        description: "Please sign in to start an adventure.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Map detected genre to database enum
+      const dbGenre = detectedGenre === 'generic' ? 'Modern' as DatabaseGenre : detectedGenre as DatabaseGenre;
+      
+      // Create campaign seed
+      const campaignData = buildCampaignSeed(
+        dbGenre,
+        "Custom Adventure",
+        gameIdea,
+        Date.now()
+      );
+
+      // Save to database
+      const seedId = await saveCampaignSeed(campaignData);
+      
+      // Create default characters
+      const defaultCharacters: Character[] = [
+        { id: "1", playerName: "Player 1", characterName: "Character 1", concept: "Determined hero" },
+        { id: "2", playerName: "Player 2", characterName: "Character 2", concept: "Clever ally" },
+      ];
+
+      // Create game
+      const gameId = await createGame(seedId, "Custom Adventure", defaultCharacters);
+      
+      toast({
+        title: "Adventure Started!",
+        description: "Created custom adventure",
+      });
+
+      onStartGame(gameId);
+    } catch (error) {
+      console.error('Failed to start adventure:', error);
+      toast({
+        title: "Failed to Start Adventure", 
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -80,10 +184,31 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl lg:text-5xl font-bold text-foreground">
-            Start Your
-            <span className="text-primary block">Adventure</span>
-          </h1>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex-1"></div>
+            <div className="flex-1">
+              <h1 className="text-4xl lg:text-5xl font-bold text-foreground">
+                Start Your
+                <span className="text-primary block">Adventure</span>
+              </h1>
+            </div>
+            <div className="flex-1 flex justify-end">
+              {isAuthenticated && (
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    toast({
+                      title: "Signed Out",
+                      description: "You have been signed out successfully.",
+                    });
+                  }}
+                >
+                  Sign Out
+                </Button>
+              )}
+            </div>
+          </div>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             Choose from curated scenarios or describe your own adventure. 
             Our AI gamemaster will bring your story to life.
@@ -120,11 +245,11 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
               <Button 
                 variant="crimson" 
                 onClick={handleCustomStart}
-                disabled={!gameIdea.trim()}
+                disabled={!gameIdea.trim() || loading}
                 className="px-8"
               >
                 <PlayCircle className="w-4 h-4 mr-2" />
-                Start Game
+                {loading ? "Starting..." : "Start Game"}
               </Button>
             </div>
           </CardContent>
@@ -187,9 +312,10 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
                     <Button
                       variant="outline"
                       className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                      onClick={() => handleQuickStart(scenario)}
+                      onClick={() => handleQuickStart(scenario, genre)}
+                      disabled={loading}
                     >
-                      Start Adventure
+                      {loading ? "Starting..." : "Start Adventure"}
                     </Button>
                   </CardContent>
                 </Card>
