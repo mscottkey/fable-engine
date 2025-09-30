@@ -110,7 +110,9 @@ export async function getUserGames() {
     throw new Error('User must be authenticated to fetch games');
   }
 
-  // Get completed games (excluding soft-deleted ones) - only include games where user is actually a member
+  console.log('Fetching games for user:', user.id);
+
+  // Get completed games with proper joins
   const { data: games, error: gamesError } = await supabase
     .from('games')
     .select(`
@@ -118,25 +120,41 @@ export async function getUserGames() {
       name,
       created_at,
       status,
-      campaign_seeds!inner (
-        id,
-        name,
-        genre,
-        scenario_title,
-        scenario_description
-      ),
-      game_members!inner (
-        role
-      )
+      seed_id
     `)
     .eq('user_id', user.id)
-    .eq('game_members.user_id', user.id)  // Ensure user is a member
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (gamesError) {
     console.error('Error fetching games:', gamesError);
     throw new Error(`Failed to fetch games: ${gamesError.message}`);
+  }
+
+  // Get campaign seeds for the games
+  let gameResults = [];
+  if (games && games.length > 0) {
+    const seedIds = games.map(g => g.seed_id);
+    const { data: seeds, error: seedsError } = await supabase
+      .from('campaign_seeds')
+      .select('id, name, genre, scenario_title, scenario_description')
+      .in('id', seedIds);
+
+    if (seedsError) {
+      console.error('Error fetching campaign seeds for games:', seedsError);
+    } else {
+      gameResults = games.map(game => {
+        const seed = seeds?.find(s => s.id === game.seed_id);
+        return {
+          id: game.id,
+          name: game.name,
+          created_at: game.created_at,
+          type: 'game' as const,
+          status: game.status === 'setup' ? 'setup' : game.status || 'lobby',
+          campaign_seed: seed
+        };
+      });
+    }
   }
 
   // Get campaign seeds that haven't become full games yet (excluding soft-deleted ones)
@@ -156,14 +174,7 @@ export async function getUserGames() {
   // Combine and format the results
   const combinedResults = [
     // Completed games
-    ...(games || []).map(game => ({
-      id: game.id,
-      name: game.name,
-      created_at: game.created_at,
-      type: 'game' as const,
-      status: game.status === 'setup' ? 'setup' : game.status || 'lobby', // Preserve actual game status
-      campaign_seed: Array.isArray(game.campaign_seeds) ? game.campaign_seeds[0] : game.campaign_seeds
-    })),
+    ...gameResults,
     // In-progress campaign seeds
     ...(seeds || []).map(seed => ({
       id: seed.id,
