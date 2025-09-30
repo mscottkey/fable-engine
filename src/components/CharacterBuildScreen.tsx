@@ -147,7 +147,7 @@ export default function CharacterBuildScreen() {
     }
   };
 
-  const handleGenerationComplete = useCallback((lineup: any, metrics: any) => {
+  const handleGenerationComplete = useCallback(async (lineup: any, metrics: any) => {
     console.log('Generation complete');
     console.log('Received lineup:', lineup);
     
@@ -165,15 +165,18 @@ export default function CharacterBuildScreen() {
     
     console.log('Transformed lineup:', transformedLineup);
     
-    // Transition to char_review state before navigating
-    transitionGameState(gameId!, 'char_review')
-      .then(() => {
-        console.log('Transitioned to char_review state');
-      })
-      .catch((err) => {
-        console.error('Failed to transition to char_review:', err);
-        // Non-fatal, continue
+    // CRITICAL: Transition to char_review state BEFORE navigating
+    try {
+      await transitionGameState(gameId!, 'char_review');
+      console.log('Successfully transitioned to char_review state');
+    } catch (err) {
+      console.error('Failed to transition to char_review:', err);
+      // Show error but continue - the CharacterReviewScreen will handle it
+      toast({
+        title: "State Transition Warning",
+        description: "Game state may not have updated correctly. Characters can still be reviewed.",
       });
+    }
     
     // Navigate to character review screen
     navigate(`/game/${gameId}/characters-review`, {
@@ -185,7 +188,7 @@ export default function CharacterBuildScreen() {
         fromGeneration: true
       }
     });
-  }, [navigate, gameId, storyOverview, characterSeeds]);
+  }, [navigate, gameId, storyOverview, characterSeeds, toast]);
 
   const handleBack = useCallback(() => {
     // Transition back to lobby if user cancels
