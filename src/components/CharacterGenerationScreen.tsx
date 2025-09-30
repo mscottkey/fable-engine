@@ -28,8 +28,7 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
   const [currentStage, setCurrentStage] = useState('preparing');
 
   const generateCharacters = async () => {
-    // Prevent multiple simultaneous generations
-    if (status === 'generating') return;
+    console.log('generateCharacters called, current status:', status);
     
     setStatus('generating');
     setError(null);
@@ -87,6 +86,7 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
   };
 
   useEffect(() => {
+    console.log('useEffect triggered, starting character generation');
     // Auto-start generation only once
     generateCharacters();
   }, []); // Empty dependency array to run only once
