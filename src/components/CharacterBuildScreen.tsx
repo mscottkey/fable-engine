@@ -15,6 +15,7 @@ export default function CharacterBuildScreen() {
   const [storyOverview, setStoryOverview] = useState<any>(null);
   const [characterSeeds, setCharacterSeeds] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [generationComplete, setGenerationComplete] = useState(false);
 
   useEffect(() => {
     if (gameId) {
@@ -81,6 +82,7 @@ export default function CharacterBuildScreen() {
 
   const handleGenerationComplete = useCallback((lineup: CharacterLineup, metrics: any) => {
     console.log('Generation complete, navigating to review');
+    setGenerationComplete(true);
     // Navigate to character review screen
     navigate(`/game/${gameId}/characters-review`);
   }, [navigate, gameId]);
@@ -109,6 +111,17 @@ export default function CharacterBuildScreen() {
           >
             Return to Lobby
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (generationComplete) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Characters Generated!</h2>
+          <p className="text-muted-foreground mb-4">Redirecting to character review...</p>
         </div>
       </div>
     );
