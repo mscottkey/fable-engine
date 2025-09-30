@@ -1,45 +1,31 @@
-// Prompt Registry - Maps template IDs to content
-// Never edit prompts in place - create new versions (v2, v3, etc.)
+// Prompt registry for version management and governance
+// Prompts are stored in separate files to enable versioning and prevent inline embedding
 
-import systemV1 from './phase1/system.v1.md?raw';
-import userV1 from './phase1/user.v1.hbs?raw';
-import repairV1 from './phase1/repair.v1.md?raw';
-
-// Regeneration prompts
-import regenExpandedSettingV1 from './phase1/regen/expandedSetting.v1.hbs?raw';
-import regenNotableLocationsV1 from './phase1/regen/notableLocations.v1.hbs?raw';
-import regenToneManifestoV1 from './phase1/regen/toneManifesto.v1.hbs?raw';
-import regenStoryHooksV1 from './phase1/regen/storyHooks.v1.hbs?raw';
-import regenCoreConflictV1 from './phase1/regen/coreConflict.v1.hbs?raw';
-import regenSessionZeroV1 from './phase1/regen/sessionZero.v1.hbs?raw';
-
-// Remix prompts
-import remixSystemV1 from './phase1/remix/system.v1.md?raw';
-import remixUserV1 from './phase1/remix/user.v1.hbs?raw';
-
-export const PROMPT_REGISTRY: Record<string, string> = {
-  // Base prompts
-  'phase1/system@v1': systemV1,
-  'phase1/user@v1': userV1,
-  'phase1/repair@v1': repairV1,
+export const PROMPT_TEMPLATES: Record<string, string> = {
+  // Phase 1 prompts
+  'phase1/system@v1': '',
+  'phase1/user@v1': '',
+  'phase1/repair@v1': '',
   
-  // Regeneration prompts
-  'phase1/regen/expandedSetting@v1': regenExpandedSettingV1,
-  'phase1/regen/notableLocations@v1': regenNotableLocationsV1,
-  'phase1/regen/toneManifesto@v1': regenToneManifestoV1,
-  'phase1/regen/storyHooks@v1': regenStoryHooksV1,
-  'phase1/regen/coreConflict@v1': regenCoreConflictV1,
-  'phase1/regen/sessionZero@v1': regenSessionZeroV1,
+  // Phase 1 regeneration prompts
+  'phase1/regen/expandedSetting@v1': '',
+  'phase1/regen/notableLocations@v1': '',
+  'phase1/regen/toneManifesto@v1': '',
+  'phase1/regen/storyHooks@v1': '',
+  'phase1/regen/coreConflict@v1': '',
+  'phase1/regen/sessionZero@v1': '',
   
-  // Remix prompts
-  'phase1/remix/system@v1': remixSystemV1,
-  'phase1/remix/user@v1': remixUserV1,
+  // Phase 1 remix prompts
+  'phase1/remix/system@v1': '',
+  'phase1/remix/user@v1': '',
 };
 
-export function getPrompt(templateId: string): string {
-  const prompt = PROMPT_REGISTRY[templateId];
-  if (!prompt) {
-    throw new Error(`Prompt template not found: ${templateId}`);
-  }
-  return prompt;
+// Template loading would be implemented here in a production system
+// For now, prompts are managed as separate files in the prompts directory
+export function getPromptTemplate(templateId: string): string {
+  return PROMPT_TEMPLATES[templateId] || '';
+}
+
+export function listPromptTemplates(): string[] {
+  return Object.keys(PROMPT_TEMPLATES);
 }

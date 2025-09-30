@@ -1,26 +1,22 @@
 CAMPAIGN_SEED
-Name: {{seed.name}}
+Name: {{name}}
 Genre: {{genre}}
-Vibe: {{seed.tone_vibe}}
+Vibe: {{tone_vibe}}
 Tone Levers:
-- Pace: {{seed.tone_levers.pace}}
-- Danger: {{seed.tone_levers.danger}}
-- Morality: {{seed.tone_levers.morality}}
-- Scale: {{seed.tone_levers.scale}}
-Difficulty: {{seed.difficulty_label}} — {{seed.difficulty_desc}}
+- Pace: {{pace}}
+- Danger: {{danger}}
+- Morality: {{morality}}
+- Scale: {{scale}}
+Difficulty: {{difficulty_label}} — {{difficulty_desc}}
 
 Setting (seed):
-{{seed.setting}}
+{{setting}}
 
 Notable Locations (seed):
-{{#each seed.notable_locations}}
-- {{this.name}}: {{this.description}}
-{{/each}}
+{{notable_locations}}
 
 Initial Hooks (seed):
-{{#each seed.hooks}}
-- {{this.title}}: {{this.description}}
-{{/each}}
+{{hooks}}
 
 INSTRUCTIONS
 - Expand the seed into a Story Overview matching the JSON schema exactly.

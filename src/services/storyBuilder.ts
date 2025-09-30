@@ -1,8 +1,7 @@
 // Story Builder Service - Manages Phase 1 story generation and regeneration
 
 import { supabase } from "@/integrations/supabase/client";
-import { getPrompt } from "@/ai/prompts";
-import { renderTemplate } from "@/ai/templateRenderer";
+import { getPromptTemplate } from '@/ai/prompts';
 import type { StoryOverview, AIGenerationRequest, AIGenerationResponse } from "@/types/storyOverview";
 
 const STORY_SCHEMA = {
@@ -82,6 +81,7 @@ export async function generateStoryOverview(request: AIGenerationRequest): Promi
 
     return {
       success: true,
+      story: functionData.story,
       data: functionData.story,
       tokensUsed: functionData.tokensUsed,
       cost: functionData.cost,

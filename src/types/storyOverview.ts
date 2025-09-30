@@ -40,14 +40,16 @@ export interface SessionZero {
 
 export interface AIGenerationRequest {
   seedId: string;
-  type: 'initial' | 'regen' | 'remix';
+  type?: 'initial' | 'regen' | 'remix';
   section?: keyof StoryOverview;
   feedback?: string;
   remixBrief?: string;
+  schema?: any;
 }
 
 export interface AIGenerationResponse {
   success: boolean;
+  story?: StoryOverview;
   data?: Partial<StoryOverview>;
   error?: string;
   tokensUsed?: number;

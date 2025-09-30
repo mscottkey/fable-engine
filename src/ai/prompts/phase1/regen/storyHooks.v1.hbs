@@ -3,7 +3,7 @@ TASK: Regenerate ONLY the requested section of the Story Overview. Keep all othe
 Rules:
 - Match tone, genre, and difficulty already set.
 - Keep JSON shape and keys identical.
-- Return STRICT, minified JSON containing ONLY the regenerated section as the top-level key (e.g., {"notableLocations":[...]}).
+- Return STRICT, minified JSON containing ONLY the regenerated section as the top-level key.
 
 CURRENT OVERVIEW (for context):
 {{json overview}}
@@ -12,4 +12,5 @@ REGENERATE: "storyHooks"
 
 Produce 3–6 hooks, each 2–3 sentences, with clear stakes and why PCs care.
 Tie at least half of the hooks to existing locations or factions implied by the seed.
+{{reason_or_feedback}}
 Return: {"storyHooks":[{"title":"...","description":"..."}, ...]}
