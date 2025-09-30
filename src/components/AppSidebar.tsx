@@ -221,7 +221,7 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSee
         </SidebarGroup>
 
         {/* User Games */}
-        <SidebarGroup>
+        <SidebarGroup className="flex-1 flex flex-col min-h-0">
           <div className="flex items-center justify-between">
             {open && (
               <SidebarGroupLabel className="text-sidebar-foreground/80">
@@ -241,7 +241,7 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSee
               </Button>
             )}
           </div>
-          <SidebarGroupContent>
+          <SidebarGroupContent className="flex-1 overflow-y-auto min-h-0">
             <SidebarMenu>
               {loading ? (
                 <SidebarMenuItem>
