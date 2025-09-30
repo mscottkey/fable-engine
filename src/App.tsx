@@ -7,6 +7,13 @@ import { AuthPage } from "@/components/AuthPage";
 import { Dashboard } from "@/components/Dashboard";
 import { JoinGamePage } from "@/components/JoinGamePage";
 import { LobbyPage } from "@/components/LobbyPage";
+import { GameInterface } from "@/components/GameInterface";
+import { useParams } from "react-router-dom";
+
+function GameInterfaceWrapper() {
+  const { gameId } = useParams<{ gameId: string }>();
+  return <GameInterface gameId={gameId || ''} />;
+}
 import { Toaster } from "@/components/ui/toaster";
 
 function App() {
@@ -47,6 +54,7 @@ function App() {
         <Route path="/auth" element={<AuthPage onBack={() => {}} />} />
         <Route path="/join/:gameId" element={<JoinGamePage />} />
         <Route path="/lobby/:gameId" element={user ? <LobbyPage /> : <Navigate to="/auth" />} />
+        <Route path="/game/:gameId" element={user ? <GameInterfaceWrapper /> : <Navigate to="/auth" />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
       <Toaster />
