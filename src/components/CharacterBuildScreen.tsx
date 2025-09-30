@@ -80,13 +80,25 @@ export default function CharacterBuildScreen() {
     }
   };
 
-  const handleGenerationComplete = useCallback((lineup: CharacterLineup, metrics: any) => {
+  const handleGenerationComplete = useCallback((lineup: any, metrics: any) => {
     console.log('Generation complete, navigating to review');
+    console.log('Received lineup structure:', lineup);
+    
     setGenerationComplete(true);
+    
+    // Transform the lineup structure to match what CharacterReviewScreen expects
+    const transformedLineup = {
+      characters: lineup.characterLineup || lineup.characters || [],
+      bonds: lineup.partyBonds || lineup.bonds || [],
+      coverage: lineup.coverageAnalysis || lineup.coverage || {}
+    };
+    
+    console.log('Transformed lineup:', transformedLineup);
+    
     // Navigate to character review screen with required state data
     navigate(`/game/${gameId}/characters-review`, {
       state: {
-        lineup,
+        lineup: transformedLineup,
         storyOverview,
         slots: characterSeeds,
         metrics
