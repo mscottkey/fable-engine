@@ -151,8 +151,7 @@ export async function getGameWithRelations(gameId: string) {
           display_name,
           pronouns,
           concept,
-          archetype_prefs,
-          status
+          archetype_prefs
         )
       ),
       game_members (
