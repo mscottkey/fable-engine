@@ -110,7 +110,7 @@ export async function getUserGames() {
     throw new Error('User must be authenticated to fetch games');
   }
 
-  // Get completed games (excluding soft-deleted ones)
+  // Get completed games (excluding soft-deleted ones) - only include games where user is actually a member
   const { data: games, error: gamesError } = await supabase
     .from('games')
     .select(`
@@ -124,9 +124,13 @@ export async function getUserGames() {
         genre,
         scenario_title,
         scenario_description
+      ),
+      game_members!inner (
+        role
       )
     `)
     .eq('user_id', user.id)
+    .eq('game_members.user_id', user.id)  // Ensure user is a member
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
