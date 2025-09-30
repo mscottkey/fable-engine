@@ -23,8 +23,10 @@ export function Dashboard({ user }: DashboardProps) {
   const [currentGameId, setCurrentGameId] = useState<string | null>(null);
   const [campaignSeed, setCampaignSeed] = useState<CampaignSeed | null>(null);
   const [sidebarKey, setSidebarKey] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const handleResumeSeed = useCallback(async (seedIdToLoad: string) => {
+    setLoading(true);
     try {
       // Fetch the campaign seed to resume story building
       const { data: seed, error } = await supabase
@@ -35,6 +37,7 @@ export function Dashboard({ user }: DashboardProps) {
 
       if (error || !seed) {
         console.error('Failed to fetch campaign seed:', error);
+        setLoading(false);
         return;
       }
 
@@ -42,10 +45,12 @@ export function Dashboard({ user }: DashboardProps) {
       setState('story-builder');
     } catch (error) {
       console.error('Error resuming seed:', error);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // Check for seed ID in route params
+  // Check for seed ID in route params and handle changes
   useEffect(() => {
     if (seedId) {
       handleResumeSeed(seedId);
@@ -53,6 +58,7 @@ export function Dashboard({ user }: DashboardProps) {
       // If no seedId in params, show adventures
       setState('adventures');
       setCampaignSeed(null);
+      setLoading(false);
     }
   }, [seedId, handleResumeSeed]);
 
@@ -108,20 +114,26 @@ export function Dashboard({ user }: DashboardProps) {
 
   return (
     <>
-      {state === 'adventures' && (
+      {loading && (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      )}
+      {!loading && state === 'adventures' && (
         <AdventureStarter onStartStoryBuilder={handleStartStoryBuilder} />
       )}
-      {state === 'story-builder' && campaignSeed && (
+      {!loading && state === 'story-builder' && campaignSeed && (
         <StoryBuilder
+          key={campaignSeed.id}
           campaignSeed={campaignSeed}
           onComplete={handleStoryComplete}
           onBack={handleBackToAdventures}
         />
       )}
-      {state === 'game' && currentGameId && (
+      {!loading && state === 'game' && currentGameId && (
         <GameInterface gameId={currentGameId} />
       )}
-      {state === 'settings' && (
+      {!loading && state === 'settings' && (
         <SettingsPage onBack={handleBackToAdventures} />
       )}
     </>
