@@ -300,7 +300,36 @@ CONSTRAINTS
 - Ensure party has complementary roles and skills
 - All content must be IP-safe
 
-Return a complete character lineup with characters, bonds, and coverage analysis.`;
+SCHEMA REQUIREMENTS
+Return a JSON object with:
+- characters: Array of character objects (one per slot)
+- bonds: Array of character relationship objects
+- coverage: Object describing party capabilities
+
+Each character must include:
+- name (string)
+- pronouns (string)
+- concept (string)
+- background (string)
+- mechanicalRole (string)
+- socialRole (string)
+- explorationRole (string)
+- primaryArchetype (string)
+- secondaryArchetype (string, optional)
+- personalityTraits (array of strings)
+- motivations (array of strings)
+- flaws (array of strings)
+- connections (object with locations and hooks arrays)
+- equipment (array of strings)
+- abilities (array of strings)
+
+Each bond must include:
+- character1Index (number)
+- character2Index (number)
+- relationship (string)
+- description (string)
+
+Return the complete lineup following this exact schema.`;
   }
   
   if (template.includes('regen/pc.v1.hbs')) {

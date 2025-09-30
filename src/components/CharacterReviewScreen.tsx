@@ -380,7 +380,30 @@ export default function CharacterReviewScreen() {
 
         {/* Character Cards */}
         <div className="grid gap-6 mb-8">
-          {(lineup.characters || []).map((character, index) => (
+            {(lineup.characters || []).map((char: any, index) => {
+              // Normalize character data to handle both old and new schemas
+              const character = {
+                name: char.name || '',
+                pronouns: char.pronouns || '',
+                concept: char.concept || '',
+                background: char.background || char.description || '',
+                mechanicalRole: char.mechanicalRole || char.role || '',
+                socialRole: char.socialRole || '',
+                explorationRole: char.explorationRole || '',
+                primaryArchetype: char.primaryArchetype || char.archetype || '',
+                secondaryArchetype: char.secondaryArchetype || '',
+                personalityTraits: char.personalityTraits || [],
+                motivations: char.motivations || (char.personalQuest ? [char.personalQuest] : []),
+                flaws: char.flaws || [],
+                connections: char.connections || {
+                  locations: char.locationBonds || [],
+                  hooks: char.storyHooks || []
+                },
+                equipment: char.equipment || [],
+                abilities: char.abilities || []
+              };
+              
+              return (
             <Card key={index} className="overflow-hidden">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -501,7 +524,8 @@ export default function CharacterReviewScreen() {
                 </Tabs>
               </CardContent>
             </Card>
-          ))}
+              );
+            })}
         </div>
 
         {/* Character Edit Dialog */}
