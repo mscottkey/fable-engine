@@ -1,8 +1,10 @@
 import { User } from "@supabase/supabase-js";
-import { Home, Settings, LogOut, Dice6 } from "lucide-react";
+import { Home, Settings, LogOut, Dice6, Plus, Clock, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import logoSvg from "@/assets/logo.svg";
 import { useToast } from "@/hooks/use-toast";
+import { getUserGames } from "@/services/campaignService";
 import {
   Sidebar,
   SidebarContent,
@@ -22,12 +24,37 @@ import { Button } from "@/components/ui/button";
 interface AppSidebarProps {
   user: User;
   onBackToAdventures: () => void;
+  onSelectGame?: (gameId: string) => void;
   gameStarted: boolean;
+  currentGameId?: string | null;
 }
 
-export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebarProps) {
+export function AppSidebar({ user, onBackToAdventures, onSelectGame, gameStarted, currentGameId }: AppSidebarProps) {
   const { open } = useSidebar();
   const { toast } = useToast();
+  const [games, setGames] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadGames();
+  }, []);
+
+  const loadGames = async () => {
+    try {
+      setLoading(true);
+      const userGames = await getUserGames();
+      setGames(userGames || []);
+    } catch (error) {
+      console.error('Failed to load games:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load your games",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignOut = async () => {
     try {
@@ -40,10 +67,24 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
     }
   };
 
-  const menuItems = [
-    { title: "Adventures", icon: Home, onClick: onBackToAdventures, active: !gameStarted },
-    { title: "Current Game", icon: Dice6, onClick: () => {}, active: gameStarted, disabled: !gameStarted },
-  ];
+  const handleGameSelect = (gameId: string) => {
+    if (onSelectGame) {
+      onSelectGame(gameId);
+    }
+  };
+
+  const formatGameDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 24) {
+      return `${Math.floor(diffInHours)}h ago`;
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays}d ago`;
+    }
+  };
 
   return (
     <Sidebar
@@ -83,6 +124,7 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
       </SidebarHeader>
 
       <SidebarContent className="bg-sidebar">
+        {/* Navigation */}
         <SidebarGroup>
           {open && (
             <SidebarGroupLabel className="text-sidebar-foreground/80">
@@ -91,29 +133,94 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
           )}
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    onClick={item.onClick}
-                    isActive={item.active}
-                    disabled={item.disabled}
-                    className={[
-                      item.active
-                        ? "bg-sidebar-primary/10 text-sidebar-primary border-sidebar-primary/20"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent",
-                      item.disabled ? "opacity-50 cursor-not-allowed" : "",
-                    ].join(" ")}
-                    aria-label={item.title}
-                  >
-                    <item.icon className="h-5 w-5 shrink-0" />
-                    {open && <span className="truncate">{item.title}</span>}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={onBackToAdventures}
+                  isActive={!gameStarted}
+                  className={
+                    !gameStarted
+                      ? "bg-sidebar-primary/10 text-sidebar-primary border-sidebar-primary/20"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent"
+                  }
+                  aria-label="Create New Adventure"
+                >
+                  <Plus className="h-5 w-5 shrink-0" />
+                  {open && <span className="truncate">New Adventure</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* User Games */}
+        <SidebarGroup>
+          <div className="flex items-center justify-between">
+            {open && (
+              <SidebarGroupLabel className="text-sidebar-foreground/80">
+                Your Games
+              </SidebarGroupLabel>
+            )}
+            {open && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={loadGames}
+                disabled={loading}
+                className="h-6 w-6 p-0 hover:bg-sidebar-accent"
+                aria-label="Refresh games"
+              >
+                <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+            )}
+          </div>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {loading ? (
+                <SidebarMenuItem>
+                  <SidebarMenuButton disabled className="text-sidebar-foreground/50">
+                    <RefreshCw className="h-5 w-5 shrink-0 animate-spin" />
+                    {open && <span>Loading...</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ) : games.length === 0 ? (
+                <SidebarMenuItem>
+                  <SidebarMenuButton disabled className="text-sidebar-foreground/50">
+                    <Dice6 className="h-5 w-5 shrink-0" />
+                    {open && <span>No games yet</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ) : (
+                games.map((game) => (
+                  <SidebarMenuItem key={game.id}>
+                    <SidebarMenuButton
+                      onClick={() => handleGameSelect(game.id)}
+                      isActive={currentGameId === game.id}
+                      className={
+                        currentGameId === game.id
+                          ? "bg-sidebar-primary/10 text-sidebar-primary border-sidebar-primary/20"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent"
+                      }
+                      aria-label={`Play ${game.name}`}
+                    >
+                      <Dice6 className="h-5 w-5 shrink-0" />
+                      {open && (
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-medium">{game.name}</div>
+                          <div className="flex items-center gap-1 text-xs text-sidebar-foreground/60">
+                            <Clock className="h-3 w-3" />
+                            {formatGameDate(game.created_at)}
+                          </div>
+                        </div>
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Account Settings */}
         <SidebarGroup>
           {open && (
             <SidebarGroupLabel className="text-sidebar-foreground/80">

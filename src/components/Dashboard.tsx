@@ -17,6 +17,7 @@ export function Dashboard({ user }: DashboardProps) {
   const [state, setState] = useState<DashboardState>('adventures');
   const [currentGameId, setCurrentGameId] = useState<string | null>(null);
   const [campaignSeed, setCampaignSeed] = useState<CampaignSeed | null>(null);
+  const [sidebarKey, setSidebarKey] = useState(0);
 
   const handleStartStoryBuilder = (seed: CampaignSeed) => {
     setCampaignSeed(seed);
@@ -27,6 +28,12 @@ export function Dashboard({ user }: DashboardProps) {
     // For now, we'll create a game with the story overview
     // In the future, this might be a separate step
     setCurrentGameId(storyOverviewId);
+    setState('game');
+    setSidebarKey(prev => prev + 1); // Refresh sidebar to show new game
+  };
+
+  const handleSelectGame = (gameId: string) => {
+    setCurrentGameId(gameId);
     setState('game');
   };
 
@@ -40,9 +47,12 @@ export function Dashboard({ user }: DashboardProps) {
     <SidebarProvider>
       <div className="flex min-h-dvh w-full bg-background">
         <AppSidebar
+          key={sidebarKey}
           user={user}
           onBackToAdventures={handleBackToAdventures}
+          onSelectGame={handleSelectGame}
           gameStarted={state === 'game'}
+          currentGameId={currentGameId}
         />
         {/* SidebarInset applies the left offset using CSS vars; allow content to shrink */}
         <SidebarInset className="min-w-0">
