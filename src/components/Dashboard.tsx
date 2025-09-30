@@ -94,40 +94,23 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-dvh w-full bg-background">
-        <AppSidebar
-          key={sidebarKey}
-          user={user}
-          onBackToAdventures={handleBackToAdventures}
-          onOpenSettings={handleOpenSettings}
-          onSelectGame={handleSelectGame}
-          onResumeSeed={handleResumeSeed}
-          gameStarted={state === 'game'}
-          currentGameId={currentGameId}
+    <>
+      {state === 'adventures' && (
+        <AdventureStarter onStartStoryBuilder={handleStartStoryBuilder} />
+      )}
+      {state === 'story-builder' && campaignSeed && (
+        <StoryBuilder
+          campaignSeed={campaignSeed}
+          onComplete={handleStoryComplete}
+          onBack={handleBackToAdventures}
         />
-        {/* SidebarInset applies the left offset using CSS vars; allow content to shrink */}
-        <SidebarInset className="min-w-0">
-          <main className="flex-1 min-w-0">
-            {state === 'adventures' && (
-              <AdventureStarter onStartStoryBuilder={handleStartStoryBuilder} />
-            )}
-            {state === 'story-builder' && campaignSeed && (
-              <StoryBuilder
-                campaignSeed={campaignSeed}
-                onComplete={handleStoryComplete}
-                onBack={handleBackToAdventures}
-              />
-            )}
-            {state === 'game' && currentGameId && (
-              <GameInterface gameId={currentGameId} />
-            )}
-            {state === 'settings' && (
-              <SettingsPage onBack={handleBackToAdventures} />
-            )}
-          </main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+      )}
+      {state === 'game' && currentGameId && (
+        <GameInterface gameId={currentGameId} />
+      )}
+      {state === 'settings' && (
+        <SettingsPage onBack={handleBackToAdventures} />
+      )}
+    </>
   );
 }
