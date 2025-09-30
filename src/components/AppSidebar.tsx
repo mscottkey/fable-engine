@@ -241,8 +241,8 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSee
               </Button>
             )}
           </div>
-          <SidebarGroupContent className="flex-1 overflow-y-auto min-h-0">
-            <SidebarMenu>
+          <SidebarGroupContent className="flex-1 overflow-y-auto min-h-0 pb-4">
+            <SidebarMenu className="space-y-1">
               {loading ? (
                 <SidebarMenuItem>
                   <SidebarMenuButton disabled className="text-sidebar-foreground/50">
