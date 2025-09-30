@@ -537,6 +537,10 @@ export type Database = {
         Args: { _game_id: string; _user_id: string }
         Returns: boolean
       }
+      can_manage_party_slots: {
+        Args: { _game_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       difficulty_label: "Easy" | "Standard" | "Hard"
