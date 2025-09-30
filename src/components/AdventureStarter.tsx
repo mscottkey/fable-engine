@@ -454,10 +454,31 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {Object.values(Genre).map((genre) => {
               const scenario = genreScenarios[genre];
+              
+              // Tag colors and emojis for differentiation
+              const getTagStyle = (tag: string, index: number) => {
+                const colors = [
+                  "bg-rose-100 text-rose-800 border-rose-200",
+                  "bg-blue-100 text-blue-800 border-blue-200", 
+                  "bg-green-100 text-green-800 border-green-200",
+                  "bg-purple-100 text-purple-800 border-purple-200",
+                  "bg-amber-100 text-amber-800 border-amber-200",
+                  "bg-cyan-100 text-cyan-800 border-cyan-200"
+                ];
+                
+                const emojis = ["⚔️", "🏰", "🌟", "🔮", "⭐", "🎭", "🗡️", "🛡️", "🏺", "📜"];
+                const emoji = emojis[tag.toLowerCase().charCodeAt(0) % emojis.length];
+                
+                return {
+                  className: colors[index % colors.length],
+                  emoji
+                };
+              };
+              
               return (
                 <Card
                   key={genre}
-                  className="cursor-pointer transition-all duration-300 hover:scale-105 border-border bg-card/50 backdrop-blur-sm hover:bg-card/70 hover:border-primary/50"
+                  className="cursor-pointer transition-all duration-300 hover:scale-105 border-border bg-card/50 backdrop-blur-sm hover:bg-card/70 hover:border-primary/50 flex flex-col h-full"
                   onMouseEnter={() => setHoveredGenre(genre)}
                   onMouseLeave={() => setHoveredGenre(null)}
                 >
@@ -481,27 +502,37 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
                     </div>
                     <CardTitle className="text-md">{scenario.title}</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <CardDescription className="leading-relaxed text-sm">
+                  <CardContent className="space-y-4 flex-1 flex flex-col">
+                    <CardDescription className="leading-relaxed text-sm flex-1">
                       {scenario.description}
                     </CardDescription>
                     
                     <div className="flex flex-wrap gap-2">
-                      {scenario.tags.map((tag, tagIndex) => (
-                        <Badge key={tagIndex} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
+                      {scenario.tags.map((tag, tagIndex) => {
+                        const tagStyle = getTagStyle(tag, tagIndex);
+                        return (
+                          <Badge 
+                            key={tagIndex} 
+                            variant="outline" 
+                            className={`text-xs border ${tagStyle.className}`}
+                          >
+                            <span className="mr-1">{tagStyle.emoji}</span>
+                            {tag}
+                          </Badge>
+                        );
+                      })}
                     </div>
                     
-                    <Button
-                      variant="outline"
-                      className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                      onClick={() => handleQuickStart(scenario, genre)}
-                      disabled={loading}
-                    >
-                      {loading ? "Starting..." : "Start Adventure"}
-                    </Button>
+                    <div className="mt-auto pt-4">
+                      <Button
+                        variant="outline"
+                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                        onClick={() => handleQuickStart(scenario, genre)}
+                        disabled={loading}
+                      >
+                        {loading ? "Starting..." : "Start Adventure"}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
