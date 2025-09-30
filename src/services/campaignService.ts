@@ -128,8 +128,9 @@ export async function getUserGames() {
 
   console.log('Fetching games for user:', user.id);
 
-  // Get completed games with proper joins
-  const { data: games, error: gamesError } = await supabase
+  // Get games where user is either owner OR a member
+  // First get games where user is the owner
+  const { data: ownedGames, error: ownedError } = await supabase
     .from('games')
     .select(`
       id,
@@ -139,12 +140,48 @@ export async function getUserGames() {
       seed_id
     `)
     .eq('user_id', user.id)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
+    .is('deleted_at', null);
 
-  if (gamesError) {
-    console.error('Error fetching games:', gamesError);
-    throw new Error(`Failed to fetch games: ${gamesError.message}`);
+  // Then get games where user is a member
+  const { data: memberGames, error: memberError } = await supabase
+    .from('game_members')
+    .select(`
+      games!inner(
+        id,
+        name,
+        created_at,
+        status,
+        seed_id
+      )
+    `)
+    .eq('user_id', user.id)
+    .is('games.deleted_at', null);
+
+  if (ownedError || memberError) {
+    const error = ownedError || memberError;
+    console.error('Error fetching games:', error);
+    throw new Error(`Failed to fetch games: ${error!.message}`);
+  }
+
+  // Combine and deduplicate games
+  const allGames = [...(ownedGames || [])];
+  
+  if (memberGames) {
+    memberGames.forEach(member => {
+      const game = (member as any).games;
+      if (game && !allGames.find(g => g.id === game.id)) {
+        allGames.push(game);
+      }
+    });
+  }
+
+  // Sort by creation date
+  const games = allGames.sort((a, b) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  if (!games || games.length === 0) {
+    console.log('No games found for user');
   }
 
   // Get campaign seeds for the games
