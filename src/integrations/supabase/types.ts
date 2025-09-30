@@ -103,6 +103,76 @@ export type Database = {
           },
         ]
       }
+      campaign_arcs: {
+        Row: {
+          arcs_json: Json
+          cost_usd: number
+          created_at: string
+          game_id: string
+          id: string
+          input_tokens: number
+          model: string
+          output_tokens: number
+          provider: string
+          seed_id: string
+          status: string
+          story_nodes_id: string
+          version: number
+        }
+        Insert: {
+          arcs_json: Json
+          cost_usd?: number
+          created_at?: string
+          game_id: string
+          id?: string
+          input_tokens?: number
+          model: string
+          output_tokens?: number
+          provider: string
+          seed_id: string
+          status?: string
+          story_nodes_id: string
+          version?: number
+        }
+        Update: {
+          arcs_json?: Json
+          cost_usd?: number
+          created_at?: string
+          game_id?: string
+          id?: string
+          input_tokens?: number
+          model?: string
+          output_tokens?: number
+          provider?: string
+          seed_id?: string
+          status?: string
+          story_nodes_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_arcs_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_arcs_seed_id_fkey"
+            columns: ["seed_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_seeds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_arcs_story_nodes_id_fkey"
+            columns: ["story_nodes_id"]
+            isOneToOne: false
+            referencedRelation: "story_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_seeds: {
         Row: {
           constraints: Json | null
@@ -398,6 +468,72 @@ export type Database = {
             columns: ["slot_id"]
             isOneToOne: false
             referencedRelation: "party_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factions: {
+        Row: {
+          cost_usd: number
+          created_at: string
+          factions_json: Json
+          fronts: Json | null
+          game_id: string
+          id: string
+          input_tokens: number
+          model: string
+          output_tokens: number
+          provider: string
+          relationships: Json
+          seed_id: string
+          status: string
+          version: number
+        }
+        Insert: {
+          cost_usd?: number
+          created_at?: string
+          factions_json: Json
+          fronts?: Json | null
+          game_id: string
+          id?: string
+          input_tokens?: number
+          model: string
+          output_tokens?: number
+          provider: string
+          relationships: Json
+          seed_id: string
+          status?: string
+          version?: number
+        }
+        Update: {
+          cost_usd?: number
+          created_at?: string
+          factions_json?: Json
+          fronts?: Json | null
+          game_id?: string
+          id?: string
+          input_tokens?: number
+          model?: string
+          output_tokens?: number
+          provider?: string
+          relationships?: Json
+          seed_id?: string
+          status?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factions_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factions_seed_id_fkey"
+            columns: ["seed_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_seeds"
             referencedColumns: ["id"]
           },
         ]
@@ -726,6 +862,149 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      resolutions: {
+        Row: {
+          campaign_arcs_id: string
+          cost_usd: number
+          created_at: string
+          game_id: string
+          id: string
+          input_tokens: number
+          model: string
+          output_tokens: number
+          provider: string
+          resolution_paths_json: Json
+          seed_id: string
+          status: string
+          twist: string | null
+          version: number
+        }
+        Insert: {
+          campaign_arcs_id: string
+          cost_usd?: number
+          created_at?: string
+          game_id: string
+          id?: string
+          input_tokens?: number
+          model: string
+          output_tokens?: number
+          provider: string
+          resolution_paths_json: Json
+          seed_id: string
+          status?: string
+          twist?: string | null
+          version?: number
+        }
+        Update: {
+          campaign_arcs_id?: string
+          cost_usd?: number
+          created_at?: string
+          game_id?: string
+          id?: string
+          input_tokens?: number
+          model?: string
+          output_tokens?: number
+          provider?: string
+          resolution_paths_json?: Json
+          seed_id?: string
+          status?: string
+          twist?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resolutions_campaign_arcs_id_fkey"
+            columns: ["campaign_arcs_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_arcs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resolutions_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resolutions_seed_id_fkey"
+            columns: ["seed_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_seeds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_nodes: {
+        Row: {
+          cost_usd: number
+          created_at: string
+          factions_id: string
+          game_id: string
+          id: string
+          input_tokens: number
+          model: string
+          nodes_json: Json
+          output_tokens: number
+          provider: string
+          seed_id: string
+          status: string
+          version: number
+        }
+        Insert: {
+          cost_usd?: number
+          created_at?: string
+          factions_id: string
+          game_id: string
+          id?: string
+          input_tokens?: number
+          model: string
+          nodes_json: Json
+          output_tokens?: number
+          provider: string
+          seed_id: string
+          status?: string
+          version?: number
+        }
+        Update: {
+          cost_usd?: number
+          created_at?: string
+          factions_id?: string
+          game_id?: string
+          id?: string
+          input_tokens?: number
+          model?: string
+          nodes_json?: Json
+          output_tokens?: number
+          provider?: string
+          seed_id?: string
+          status?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_nodes_factions_id_fkey"
+            columns: ["factions_id"]
+            isOneToOne: false
+            referencedRelation: "factions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_nodes_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_nodes_seed_id_fkey"
+            columns: ["seed_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_seeds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       story_overviews: {
         Row: {

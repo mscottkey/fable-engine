@@ -12,7 +12,7 @@ export const LeaderSchema = z.object({
 
 export const ProjectClockSchema = z.object({
   name: z.string(),
-  clockSize: z.enum([4, 6, 8]),
+  clockSize: z.union([z.literal(4), z.literal(6), z.literal(8)]),
   filled: z.number().int().min(0),
   impact: z.string(),
   triggers: z.array(z.string()).min(2).max(6),
