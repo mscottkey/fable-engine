@@ -56,12 +56,17 @@ export default function CharacterReviewScreen() {
   useEffect(() => {
     // Get data from navigation state or load from database
     const state = location.state as any;
+    console.log('Navigation state:', state);
     if (state?.lineup && state?.storyOverview && state?.slots) {
+      console.log('Setting lineup:', state.lineup);
+      console.log('Lineup characters:', state.lineup.characters);
+      console.log('Lineup bonds:', state.lineup.bonds);
       setLineup(state.lineup);
       setStoryOverview(state.storyOverview);
       setSlots(state.slots);
       loadGameData();
     } else {
+      console.log('No state data, redirecting to build screen');
       // Redirect back to build screen if no data
       navigate(`/game/${gameId}/build-characters`);
     }
@@ -276,7 +281,7 @@ export default function CharacterReviewScreen() {
   };
 
   const transformSlotsToSeeds = (slots: any[]) => {
-    return slots.map((slot, index) => transformSlotToSeed(slot, index));
+    return (slots || []).map((slot, index) => transformSlotToSeed(slot, index));
   };
 
   const runIPSanitizer = async (lineup: CharacterLineup): Promise<CharacterLineup> => {
@@ -481,7 +486,7 @@ export default function CharacterReviewScreen() {
                       .filter(bond => bond.character1Index === index || bond.character2Index === index)
                       .map((bond, i) => {
                         const otherIndex = bond.character1Index === index ? bond.character2Index : bond.character1Index;
-                        const otherCharacter = lineup.characters[otherIndex];
+                        const otherCharacter = (lineup.characters || [])[otherIndex];
                         return (
                           <div key={i} className="p-3 bg-muted/50 rounded-lg">
                             <div className="flex items-center gap-2 mb-1">
