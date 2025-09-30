@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { LandingPage } from "@/components/LandingPage";
@@ -10,6 +10,7 @@ import { LobbyPage } from "@/components/LobbyPage";
 import { GameInterface } from "@/components/GameInterface";
 import CharacterBuildScreen from "@/components/CharacterBuildScreen";
 import CharacterReviewScreen from "@/components/CharacterReviewScreen";
+import SettingsPage from "@/components/SettingsPage";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useParams } from "react-router-dom";
@@ -22,6 +23,8 @@ function GameInterfaceWrapper() {
 
 function AppLayout({ children, user }: { children: React.ReactNode; user: User | null }) {
   const [sidebarKey, setSidebarKey] = useState(0);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Don't show sidebar for landing page and auth page
   const isPublicRoute = location.pathname === '/' && !user || location.pathname === '/auth' || location.pathname.startsWith('/join/');
@@ -35,20 +38,19 @@ function AppLayout({ children, user }: { children: React.ReactNode; user: User |
   }
 
   const handleBackToAdventures = () => {
-    window.location.href = '/';
+    navigate('/');
   };
 
   const handleOpenSettings = () => {
-    // For now, just navigate back to dashboard - settings will be handled by Dashboard component
-    window.location.href = '/';
+    navigate('/settings');
   };
 
   const handleSelectGame = (gameId: string) => {
-    window.location.href = `/lobby/${gameId}`;
+    navigate(`/lobby/${gameId}`);
   };
 
   const handleResumeSeed = (seedId: string) => {
-    window.location.href = '/';
+    navigate('/');
   };
 
   return (
@@ -109,20 +111,29 @@ function App() {
 
   return (
     <Router>
-      <AppLayout user={user}>
-        <Routes>
-          <Route path="/" element={user ? <Dashboard user={user} /> : <LandingPage onShowAuth={() => {}} />} />
-          <Route path="/auth" element={<AuthPage onBack={() => {}} />} />
-          <Route path="/join/:gameId" element={<JoinGamePage />} />
-          <Route path="/lobby/:gameId" element={<LobbyPage />} />
-          <Route path="/game/:gameId/build-characters" element={<CharacterBuildScreen />} />
-          <Route path="/game/:gameId/characters-review" element={<CharacterReviewScreen />} />
-          <Route path="/game/:gameId" element={<GameInterfaceWrapper />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </AppLayout>
+      <AppLayoutWrapper user={user} />
       <Toaster />
     </Router>
+  );
+}
+
+function AppLayoutWrapper({ user }: { user: User | null }) {
+  const navigate = useNavigate();
+  
+  return (
+    <AppLayout user={user}>
+      <Routes>
+        <Route path="/" element={user ? <Dashboard user={user} /> : <LandingPage onShowAuth={() => {}} />} />
+        <Route path="/auth" element={<AuthPage onBack={() => {}} />} />
+        <Route path="/join/:gameId" element={<JoinGamePage />} />
+        <Route path="/settings" element={<SettingsPage onBack={() => navigate('/')} />} />
+        <Route path="/lobby/:gameId" element={<LobbyPage />} />
+        <Route path="/game/:gameId/build-characters" element={<CharacterBuildScreen />} />
+        <Route path="/game/:gameId/characters-review" element={<CharacterReviewScreen />} />
+        <Route path="/game/:gameId" element={<GameInterfaceWrapper />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </AppLayout>
   );
 }
 
