@@ -732,6 +732,7 @@ export type Database = {
           core_conflict: string
           created_at: string
           expanded_setting: string
+          game_id: string | null
           id: string
           name: string
           notable_locations: Json
@@ -746,6 +747,7 @@ export type Database = {
           core_conflict: string
           created_at?: string
           expanded_setting: string
+          game_id?: string | null
           id?: string
           name: string
           notable_locations?: Json
@@ -760,6 +762,7 @@ export type Database = {
           core_conflict?: string
           created_at?: string
           expanded_setting?: string
+          game_id?: string | null
           id?: string
           name?: string
           notable_locations?: Json
@@ -770,7 +773,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "story_overviews_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
