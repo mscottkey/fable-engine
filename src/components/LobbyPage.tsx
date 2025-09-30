@@ -235,7 +235,7 @@ export function LobbyPage() {
   };
 
   const canLockParty = () => {
-    return userMember?.role === 'host' && getReadyCount() >= 3; // Minimum 3 players
+    return userMember?.role === 'host' && getReadyCount() >= 1; // Allow locking with 1+ ready players for testing
   };
 
   if (isLoading) {
