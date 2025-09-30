@@ -264,6 +264,59 @@ export function LobbyPage() {
     );
   }
 
+  // If party is locked and game is in characters status, redirect to character building
+  if (game?.party_locked && game?.status === 'characters') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <div>
+                <Lock className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <h3 className="text-lg font-semibold">Party Locked</h3>
+                <p className="text-sm text-muted-foreground">
+                  Character generation is in progress
+                </p>
+              </div>
+              
+              {userMember?.role === 'host' ? (
+                <div className="space-y-2">
+                  <Button onClick={() => navigate(`/game/${gameId}/build-characters`)} className="w-full">
+                    Continue Character Generation
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate(`/game/${gameId}/characters-review`)} 
+                    className="w-full"
+                  >
+                    Review Characters
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Waiting for host to complete character generation...
+                  </p>
+                  <Button 
+                    variant="outline"
+                    onClick={() => navigate(`/game/${gameId}/characters-review`)} 
+                    className="w-full"
+                  >
+                    View Character Progress
+                  </Button>
+                </div>
+              )}
+              
+              <Button variant="ghost" onClick={() => navigate('/')} className="w-full">
+                Return to Dashboard
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-6xl mx-auto space-y-6">
