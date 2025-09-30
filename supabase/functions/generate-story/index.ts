@@ -87,36 +87,66 @@ async function logAIEvent(
   model: string,
   inputTokens: number,
   outputTokens: number,
-  costUsd: number,
   latencyMs: number,
   status: string,
   httpStatus: number,
-  errorCode?: string
-) {
+  errorCode?: string,
+  promptText: string = '',
+  completionText: string = ''
+): Promise<number> {
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
+  // Lookup pricing for cost calculation
+  const { data: pricingData } = await supabase
+    .from('model_pricing')
+    .select('id, input_rate, output_rate')
+    .eq('provider', 'google')
+    .eq('model', model)
+    .lte('effective_from', new Date().toISOString())
+    .order('effective_from', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let cost = 0;
+  let pricingId = null;
+  
+  if (pricingData) {
+    pricingId = pricingData.id;
+    const inputRate = Number(pricingData.input_rate);
+    const outputRate = Number(pricingData.output_rate);
+    cost = (inputTokens / 1000 * inputRate) + (outputTokens / 1000 * outputRate);
+    cost = Math.round(cost * 1000000) / 1000000; // Round to 6 decimals
+  }
+
   await supabase.from('ai_events').insert({
     user_id: userId,
     game_id: gameId,
     seed_id: seedId,
+    pricing_id: pricingId,
     feature: 'phase1_story',
     phase,
-    prompt_hash: await hashString(promptTemplateId),
-    completion_hash: await hashString(`${model}-${Date.now()}`),
+    prompt_hash: await hashString(promptText || promptTemplateId),
+    completion_hash: await hashString(completionText || `${model}-${Date.now()}`),
     model,
-    provider: 'lovable',
+    provider: 'google',
     input_tokens: inputTokens,
     output_tokens: outputTokens,
-    cost_usd: costUsd,
+    prompt_chars: promptText.length,
+    completion_chars: completionText.length,
+    cost_usd: cost,
     latency_ms: latencyMs,
     status,
     http_status: httpStatus,
     error_code: errorCode,
-    response_mode: 'sync'
+    response_mode: 'json',
+    cache_hit: false,
+    retry_count: 0
   });
+
+  return cost;
 }
 
 async function hashString(str: string): Promise<string> {
@@ -247,14 +277,15 @@ ADDITIONAL RULES
         seedId,
         phase,
         promptTemplateId,
-        'google/gemini-2.5-flash',
-        0,
+        'gemini-2.5-flash',
         0,
         0,
         latencyMs,
         'error',
         response.status,
-        `API_ERROR_${response.status}`
+        `API_ERROR_${response.status}`,
+        userPrompt,
+        ''
       );
 
       return new Response(JSON.stringify({ 
@@ -275,14 +306,15 @@ ADDITIONAL RULES
         seedId,
         phase,
         promptTemplateId,
-        'google/gemini-2.5-flash',
+        'gemini-2.5-flash',
         data.usage?.prompt_tokens || 0,
         data.usage?.completion_tokens || 0,
-        0, // TODO: Calculate cost
         latencyMs,
         'error',
         200,
-        'NO_CONTENT'
+        'NO_CONTENT',
+        userPrompt,
+        ''
       );
 
       return new Response(JSON.stringify({ error: 'No content generated' }), {
@@ -328,14 +360,15 @@ ADDITIONAL RULES
             seedId,
             phase,
             promptTemplateId,
-            'google/gemini-2.5-flash',
+            'gemini-2.5-flash',
             data.usage?.prompt_tokens || 0,
             data.usage?.completion_tokens || 0,
-            0,
             latencyMs,
             'error',
             200,
-            'JSON_PARSE_ERROR'
+            'JSON_PARSE_ERROR',
+            userPrompt,
+            content
           );
 
           return new Response(JSON.stringify({ error: 'Failed to generate valid JSON' }), {
@@ -346,25 +379,27 @@ ADDITIONAL RULES
       }
     }
 
-    await logAIEvent(
+    const calculatedCost = await logAIEvent(
       user.id,
       null,
       seedId,
       phase,
       promptTemplateId,
-      'google/gemini-2.5-flash',
+      'gemini-2.5-flash',
       data.usage?.prompt_tokens || 0,
       data.usage?.completion_tokens || 0,
-      0, // TODO: Calculate cost
       latencyMs,
       'success',
-      200
+      200,
+      undefined,
+      userPrompt,
+      content
     );
 
     return new Response(JSON.stringify({
       story: storyData,
       tokensUsed: data.usage?.total_tokens || 0,
-      cost: 0, // TODO: Calculate cost
+      cost: calculatedCost,
       latency: latencyMs
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
