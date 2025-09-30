@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+// src/App.tsx
+// Production-grade root application component with proper routing and state management
+
+import { useEffect, useState, useCallback } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation, useParams } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { LandingPage } from "@/components/LandingPage";
@@ -13,58 +16,208 @@ import CharacterReviewScreen from "@/components/CharacterReviewScreen";
 import SettingsPage from "@/components/SettingsPage";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { useParams } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
+
+// ============================================================================
+// Game Interface Wrapper
+// ============================================================================
 
 function GameInterfaceWrapper() {
   const { gameId } = useParams<{ gameId: string }>();
-  if (!gameId) return <div>Game not found</div>;
+  
+  if (!gameId) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Game Not Found</h2>
+          <p className="text-muted-foreground">The requested game could not be found.</p>
+        </div>
+      </div>
+    );
+  }
+  
   return <GameInterface gameId={gameId} />;
 }
 
+// ============================================================================
+// App Layout with Sidebar
+// ============================================================================
+
 function AppLayout({ children, user }: { children: React.ReactNode; user: User | null }) {
-  const [sidebarKey, setSidebarKey] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
+  const [currentGameId, setCurrentGameId] = useState<string | null>(null);
 
-  // Don't show sidebar for landing page and auth page
-  const isPublicRoute = location.pathname === '/' && !user || location.pathname === '/auth' || location.pathname.startsWith('/join/');
+  // Determine if we're on a public route (no sidebar needed)
+  const isPublicRoute = 
+    (location.pathname === '/' && !user) || 
+    location.pathname === '/auth' || 
+    location.pathname.startsWith('/join/');
   
+  // Public routes don't show sidebar
   if (isPublicRoute) {
     return <>{children}</>;
   }
 
+  // Require authentication for protected routes
   if (!user) {
-    return <Navigate to="/auth" />;
+    return <Navigate to="/auth" replace />;
   }
 
-  const handleBackToAdventures = () => {
-    navigate('/');
-  };
+  // Determine if we're in an active game
+  const gameStarted = location.pathname.startsWith('/game/') && 
+                      !location.pathname.includes('/build-characters') &&
+                      !location.pathname.includes('/characters-review');
 
-  const handleOpenSettings = () => {
+  // Extract current game ID from route if applicable
+  useEffect(() => {
+    const match = location.pathname.match(/\/(game|lobby)\/([a-f0-9-]+)/);
+    if (match) {
+      setCurrentGameId(match[2]);
+    } else {
+      setCurrentGameId(null);
+    }
+  }, [location.pathname]);
+
+  // ============================================================================
+  // Navigation Handlers
+  // ============================================================================
+
+  const handleBackToAdventures = useCallback(() => {
+    navigate('/');
+  }, [navigate]);
+
+  const handleOpenSettings = useCallback(() => {
     navigate('/settings');
-  };
+  }, [navigate]);
 
-  const handleSelectGame = (gameId: string) => {
-    navigate(`/lobby/${gameId}`);
-  };
+  const handleSelectGame = useCallback(async (gameId: string) => {
+    try {
+      // Fetch game to determine correct route based on status
+      const { data: game, error } = await supabase
+        .from('games')
+        .select('id, status, party_locked')
+        .eq('id', gameId)
+        .single();
 
-  const handleResumeSeed = (seedId: string) => {
+      if (error) {
+        console.error('Failed to fetch game:', error);
+        toast({
+          title: "Unable to Open Game",
+          description: "Could not load game information. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!game) {
+        toast({
+          title: "Game Not Found",
+          description: "This game no longer exists.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Route based on game status using state machine logic
+      switch (game.status) {
+        case 'draft':
+        case 'story_review':
+          // Story creation phase - stay on dashboard
+          navigate('/');
+          toast({
+            title: "Story In Progress",
+            description: "Complete the story creation first.",
+          });
+          break;
+          
+        case 'lobby':
+          // Lobby phase - players joining and setting up characters
+          navigate(`/lobby/${gameId}`);
+          break;
+          
+        case 'characters':
+          // Character generation in progress
+          if (game.party_locked) {
+            navigate(`/game/${gameId}/build-characters`);
+          } else {
+            navigate(`/lobby/${gameId}`);
+          }
+          break;
+          
+        case 'char_review':
+          // Character review/approval phase
+          navigate(`/game/${gameId}/characters-review`);
+          break;
+          
+        case 'playing':
+        case 'paused':
+          // Active game session
+          navigate(`/game/${gameId}`);
+          break;
+          
+        case 'completed':
+          // Completed game - view only
+          navigate(`/game/${gameId}`);
+          toast({
+            title: "Game Completed",
+            description: "This game has been completed.",
+          });
+          break;
+          
+        case 'abandoned':
+          // Abandoned game
+          toast({
+            title: "Game Abandoned",
+            description: "This game has been abandoned.",
+            variant: "destructive"
+          });
+          break;
+          
+        default:
+          // Unknown status - default to lobby
+          console.warn(`Unknown game status: ${game.status}`);
+          navigate(`/lobby/${gameId}`);
+      }
+    } catch (error) {
+      console.error('Error selecting game:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while opening the game.",
+        variant: "destructive"
+      });
+    }
+  }, [navigate, toast]);
+
+  const handleResumeSeed = useCallback((seedId: string) => {
+    // Navigate to dashboard which will show the seed and allow resuming story builder
     navigate('/');
-  };
+    
+    // Optional: Show toast to guide user
+    toast({
+      title: "Resume Story Creation",
+      description: "Continue building your story from where you left off.",
+    });
+  }, [navigate, toast]);
+
+  // ============================================================================
+  // Render
+  // ============================================================================
 
   return (
     <SidebarProvider>
       <div className="flex min-h-dvh w-full bg-background">
         <AppSidebar
-          key={sidebarKey}
           user={user}
           onBackToAdventures={handleBackToAdventures}
           onOpenSettings={handleOpenSettings}
           onSelectGame={handleSelectGame}
           onResumeSeed={handleResumeSeed}
-          gameStarted={false}
-          currentGameId={null}
+          gameStarted={gameStarted}
+          currentGameId={currentGameId}
         />
         <SidebarInset className="min-w-0">
           <main className="flex-1 min-w-0">
@@ -76,7 +229,9 @@ function AppLayout({ children, user }: { children: React.ReactNode; user: User |
   );
 }
 
-import { Toaster } from "@/components/ui/toaster";
+// ============================================================================
+// Main App Component
+// ============================================================================
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -84,27 +239,37 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
       }
     );
 
+    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-foreground">Loading...</div>
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="text-foreground">Loading RoleplAI GM...</div>
+        </div>
       </div>
     );
   }
@@ -117,21 +282,57 @@ function App() {
   );
 }
 
+// ============================================================================
+// Layout Wrapper for Routes
+// ============================================================================
+
 function AppLayoutWrapper({ user }: { user: User | null }) {
   const navigate = useNavigate();
   
   return (
     <AppLayout user={user}>
       <Routes>
-        <Route path="/" element={user ? <Dashboard user={user} /> : <LandingPage onShowAuth={() => {}} />} />
-        <Route path="/auth" element={<AuthPage onBack={() => {}} />} />
-        <Route path="/join/:gameId" element={<JoinGamePage />} />
-        <Route path="/settings" element={<SettingsPage onBack={() => navigate('/')} />} />
-        <Route path="/lobby/:gameId" element={<LobbyPage />} />
-        <Route path="/game/:gameId/build-characters" element={<CharacterBuildScreen />} />
-        <Route path="/game/:gameId/characters-review" element={<CharacterReviewScreen />} />
-        <Route path="/game/:gameId" element={<GameInterfaceWrapper />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        {/* Public Routes */}
+        <Route 
+          path="/" 
+          element={user ? <Dashboard user={user} /> : <LandingPage onShowAuth={() => navigate('/auth')} />} 
+        />
+        <Route 
+          path="/auth" 
+          element={<AuthPage onBack={() => navigate('/')} />} 
+        />
+        <Route 
+          path="/join/:gameId" 
+          element={<JoinGamePage />} 
+        />
+        
+        {/* Protected Routes */}
+        <Route 
+          path="/settings" 
+          element={user ? <SettingsPage onBack={() => navigate('/')} /> : <Navigate to="/auth" replace />} 
+        />
+        <Route 
+          path="/lobby/:gameId" 
+          element={user ? <LobbyPage /> : <Navigate to="/auth" replace />} 
+        />
+        <Route 
+          path="/game/:gameId/build-characters" 
+          element={user ? <CharacterBuildScreen /> : <Navigate to="/auth" replace />} 
+        />
+        <Route 
+          path="/game/:gameId/characters-review" 
+          element={user ? <CharacterReviewScreen /> : <Navigate to="/auth" replace />} 
+        />
+        <Route 
+          path="/game/:gameId" 
+          element={user ? <GameInterfaceWrapper /> : <Navigate to="/auth" replace />} 
+        />
+        
+        {/* Catch-all redirect */}
+        <Route 
+          path="*" 
+          element={<Navigate to="/" replace />} 
+        />
       </Routes>
     </AppLayout>
   );
