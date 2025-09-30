@@ -157,7 +157,7 @@ export async function getUserGames() {
       name: game.name,
       created_at: game.created_at,
       type: 'game' as const,
-      status: game.status || 'playing',
+      status: game.status === 'setup' ? 'setup' : game.status || 'lobby', // Preserve actual game status
       campaign_seed: Array.isArray(game.campaign_seeds) ? game.campaign_seeds[0] : game.campaign_seeds
     })),
     // In-progress campaign seeds

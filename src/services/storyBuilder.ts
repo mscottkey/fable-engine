@@ -132,6 +132,7 @@ export async function saveStoryOverview(
   name: string
 ): Promise<{ success: boolean; id?: string; gameId?: string; error?: string }> {
   try {
+    // Start a transaction-like approach - create story overview first
     const { data, error } = await supabase
       .from('story_overviews')
       .insert({
@@ -152,32 +153,29 @@ export async function saveStoryOverview(
       return { success: false, error: error.message };
     }
 
-    // Update campaign seed status to approved
-    await supabase
-      .from('campaign_seeds')
-      .update({ generation_status: 'story_approved' })
-      .eq('id', seedId);
-
-    // Create a game for this approved story
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) {
       return { success: false, error: 'User not authenticated' };
     }
 
+    // Create a game for this approved story
+    console.log('Creating game for approved story overview');
     const { data: gameData, error: gameError } = await supabase
       .from('games')
       .insert({
         user_id: userData.user.id,
         seed_id: seedId,
-        name: name, // Use the name parameter instead of finalOverview.name
+        name: name,
         status: 'lobby',
-        party_size: 4 // Default party size
+        party_size: 4
       })
       .select()
       .single();
 
     if (gameError) {
       console.error('Error creating game:', gameError);
+      // Clean up the story overview if game creation fails
+      await supabase.from('story_overviews').delete().eq('id', data.id);
       return { success: false, error: 'Failed to create game' };
     }
 
@@ -195,6 +193,10 @@ export async function saveStoryOverview(
     if (memberError) {
       console.error('Error adding host to game:', memberError);
       console.error('Failed to add user as host - Game ID:', gameData.id, 'User ID:', userData.user.id);
+      
+      // Clean up both game and story overview
+      await supabase.from('games').delete().eq('id', gameData.id);
+      await supabase.from('story_overviews').delete().eq('id', data.id);
       return { success: false, error: `Failed to add host to game: ${memberError.message}` };
     }
 
@@ -207,15 +209,35 @@ export async function saveStoryOverview(
       status: 'empty'
     }));
 
+    console.log('Creating party slots:', slotsToCreate);
     const { error: slotsError } = await supabase
       .from('party_slots')
       .insert(slotsToCreate);
 
     if (slotsError) {
       console.error('Error creating party slots:', slotsError);
+      
+      // Clean up everything if slots creation fails
+      await supabase.from('game_members').delete().eq('game_id', gameData.id);
+      await supabase.from('games').delete().eq('id', gameData.id);
+      await supabase.from('story_overviews').delete().eq('id', data.id);
       return { success: false, error: 'Failed to create party slots' };
     }
 
+    console.log('Successfully created party slots');
+
+    // Only update campaign seed status after everything succeeds
+    const { error: seedError } = await supabase
+      .from('campaign_seeds')
+      .update({ generation_status: 'story_approved' })
+      .eq('id', seedId);
+
+    if (seedError) {
+      console.error('Error updating campaign seed status:', seedError);
+      // This is less critical, so we don't need to rollback everything
+    }
+
+    console.log('Successfully completed story approval process');
     return { success: true, id: data.id, gameId: gameData.id };
   } catch (error) {
     console.error('Save story overview error:', error);
