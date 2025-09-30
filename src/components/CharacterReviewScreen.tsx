@@ -127,7 +127,7 @@ export default function CharacterReviewScreen() {
       
       if (existingLineup) {
         console.log('Loaded existing lineup from database');
-        setLineup(existingLineup.lineup_json as any);
+        setLineup(existingLineup.lineup_json);
       } else {
         // Fallback to navigation state (only on first load from generation)
         const state = location.state as any;
@@ -307,7 +307,13 @@ export default function CharacterReviewScreen() {
     setIsApproving(true);
 
     try {
-      // Try to run IP sanitizer on the final lineup (optional, won't block if it fails)
+      // Step 1: Ensure game is in char_review state
+      if (game.status === 'characters') {
+        console.log('Transitioning from characters to char_review');
+        await transitionGameState(gameId, 'char_review');
+      }
+
+      // Step 2: Run IP sanitizer on the final lineup (make optional)
       let sanitizedLineup = lineup;
       try {
         const result = await sanitizeCharacterLineup(lineup);
@@ -319,36 +325,63 @@ export default function CharacterReviewScreen() {
             description: `${result.changes.length} potential IP issues were automatically fixed.`,
           });
         }
-      } catch (sanitizeError) {
-        console.warn('IP sanitization failed, continuing with original content:', sanitizeError);
-        // Continue with original lineup - sanitization is optional
+      } catch (error) {
+        console.warn('IP sanitization failed, using original lineup:', error);
+        // Continue with original lineup if sanitizer fails
       }
       
-      // Save the approved lineup to character_lineups table
-      const lineupId = await saveCharacterLineup(
-        gameId,
-        game.seed_id,
-        null, // Story data is in campaign_seeds.story_overview_draft, not a separate table
-        sanitizedLineup,
-        {
-          provider: 'lovable-ai',
-          model: 'google/gemini-2.5-flash',
-          inputTokens: 0, // Would be tracked from generation
-          outputTokens: 0,
-          costUsd: 0
-        }
-      );
+      // Step 3: Check for existing lineup (prevent duplicates)
+      const { data: existingLineup } = await supabase
+        .from('character_lineups')
+        .select('id')
+        .eq('game_id', gameId)
+        .maybeSingle();
 
-      console.log('Saved character lineup:', lineupId);
+      let lineupId: string;
 
-      // Save individual characters to characters table
+      if (existingLineup) {
+        // Update existing lineup
+        const { data, error } = await supabase
+          .from('character_lineups')
+          .update({
+            lineup_json: sanitizedLineup as any,
+            provider: 'lovable-ai',
+            model: 'google/gemini-2.5-flash',
+            input_tokens: 0,
+            output_tokens: 0,
+            cost_usd: 0
+          })
+          .eq('id', existingLineup.id)
+          .select('id')
+          .single();
+          
+        if (error) throw error;
+        lineupId = data.id;
+        console.log('Updated existing lineup:', lineupId);
+      } else {
+        // Create new lineup
+        lineupId = await saveCharacterLineup(
+          gameId,
+          game.seed_id,
+          game.seed_id, // Use seed_id as fallback for story_overview_id
+          sanitizedLineup,
+          {
+            provider: 'lovable-ai',
+            model: 'google/gemini-2.5-flash',
+            inputTokens: 0,
+            outputTokens: 0,
+            costUsd: 0
+          }
+        );
+        console.log('Created new lineup:', lineupId);
+      }
+
+      // Step 4: Save individual characters
       await saveCharacters(gameId, game.seed_id, sanitizedLineup, slots);
-
       console.log('Saved individual characters');
 
-      // Transition game to playing state
+      // Step 5: Transition to playing state
       await transitionGameState(gameId, 'playing');
-
       console.log('Transitioned to playing state');
 
       toast({
@@ -356,7 +389,7 @@ export default function CharacterReviewScreen() {
         description: "Characters have been finalized and the game is ready to begin."
       });
 
-      // Navigate to the main game interface
+      // Step 6: Navigate to the main game interface
       navigate(`/game/${gameId}`);
       
     } catch (error: any) {
@@ -364,9 +397,7 @@ export default function CharacterReviewScreen() {
       
       toast({
         title: "Approval Failed",
-        description: error instanceof DatabaseError 
-          ? error.message 
-          : error.message || 'Failed to approve lineup',
+        description: error.message || 'Failed to approve lineup',
         variant: "destructive"
       });
     } finally {
@@ -626,14 +657,14 @@ export default function CharacterReviewScreen() {
                           <p className="text-sm text-muted-foreground">{character.background}</p>
                         </div>
 
-                        {(character as any).aspects && (
+                        {character.aspects && (
                           <div>
                             <h4 className="text-sm font-semibold mb-2">Aspects</h4>
                             <div className="space-y-1">
-                              <p className="text-sm"><strong>High Concept:</strong> {(character as any).aspects.highConcept}</p>
-                              <p className="text-sm"><strong>Trouble:</strong> {(character as any).aspects.trouble}</p>
-                              {(character as any).aspects.aspect3 && (
-                                <p className="text-sm">{(character as any).aspects.aspect3}</p>
+                              <p className="text-sm"><strong>High Concept:</strong> {character.aspects.highConcept}</p>
+                              <p className="text-sm"><strong>Trouble:</strong> {character.aspects.trouble}</p>
+                              {character.aspects.aspect3 && (
+                                <p className="text-sm">{character.aspects.aspect3}</p>
                               )}
                             </div>
                           </div>
@@ -641,11 +672,11 @@ export default function CharacterReviewScreen() {
                       </TabsContent>
 
                       <TabsContent value="mechanics" className="space-y-4">
-                        {(character as any).skills && (character as any).skills.length > 0 && (
+                        {character.skills && character.skills.length > 0 && (
                           <div>
                             <h4 className="text-sm font-semibold mb-2">Skills</h4>
                             <div className="grid grid-cols-2 gap-2">
-                              {(character as any).skills.map((skill: any, skillIdx: number) => (
+                              {character.skills.map((skill: any, skillIdx: number) => (
                                 <div key={skillIdx} className="flex justify-between text-sm">
                                   <span>{skill.name}</span>
                                   <Badge variant="outline">+{skill.rating}</Badge>
@@ -655,23 +686,23 @@ export default function CharacterReviewScreen() {
                           </div>
                         )}
 
-                        {(character as any).stunts && (character as any).stunts.length > 0 && (
+                        {character.stunts && character.stunts.length > 0 && (
                           <div>
                             <h4 className="text-sm font-semibold mb-2">Stunts</h4>
                             <ul className="space-y-1">
-                              {(character as any).stunts.map((stunt: string, stuntIdx: number) => (
+                              {character.stunts.map((stunt: string, stuntIdx: number) => (
                                 <li key={stuntIdx} className="text-sm text-muted-foreground">• {stunt}</li>
                               ))}
                             </ul>
                           </div>
                         )}
 
-                        {(character as any).stress && (
+                        {character.stress && (
                           <div>
                             <h4 className="text-sm font-semibold mb-2">Stress</h4>
                             <div className="flex gap-4 text-sm">
-                              <span>Physical: {(character as any).stress.physical}</span>
-                              <span>Mental: {(character as any).stress.mental}</span>
+                              <span>Physical: {character.stress.physical}</span>
+                              <span>Mental: {character.stress.mental}</span>
                             </div>
                           </div>
                         )}
