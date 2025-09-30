@@ -87,8 +87,20 @@ export default function CharacterBuildScreen() {
     setGenerationComplete(true);
     
     // Transform the lineup structure to match what CharacterReviewScreen expects
+    const rawCharacters = lineup.characterLineup || lineup.characters || [];
+    
+    // Unwrap characters if they're wrapped in { slot, character } objects
+    const characters = rawCharacters.map((item: any) => {
+      if (item.character) {
+        // If wrapped, unwrap it
+        return item.character;
+      }
+      // If already flat, return as-is
+      return item;
+    });
+    
     const transformedLineup = {
-      characters: lineup.characterLineup || lineup.characters || [],
+      characters,
       bonds: lineup.partyBonds || lineup.bonds || [],
       coverage: lineup.coverageAnalysis || lineup.coverage || {}
     };
