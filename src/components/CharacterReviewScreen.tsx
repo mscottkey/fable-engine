@@ -375,7 +375,7 @@ export default function CharacterReviewScreen() {
 
         {/* Character Cards */}
         <div className="grid gap-6 mb-8">
-          {lineup.characters.map((character, index) => (
+          {(lineup.characters || []).map((character, index) => (
             <Card key={index} className="overflow-hidden">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -432,7 +432,7 @@ export default function CharacterReviewScreen() {
                       <div>
                         <Label className="text-sm font-medium">Motivations</Label>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {character.motivations.map((motivation, i) => (
+                          {(character.motivations || []).map((motivation, i) => (
                             <Badge key={i} variant="secondary" className="text-xs">{motivation}</Badge>
                           ))}
                         </div>
@@ -441,7 +441,7 @@ export default function CharacterReviewScreen() {
                       <div>
                         <Label className="text-sm font-medium">Flaws</Label>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {character.flaws.map((flaw, i) => (
+                          {(character.flaws || []).map((flaw, i) => (
                             <Badge key={i} variant="outline" className="text-xs">{flaw}</Badge>
                           ))}
                         </div>
@@ -477,7 +477,7 @@ export default function CharacterReviewScreen() {
                   </TabsContent>
                   
                   <TabsContent value="bonds" className="space-y-2">
-                    {lineup.bonds
+                    {(lineup.bonds || [])
                       .filter(bond => bond.character1Index === index || bond.character2Index === index)
                       .map((bond, i) => {
                         const otherIndex = bond.character1Index === index ? bond.character2Index : bond.character1Index;
