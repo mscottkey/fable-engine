@@ -50,12 +50,15 @@ export function CharacterSeedDialog({ open, onOpenChange, slot, gameId, genre, o
   useEffect(() => {
     if (open && slot) {
       loadExistingSeed();
-      if (!slot.claimed_by) {
-        // Load user defaults for new slot
-        loadUserDefaults();
-      }
     }
   }, [open, slot]);
+
+  useEffect(() => {
+    if (open && slot && !existingSeed) {
+      // Load user defaults when there's no existing seed
+      loadUserDefaults();
+    }
+  }, [open, slot, existingSeed]);
 
   const loadUserDefaults = async () => {
     try {
@@ -137,8 +140,9 @@ export function CharacterSeedDialog({ open, onOpenChange, slot, gameId, genre, o
         .eq('slot_id', slot.id)
         .maybeSingle();
 
+      setExistingSeed(seedData);
+      
       if (seedData) {
-        setExistingSeed(seedData);
         setDisplayName(seedData.display_name || '');
         setPronouns(seedData.pronouns || '');
         setConcept(seedData.concept || '');
@@ -155,8 +159,6 @@ export function CharacterSeedDialog({ open, onOpenChange, slot, gameId, genre, o
         setKeepName(seedData.keep_name || false);
         setTtsVoice(seedData.tts_voice || '');
         setTimezone(seedData.timezone || '');
-      } else {
-        resetForm();
       }
     } catch (error) {
       console.error('Failed to load existing seed:', error);
