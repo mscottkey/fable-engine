@@ -114,27 +114,38 @@ export async function getUserGames() {
   const { data: games, error: gamesError } = await supabase
     .from('games')
     .select(`
-      *,
-      campaign_seeds (*)
+      id,
+      name,
+      created_at,
+      status,
+      campaign_seeds!inner (
+        id,
+        name,
+        genre,
+        scenario_title,
+        scenario_description
+      )
     `)
     .eq('user_id', user.id)
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (gamesError) {
+    console.error('Error fetching games:', gamesError);
     throw new Error(`Failed to fetch games: ${gamesError.message}`);
   }
 
   // Get campaign seeds that haven't become full games yet (excluding soft-deleted ones)
   const { data: seeds, error: seedsError } = await supabase
     .from('campaign_seeds')
-    .select('*')
+    .select('id, name, created_at, generation_status, genre, scenario_title, scenario_description')
     .eq('user_id', user.id)
     .is('deleted_at', null)
-    .not('generation_status', 'eq', 'story_approved')
+    .neq('generation_status', 'story_approved')
     .order('created_at', { ascending: false });
 
   if (seedsError) {
+    console.error('Error fetching seeds:', seedsError);
     throw new Error(`Failed to fetch campaign seeds: ${seedsError.message}`);
   }
 
@@ -146,8 +157,8 @@ export async function getUserGames() {
       name: game.name,
       created_at: game.created_at,
       type: 'game' as const,
-      status: 'playing',
-      campaign_seed: game.campaign_seeds
+      status: game.status || 'playing',
+      campaign_seed: Array.isArray(game.campaign_seeds) ? game.campaign_seeds[0] : game.campaign_seeds
     })),
     // In-progress campaign seeds
     ...(seeds || []).map(seed => ({
@@ -160,10 +171,21 @@ export async function getUserGames() {
     }))
   ];
 
+  // Remove duplicates based on ID and type
+  const uniqueResults = combinedResults.filter((item, index, self) => 
+    index === self.findIndex(t => t.id === item.id && t.type === item.type)
+  );
+
   // Sort by creation date (most recent first)
-  combinedResults.sort((a, b) => 
+  uniqueResults.sort((a, b) => 
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 
-  return combinedResults;
+  console.log('Fetched games and seeds:', { 
+    gamesCount: games?.length || 0, 
+    seedsCount: seeds?.length || 0,
+    totalResults: uniqueResults.length 
+  });
+
+  return uniqueResults;
 }
