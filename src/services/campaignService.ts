@@ -61,6 +61,22 @@ export async function createGame(seedId: string, name: string, characters: Chara
     throw new Error(`Failed to create game: ${error.message}`);
   }
 
+  // Add the creator as the host member
+  const { error: memberError } = await supabase
+    .from('game_members')
+    .insert({
+      game_id: data.id,
+      user_id: user.id,
+      role: 'host'
+    });
+
+  if (memberError) {
+    console.error('Failed to add creator as game member:', memberError);
+    // Try to clean up the game if member creation failed
+    await supabase.from('games').delete().eq('id', data.id);
+    throw new Error(`Failed to set up game membership: ${memberError.message}`);
+  }
+
   // TODO: Store characters when we add characters table
   // For now, characters are handled in the front-end
 
