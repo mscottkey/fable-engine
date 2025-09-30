@@ -28,6 +28,9 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
   const [currentStage, setCurrentStage] = useState('preparing');
 
   const generateCharacters = async () => {
+    // Prevent multiple simultaneous generations
+    if (status === 'generating') return;
+    
     setStatus('generating');
     setError(null);
     setProgress(0);
@@ -84,9 +87,9 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
   };
 
   useEffect(() => {
-    // Auto-start generation
+    // Auto-start generation only once
     generateCharacters();
-  }, []);
+  }, []); // Empty dependency array to run only once
 
   const retry = () => {
     generateCharacters();
@@ -177,7 +180,7 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
               </CardHeader>
               <CardContent className="space-y-3">
                 {characterSeeds.map((seed: any, index: number) => (
-                  <div key={seed.id} className="border rounded-lg p-3 space-y-2">
+                  <div key={seed.id || index} className="border rounded-lg p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-sm">
                         {seed.display_name || `Player ${index + 1}`}
