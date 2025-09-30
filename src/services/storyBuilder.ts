@@ -131,6 +131,7 @@ export async function saveStoryOverview(
   overview: StoryOverview,
   name: string
 ): Promise<{ success: boolean; id?: string; gameId?: string; error?: string }> {
+  console.log('Starting saveStoryOverview process...');
   try {
     // Start a transaction-like approach - create story overview first
     const { data, error } = await supabase

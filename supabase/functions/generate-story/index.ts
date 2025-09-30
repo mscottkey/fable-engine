@@ -358,14 +358,19 @@ ADDITIONAL RULES
 
     // Clean up potential markdown formatting and try to parse JSON
     let storyData;
-    let cleanContent = content;
+    let cleanContent = content.trim();
     
-    // Remove potential ```json and ``` wrapper if present
-    if (content.includes('```json')) {
-      cleanContent = content.replace(/```json\s*\n?/g, '').replace(/\n?\s*```/g, '');
-    } else if (content.includes('```')) {
-      cleanContent = content.replace(/```\s*\n?/g, '').replace(/\n?\s*```/g, '');
+    // More robust cleanup of markdown code blocks
+    if (cleanContent.startsWith('```json')) {
+      cleanContent = cleanContent.replace(/^```json\s*\n?/, '').replace(/\n?\s*```\s*$/, '');
+    } else if (cleanContent.startsWith('```')) {
+      cleanContent = cleanContent.replace(/^```\s*\n?/, '').replace(/\n?\s*```\s*$/, '');
     }
+    
+    // Also handle cases where there are backticks in the middle
+    cleanContent = cleanContent.replace(/```json\n?/g, '').replace(/\n?```/g, '');
+    
+    console.log('Attempting to parse cleaned content:', cleanContent.substring(0, 200) + '...');
     
     try {
       storyData = JSON.parse(cleanContent);
