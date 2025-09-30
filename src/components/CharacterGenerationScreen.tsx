@@ -194,7 +194,7 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
                   <div key={seed.id || index} className="border rounded-lg p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-sm">
-                        {seed.display_name || `Player ${index + 1}`}
+                        {seed.displayName || `Player ${index + 1}`}
                       </span>
                       {seed.pronouns && (
                         <Badge variant="outline" className="text-xs">
@@ -209,16 +209,16 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
                       </p>
                     )}
                     
-                    {seed.archetype_prefs?.length > 0 && (
+                    {seed.archetypePrefs?.length > 0 && (
                       <div className="flex flex-wrap gap-1">
-                        {seed.archetype_prefs.slice(0, 2).map((archetype: string, i: number) => (
+                        {seed.archetypePrefs.slice(0, 2).map((archetype: string, i: number) => (
                           <Badge key={i} variant="secondary" className="text-xs">
                             {archetype}
                           </Badge>
                         ))}
-                        {seed.archetype_prefs.length > 2 && (
+                        {seed.archetypePrefs.length > 2 && (
                           <Badge variant="secondary" className="text-xs">
-                            +{seed.archetype_prefs.length - 2}
+                            +{seed.archetypePrefs.length - 2}
                           </Badge>
                         )}
                       </div>
