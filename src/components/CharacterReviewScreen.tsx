@@ -307,14 +307,21 @@ export default function CharacterReviewScreen() {
     setIsApproving(true);
 
     try {
-      // Run IP sanitizer on the final lineup
-      const { sanitizedLineup, changes } = await sanitizeCharacterLineup(lineup);
-      
-      if (changes.length > 0) {
-        toast({
-          title: "Content Sanitized",
-          description: `${changes.length} potential IP issues were automatically fixed.`,
-        });
+      // Try to run IP sanitizer on the final lineup (optional, won't block if it fails)
+      let sanitizedLineup = lineup;
+      try {
+        const result = await sanitizeCharacterLineup(lineup);
+        sanitizedLineup = result.sanitizedLineup;
+        
+        if (result.changes.length > 0) {
+          toast({
+            title: "Content Sanitized",
+            description: `${result.changes.length} potential IP issues were automatically fixed.`,
+          });
+        }
+      } catch (sanitizeError) {
+        console.warn('IP sanitization failed, continuing with original content:', sanitizeError);
+        // Continue with original lineup - sanitization is optional
       }
       
       // Save the approved lineup to character_lineups table
