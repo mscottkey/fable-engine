@@ -1,0 +1,30 @@
+CAMPAIGN_SEED
+Name: {{seed.name}}
+Genre: {{genre}}
+Vibe: {{seed.tone_vibe}}
+Tone Levers:
+- Pace: {{seed.tone_levers.pace}}
+- Danger: {{seed.tone_levers.danger}}
+- Morality: {{seed.tone_levers.morality}}
+- Scale: {{seed.tone_levers.scale}}
+Difficulty: {{seed.difficulty_label}} — {{seed.difficulty_desc}}
+
+Setting (seed):
+{{seed.setting}}
+
+Notable Locations (seed):
+{{#each seed.notable_locations}}
+- {{this.name}}: {{this.description}}
+{{/each}}
+
+Initial Hooks (seed):
+{{#each seed.hooks}}
+- {{this.title}}: {{this.description}}
+{{/each}}
+
+INSTRUCTIONS
+- Expand the seed into a Story Overview matching the JSON schema exactly.
+- Keep paragraphs tight (2–4 sentences). Avoid lore dumps.
+- Build on the seed's hooks/locations; you may add up to 2 hidden/emergent locations.
+- Do not use franchise or IP terms.
+- Return STRICT JSON only.

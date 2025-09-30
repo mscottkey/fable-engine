@@ -1,0 +1,14 @@
+TASK: Regenerate ONLY the requested section of the Story Overview. Keep all other sections unchanged.
+
+Rules:
+- Match tone, genre, and difficulty already set.
+- Keep JSON shape and keys identical.
+- Return STRICT, minified JSON containing ONLY the regenerated section as the top-level key (e.g., {"notableLocations":[...]}).
+
+CURRENT OVERVIEW (for context):
+{{json overview}}
+
+REGENERATE: "coreConflict"
+
+Write 1–2 tight paragraphs describing the world in motion: who wants what, against whom, and why now.
+Return: {"coreConflict":"..."}

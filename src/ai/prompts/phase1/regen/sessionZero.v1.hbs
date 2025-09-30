@@ -1,0 +1,19 @@
+TASK: Regenerate ONLY the requested section of the Story Overview. Keep all other sections unchanged.
+
+Rules:
+- Match tone, genre, and difficulty already set.
+- Keep JSON shape and keys identical.
+- Return STRICT, minified JSON containing ONLY the regenerated section as the top-level key (e.g., {"notableLocations":[...]}).
+
+CURRENT OVERVIEW (for context):
+{{json overview}}
+
+REGENERATE: "sessionZero"
+
+Provide:
+- openQuestions (4–8),
+- contentAdvisories (0–6),
+- calibrationLevers (3–6).
+Keep bullets short and table-friendly.
+Return:
+{"sessionZero":{"openQuestions":[...],"contentAdvisories":[...],"calibrationLevers":[...]}}

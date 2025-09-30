@@ -267,6 +267,51 @@ export type Database = {
         }
         Relationships: []
       }
+      story_overviews: {
+        Row: {
+          core_conflict: string
+          created_at: string
+          expanded_setting: string
+          id: string
+          name: string
+          notable_locations: Json
+          seed_id: string
+          session_zero: Json
+          story_hooks: Json
+          tone_manifesto: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          core_conflict: string
+          created_at?: string
+          expanded_setting: string
+          id?: string
+          name: string
+          notable_locations?: Json
+          seed_id: string
+          session_zero?: Json
+          story_hooks?: Json
+          tone_manifesto?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          core_conflict?: string
+          created_at?: string
+          expanded_setting?: string
+          id?: string
+          name?: string
+          notable_locations?: Json
+          seed_id?: string
+          session_zero?: Json
+          story_hooks?: Json
+          tone_manifesto?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
