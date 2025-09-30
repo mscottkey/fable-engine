@@ -92,7 +92,8 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSee
       return {
         icon: Play,
         label: 'Playing',
-        color: 'text-green-500',
+        color: 'text-accent',
+        bgColor: 'bg-accent/20',
         description: 'Ready to play'
       };
     }
@@ -102,14 +103,16 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSee
         return {
           icon: Pause,
           label: 'Setup',
-          color: 'text-blue-500',
+          color: 'text-muted-foreground',
+          bgColor: 'bg-muted/40',
           description: 'Ready to generate story'
         };
       case 'story_generating':
         return {
           icon: Loader2,
-          label: 'Generating',
-          color: 'text-yellow-500',
+          label: 'Building',
+          color: 'text-primary',
+          bgColor: 'bg-primary/20',
           description: 'Creating story...',
           animate: 'animate-spin'
         };
@@ -117,21 +120,24 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSee
         return {
           icon: CheckCircle,
           label: 'Review',
-          color: 'text-purple-500',
+          color: 'text-accent',
+          bgColor: 'bg-accent/20',
           description: 'Story ready for review'
         };
       case 'story_failed':
         return {
           icon: AlertCircle,
           label: 'Failed',
-          color: 'text-red-500',
+          color: 'text-destructive',
+          bgColor: 'bg-destructive/20',
           description: 'Generation failed'
         };
       default:
         return {
           icon: Dice6,
           label: 'Unknown',
-          color: 'text-gray-500',
+          color: 'text-muted-foreground',
+          bgColor: 'bg-muted/20',
           description: 'Unknown status'
         };
     }
@@ -273,13 +279,13 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSee
                           <StatusIcon className={`h-4 w-4 shrink-0 ${statusInfo.color} ${statusInfo.animate || ''}`} />
                           {open && (
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-between gap-2">
                                 <span className="truncate font-medium text-sm">{game.name}</span>
-                                <span className={`text-xs px-1.5 py-0.5 rounded-full bg-opacity-20 ${statusInfo.color} bg-current`}>
+                                <span className={`text-xs px-2 py-1 rounded-md font-medium ${statusInfo.color} ${statusInfo.bgColor} border border-current/20`}>
                                   {statusInfo.label}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-1 text-xs text-sidebar-foreground/60">
+                              <div className="flex items-center gap-1 text-xs text-sidebar-foreground/60 mt-0.5">
                                 <Clock className="h-3 w-3" />
                                 {formatGameDate(game.created_at)}
                               </div>
