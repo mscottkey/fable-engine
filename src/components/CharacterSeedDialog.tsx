@@ -296,7 +296,6 @@ export function CharacterSeedDialog({ open, onOpenChange, slot, gameId, genre, o
                       <SelectValue placeholder="Select pronouns..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Select pronouns...</SelectItem>
                       <SelectItem value="they/them">they/them</SelectItem>
                       <SelectItem value="she/her">she/her</SelectItem>
                       <SelectItem value="he/him">he/him</SelectItem>
