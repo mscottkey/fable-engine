@@ -22,6 +22,7 @@ export async function saveCampaignSeed(campaignData: CampaignSeedData): Promise<
     difficulty_label: campaignData.difficultyLabel,
     difficulty_desc: campaignData.difficultyDesc,
     hooks: campaignData.hooks,
+    generation_status: 'draft', // FIX: Add this required field
   };
 
   const { data, error } = await supabase
