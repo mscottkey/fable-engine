@@ -300,28 +300,18 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSee
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {/* Account Settings */}
-        <SidebarGroup>
-          {open && (
-            <SidebarGroupLabel className="text-sidebar-foreground/80">
-              Account
-            </SidebarGroupLabel>
-          )}
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="text-sidebar-foreground hover:bg-sidebar-accent" aria-label="Settings">
-                  <Settings className="h-5 w-5 shrink-0" />
-                  {open && <span>Settings</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="bg-sidebar border-t border-sidebar-border p-4">
+      <SidebarFooter className="bg-sidebar border-t border-sidebar-border p-4 space-y-2">
+        <Button
+          variant="ghost"
+          className="w-full justify-start hover:bg-sidebar-accent hover:text-sidebar-foreground text-sidebar-foreground"
+          aria-label="Settings"
+        >
+          <Settings className="h-5 w-5 shrink-0" />
+          {open && <span className="ml-2">Settings</span>}
+        </Button>
+        
         <Button
           variant="ghost"
           onClick={handleSignOut}
