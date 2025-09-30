@@ -11,10 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { 
+import {
   getGameWithRelations,
   getExistingCharacterLineup,
   subscribeToGameUpdates,
@@ -22,25 +21,24 @@ import {
   withRetry,
   DatabaseError
 } from '@/services/database/gameService';
-import { 
-  regenerateCharacter, 
-  regenerateBonds, 
-  remixLineup, 
-  saveCharacterLineup, 
+import {
+  regenerateCharacter,
+  regenerateBonds,
+  remixLineup,
+  saveCharacterLineup,
   saveCharacters,
-  type CharacterLineup, 
-  type Character 
+  type CharacterLineup,
+  type Character
 } from '@/services/characterService';
 import { sanitizeCharacterLineup } from '@/services/ipSanitizerService';
 import { GameSessionErrorBoundary } from '@/components/ErrorBoundary';
-import { 
-  ArrowLeft, 
-  RefreshCw, 
-  Shuffle, 
-  CheckCircle, 
-  Edit, 
-  Users, 
-  Zap, 
+import {
+  ArrowLeft,
+  RefreshCw,
+  Shuffle,
+  CheckCircle,
+  Edit,
+  Users,
   AlertCircle,
   Sparkles,
   Loader2,
@@ -53,7 +51,7 @@ export default function CharacterReviewScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  
+
   // Core state
   const [lineup, setLineup] = useState<CharacterLineup | null>(null);
   const [storyOverview, setStoryOverview] = useState<any>(null);
@@ -61,7 +59,7 @@ export default function CharacterReviewScreen() {
   const [game, setGame] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // UI state
   const [editingCharacter, setEditingCharacter] = useState<number | null>(null);
   const [tempCharacter, setTempCharacter] = useState<Character | null>(null);
@@ -77,11 +75,11 @@ export default function CharacterReviewScreen() {
     if (!gameId) return;
 
     loadLineupData();
+    loadGameData(); // <-- CRITICAL: ensure slots come from DB with real IDs
 
-    // Subscribe to real-time updates
-    const unsubscribe = subscribeToGameUpdates(gameId, (payload) => {
-      console.log('Real-time update in CharacterReview:', payload);
+    const unsubscribe = subscribeToGameUpdates(gameId, () => {
       loadLineupData();
+      loadGameData();
     });
 
     return () => {
@@ -102,13 +100,9 @@ export default function CharacterReviewScreen() {
         retryDelay: 1000
       });
 
-      console.log('Loaded game data:', gameData);
-
       // Validate game is in correct state
       if (gameData.status !== 'char_review' && gameData.status !== 'characters') {
-        throw new Error(
-          `Game is in ${gameData.status} state. Cannot review characters.`
-        );
+        throw new Error(`Game is in ${gameData.status} state. Cannot review characters.`);
       }
 
       setGame(gameData);
@@ -120,23 +114,21 @@ export default function CharacterReviewScreen() {
       }
       setStoryOverview(storyOverviewData);
 
-      // Extract slots
-      setSlots(gameData.party_slots || []);
-
-      // Try to load from database first (PRIMARY SOURCE)
+      // Try to load lineup from database first (PRIMARY SOURCE)
       const existingLineup = await getExistingCharacterLineup(gameId);
-      
+
       if (existingLineup) {
-        console.log('Loaded existing lineup from database');
         setLineup(existingLineup.lineup_json as unknown as CharacterLineup);
       } else {
         // Fallback to navigation state (only on first load from generation)
         const state = location.state as any;
         if (state?.lineup) {
-          console.log('Using lineup from navigation state');
           setLineup(state.lineup);
+          // Also seed slot data from nav state if present (used later to merge onto DB slots)
+          if (Array.isArray(state.slots)) {
+            setSlots(state.slots);
+          }
         } else {
-          // No lineup found anywhere - redirect back to generation
           throw new Error('No character lineup found. Please generate characters first.');
         }
       }
@@ -145,31 +137,26 @@ export default function CharacterReviewScreen() {
       if (gameData.status === 'characters') {
         try {
           await transitionGameState(gameId, 'char_review');
-          console.log('Transitioned game to char_review state');
-        } catch (transitionError) {
-          console.error('Failed to transition to char_review:', transitionError);
-          // Non-fatal, continue
+        } catch {
+          /* non-fatal */
         }
       }
-
     } catch (error) {
-      console.error('Error loading lineup data:', error);
-      
-      const errorMessage = error instanceof DatabaseError 
-        ? error.message 
-        : error instanceof Error 
-        ? error.message 
-        : 'Failed to load character lineup';
-      
+      const errorMessage =
+        error instanceof DatabaseError
+          ? error.message
+          : error instanceof Error
+          ? error.message
+          : 'Failed to load character lineup';
+
       setError(errorMessage);
-      
+
       toast({
-        title: "Error Loading Characters",
+        title: 'Error Loading Characters',
         description: errorMessage,
-        variant: "destructive"
+        variant: 'destructive'
       });
 
-      // Redirect back to character generation
       setTimeout(() => {
         navigate(`/game/${gameId}/build-characters`);
       }, 3000);
@@ -178,12 +165,56 @@ export default function CharacterReviewScreen() {
     }
   };
 
-  const handleEditCharacter = useCallback((characterIndex: number) => {
-    if (lineup) {
-      setEditingCharacter(characterIndex);
-      setTempCharacter({ ...lineup.characters[characterIndex] });
+  // --- NEW: loadGameData (fetch slots with real IDs and merge any seed data we already have) ---
+  const loadGameData = async () => {
+    if (!gameId) return;
+    try {
+      // Load game data
+      const { data: gameData, error: gameError } = await supabase
+        .from('games')
+        .select('*')
+        .eq('id', gameId)
+        .single();
+
+      if (gameError) throw gameError;
+      setGame((prev: any) => ({ ...prev, ...gameData }));
+
+      // CRITICAL FIX: Load actual party slots from the database (with real slot IDs)
+      const { data: slotsData, error: slotsError } = await supabase
+        .from('party_slots')
+        .select('*')
+        .eq('game_id', gameId)
+        .order('index_in_party');
+
+      if (slotsError) throw slotsError;
+
+      if (slotsData && slotsData.length > 0) {
+        const mergedSlots = slotsData.map((dbSlot: any, index: number) => ({
+          ...dbSlot,
+          ...(slots[index] || {}) // preserve seed data (concepts, prefs) that may be in-state
+        }));
+        setSlots(mergedSlots);
+      }
+    } catch (error) {
+      console.error('Failed to load game data:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to load game data',
+        variant: 'destructive'
+      });
     }
-  }, [lineup]);
+  };
+  // ---------------------------------------------------------------------------------------------
+
+  const handleEditCharacter = useCallback(
+    (characterIndex: number) => {
+      if (lineup) {
+        setEditingCharacter(characterIndex);
+        setTempCharacter({ ...lineup.characters[characterIndex] });
+      }
+    },
+    [lineup]
+  );
 
   const handleSaveCharacterEdit = useCallback(() => {
     if (editingCharacter !== null && tempCharacter && lineup) {
@@ -192,10 +223,10 @@ export default function CharacterReviewScreen() {
       setLineup({ ...lineup, characters: newCharacters });
       setEditingCharacter(null);
       setTempCharacter(null);
-      
+
       toast({
-        title: "Character Updated",
-        description: "Your changes have been saved locally. Remember to approve the lineup to persist changes."
+        title: 'Character Updated',
+        description: 'Your changes have been saved locally. Remember to approve the lineup to persist changes.'
       });
     }
   }, [editingCharacter, tempCharacter, lineup, toast]);
@@ -214,7 +245,7 @@ export default function CharacterReviewScreen() {
     try {
       const seed = transformSlotToSeed(slots[characterIndex], characterIndex);
       const currentParty = lineup.characters.filter((_, i) => i !== characterIndex);
-      
+
       const newCharacter = await regenerateCharacter(
         gameId,
         characterIndex,
@@ -227,18 +258,18 @@ export default function CharacterReviewScreen() {
       const newCharacters = [...lineup.characters];
       newCharacters[characterIndex] = newCharacter;
       setLineup({ ...lineup, characters: newCharacters });
-      
+
       toast({
-        title: "Character Regenerated",
-        description: "A new version has been created."
+        title: 'Character Regenerated',
+        description: 'A new version has been created.'
       });
-      
+
       setRegenFeedback('');
     } catch (error: any) {
       toast({
-        title: "Regeneration Failed",
+        title: 'Regeneration Failed',
         description: error.message,
-        variant: "destructive"
+        variant: 'destructive'
       });
     } finally {
       setIsRegenerating(false);
@@ -255,16 +286,16 @@ export default function CharacterReviewScreen() {
     try {
       const newBonds = await regenerateBonds(gameId, lineup.characters, storyOverview);
       setLineup({ ...lineup, bonds: newBonds });
-      
+
       toast({
-        title: "Bonds Regenerated",
-        description: "New character relationships have been created."
+        title: 'Bonds Regenerated',
+        description: 'New character relationships have been created.'
       });
     } catch (error: any) {
       toast({
-        title: "Bond Regeneration Failed",
+        title: 'Bond Regeneration Failed',
         description: error.message,
-        variant: "destructive"
+        variant: 'destructive'
       });
     } finally {
       setIsRegenerating(false);
@@ -282,19 +313,19 @@ export default function CharacterReviewScreen() {
       const seeds = transformSlotsToSeeds(slots);
       const newLineup = await remixLineup(gameId, seeds, storyOverview, lineup, remixBrief);
       setLineup(newLineup);
-      
+
       toast({
-        title: "Lineup Remixed",
-        description: "A completely new character lineup has been created."
+        title: 'Lineup Remixed',
+        description: 'A completely new character lineup has been created.'
       });
-      
+
       setShowRemixDialog(false);
       setRemixBrief('');
     } catch (error: any) {
       toast({
-        title: "Remix Failed",
+        title: 'Remix Failed',
         description: error.message,
-        variant: "destructive"
+        variant: 'destructive'
       });
     } finally {
       setIsRegenerating(false);
@@ -302,119 +333,94 @@ export default function CharacterReviewScreen() {
     }
   };
 
+  // --- UPDATED: handleApproveLineup that requires valid party slot IDs and updates status to "playing" ---
   const handleApproveLineup = async () => {
-    if (!lineup || !game || !storyOverview || !gameId) return;
+    if (!lineup || !game || !storyOverview) return;
+    if (!gameId) return;
 
     setIsApproving(true);
-
     try {
-      // Step 1: Ensure game is in char_review state
-      if (game.status === 'characters') {
-        console.log('Transitioning from characters to char_review');
-        await transitionGameState(gameId, 'char_review');
+      console.log('Starting approval process...');
+      console.log('Game:', game);
+      console.log('Story Overview:', storyOverview);
+      console.log('Slots:', slots);
+
+      // Verify we have actual slot IDs
+      const hasValidSlots = Array.isArray(slots) && slots.length > 0 && slots.every((slot) => slot?.id);
+      if (!hasValidSlots) {
+        throw new Error('Missing valid party slot data. Please refresh and try again.');
       }
 
-      // Step 2: Run IP sanitizer on the final lineup (make optional)
-      let sanitizedLineup = lineup;
-      try {
-        const result = await sanitizeCharacterLineup(lineup);
-        sanitizedLineup = result.sanitizedLineup;
-        
-        if (result.changes.length > 0) {
-          toast({
-            title: "Content Sanitized",
-            description: `${result.changes.length} potential IP issues were automatically fixed.`,
-          });
+      // IP sanitizer on final lineup
+      const { sanitizedLineup, changes } = await sanitizeCharacterLineup(lineup);
+
+      if (changes.length > 0) {
+        toast({
+          title: 'Content Sanitized',
+          description: `${changes.length} potential IP issues were automatically fixed.`
+        });
+      }
+
+      console.log('Saving lineup to database...');
+
+      // Save the approved lineup
+      const lineupId = await saveCharacterLineup(
+        gameId!,
+        game.seed_id,
+        storyOverview.id,
+        sanitizedLineup,
+        {
+          provider: 'lovable-ai',
+          model: 'google/gemini-2.5-flash',
+          inputTokens: 0,
+          outputTokens: 0,
+          costUsd: 0
         }
-      } catch (error) {
-        console.warn('IP sanitization failed, using original lineup:', error);
-        // Continue with original lineup if sanitizer fails
-      }
-      
-      // Step 3: Check for existing lineup (prevent duplicates)
-      const { data: existingLineup } = await supabase
-        .from('character_lineups')
-        .select('id')
-        .eq('game_id', gameId)
-        .maybeSingle();
+      );
 
-      let lineupId: string;
+      console.log('Lineup saved with ID:', lineupId);
+      console.log('Saving individual characters...');
 
-      if (existingLineup) {
-        // Update existing lineup
-        const { data, error } = await supabase
-          .from('character_lineups')
-          .update({
-            lineup_json: sanitizedLineup as any,
-            provider: 'lovable-ai',
-            model: 'google/gemini-2.5-flash',
-            input_tokens: 0,
-            output_tokens: 0,
-            cost_usd: 0
-          })
-          .eq('id', existingLineup.id)
-          .select('id')
-          .single();
-          
-        if (error) throw error;
-        lineupId = data.id;
-        console.log('Updated existing lineup:', lineupId);
-      } else {
-        // Create new lineup
-        lineupId = await saveCharacterLineup(
-          gameId,
-          game.seed_id,
-          null, // Story data is in campaign_seeds.story_overview_draft
-          sanitizedLineup,
-          {
-            provider: 'lovable-ai',
-            model: 'google/gemini-2.5-flash',
-            inputTokens: 0,
-            outputTokens: 0,
-            costUsd: 0
-          }
-        );
-        console.log('Created new lineup:', lineupId);
+      // Save individual characters with proper slot IDs
+      await saveCharacters(gameId!, game.seed_id, sanitizedLineup, slots);
+
+      console.log('Characters saved, updating game status...');
+
+      // Update game status to playing
+      const { error: updateError } = await supabase.from('games').update({ status: 'playing' }).eq('id', gameId);
+      if (updateError) {
+        console.error('Error updating game status:', updateError);
+        throw updateError;
       }
 
-      // Step 4: Save individual characters
-      await saveCharacters(gameId, game.seed_id, sanitizedLineup, slots);
-      console.log('Saved individual characters');
-
-      // Step 5: Transition to playing state
-      await transitionGameState(gameId, 'playing');
-      console.log('Transitioned to playing state');
+      console.log('Game status updated to playing');
 
       toast({
-        title: "Lineup Approved!",
-        description: "Characters have been finalized and the game is ready to begin."
+        title: 'Lineup Approved!',
+        description: 'Characters have been finalized and the game is ready to begin.'
       });
 
-      // Step 6: Navigate to the main game interface
       navigate(`/game/${gameId}`);
-      
     } catch (error: any) {
-      console.error('Approval failed:', error);
-      
+      console.error('Approval error:', error);
       toast({
-        title: "Approval Failed",
-        description: error.message || 'Failed to approve lineup',
-        variant: "destructive"
+        title: 'Approval Failed',
+        description: error.message || 'An unknown error occurred',
+        variant: 'destructive'
       });
     } finally {
       setIsApproving(false);
     }
   };
+  // ------------------------------------------------------------------------------------------------------
 
   const handleBack = useCallback(() => {
-    // Transition back to characters state if needed
     if (gameId && game?.status === 'char_review') {
       transitionGameState(gameId, 'characters')
         .then(() => {
           navigate(`/game/${gameId}/build-characters`);
         })
         .catch(() => {
-          // Just navigate even if transition fails
           navigate(`/game/${gameId}/build-characters`);
         });
     } else {
@@ -424,7 +430,7 @@ export default function CharacterReviewScreen() {
 
   // Helper functions
   const transformSlotToSeed = (slot: any, index: number) => {
-    const seed = slot.character_seeds?.[0];
+    const seed = slot?.character_seeds?.[0] || slot?.seed || slot?.characterSeed; // be permissive
     return {
       index,
       mode: 'suggest' as const,
@@ -432,12 +438,12 @@ export default function CharacterReviewScreen() {
       pronouns: seed?.pronouns,
       archetypePrefs: seed?.archetype_prefs || [],
       concept: seed?.concept,
-      keepName: seed?.keep_name || false,
+      keepName: seed?.keep_name || false
     };
   };
 
-  const transformSlotsToSeeds = (slots: any[]) => {
-    return (slots || []).map((slot, index) => transformSlotToSeed(slot, index));
+  const transformSlotsToSeeds = (slotsArr: any[]) => {
+    return (slotsArr || []).map((slot, index) => transformSlotToSeed(slot, index));
   };
 
   const updateCharacterField = (field: keyof Character, value: any) => {
@@ -466,9 +472,7 @@ export default function CharacterReviewScreen() {
           <AlertCircle className="h-12 w-12 mx-auto text-destructive" />
           <div className="text-destructive font-semibold">Error</div>
           <div className="text-muted-foreground">{error}</div>
-          <div className="text-sm text-muted-foreground">
-            Redirecting to character generation...
-          </div>
+          <div className="text-sm text-muted-foreground">Redirecting to character generation...</div>
         </div>
       </div>
     );
@@ -482,9 +486,7 @@ export default function CharacterReviewScreen() {
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground" />
           <h2 className="text-xl font-semibold">No Character Lineup Found</h2>
           <p className="text-muted-foreground">Please generate characters first.</p>
-          <Button onClick={() => navigate(`/game/${gameId}/build-characters`)}>
-            Generate Characters
-          </Button>
+          <Button onClick={() => navigate(`/game/${gameId}/build-characters`)}>Generate Characters</Button>
         </div>
       </div>
     );
@@ -495,16 +497,10 @@ export default function CharacterReviewScreen() {
     <GameSessionErrorBoundary>
       <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
         <div className="container mx-auto px-4 py-8">
-          
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleBack}
-                disabled={isApproving}
-              >
+              <Button variant="ghost" size="sm" onClick={handleBack} disabled={isApproving}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
@@ -539,16 +535,8 @@ export default function CharacterReviewScreen() {
                 Remix Lineup
               </Button>
 
-              <Button
-                onClick={handleApproveLineup}
-                disabled={isRegenerating || isApproving}
-                className="gap-2"
-              >
-                {isApproving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <CheckCircle className="h-4 w-4" />
-                )}
+              <Button onClick={handleApproveLineup} disabled={isRegenerating || isApproving} className="gap-2">
+                {isApproving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
                 Approve & Start Game
               </Button>
             </div>
@@ -601,10 +589,7 @@ export default function CharacterReviewScreen() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label>Name</Label>
-                          <Input
-                            value={tempCharacter.name}
-                            onChange={(e) => updateCharacterField('name', e.target.value)}
-                          />
+                          <Input value={tempCharacter.name} onChange={(e) => updateCharacterField('name', e.target.value)} />
                         </div>
                         <div>
                           <Label>Pronouns</Label>
@@ -658,111 +643,96 @@ export default function CharacterReviewScreen() {
                           <p className="text-sm text-muted-foreground">{character.background}</p>
                         </div>
 
-                        {character.aspects && (
+                        {!!character.personalityTraits?.length && (
                           <div>
-                            <h4 className="text-sm font-semibold mb-2">Aspects</h4>
-                            <div className="space-y-2">
-                              <div>
-                                <span className="text-xs font-medium text-muted-foreground">High Concept:</span>
-                                <p className="text-sm">{character.aspects.highConcept}</p>
-                              </div>
-                              <div>
-                                <span className="text-xs font-medium text-muted-foreground">Trouble:</span>
-                                <p className="text-sm">{character.aspects.trouble}</p>
-                              </div>
-                              <div>
-                                <span className="text-xs font-medium text-muted-foreground">Aspect 3:</span>
-                                <p className="text-sm">{character.aspects.aspect3}</p>
-                              </div>
-                              <div>
-                                <span className="text-xs font-medium text-muted-foreground">Aspect 4:</span>
-                                <p className="text-sm">{character.aspects.aspect4}</p>
-                              </div>
-                              <div>
-                                <span className="text-xs font-medium text-muted-foreground">Aspect 5:</span>
-                                <p className="text-sm">{character.aspects.aspect5}</p>
-                              </div>
+                            <h4 className="text-sm font-semibold mb-2">Personality Traits</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {character.personalityTraits.map((trait, idx) => (
+                                <Badge key={idx} variant="secondary">
+                                  {trait}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {!!character.motivations?.length && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-2">Motivations</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {character.motivations.map((motivation, idx) => (
+                                <Badge key={idx} variant="outline">
+                                  {motivation}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {!!character.flaws?.length && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-2">Flaws</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {character.flaws.map((flaw, idx) => (
+                                <Badge key={idx} variant="destructive">
+                                  {flaw}
+                                </Badge>
+                              ))}
                             </div>
                           </div>
                         )}
                       </TabsContent>
 
                       <TabsContent value="mechanics" className="space-y-4">
-                        {character.skills && character.skills.length > 0 && (
-                          <div>
-                            <h4 className="text-sm font-semibold mb-2">Skills</h4>
-                            <div className="space-y-1">
-                              {character.skills
-                                .sort((a, b) => b.rating - a.rating)
-                                .map((skill, idx) => (
-                                  <div key={idx} className="flex items-center justify-between text-sm">
-                                    <span>{skill.name}</span>
-                                    <Badge variant={skill.rating >= 3 ? "default" : "secondary"}>
-                                      +{skill.rating}
-                                    </Badge>
-                                  </div>
-                                ))}
+                        <div>
+                          <h4 className="text-sm font-semibold mb-2">Roles</h4>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">Mechanical:</span>
+                              <Badge>{character.mechanicalRole}</Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">Social:</span>
+                              <Badge>{character.socialRole}</Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">Exploration:</span>
+                              <Badge>{character.explorationRole}</Badge>
                             </div>
                           </div>
-                        )}
+                        </div>
 
-                        {character.stunts && character.stunts.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold mb-2">Archetypes</h4>
+                          <div className="flex gap-2">
+                            <Badge variant="secondary">{character.primaryArchetype}</Badge>
+                            {character.secondaryArchetype && (
+                              <Badge variant="outline">{character.secondaryArchetype}</Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {!!character.abilities?.length && (
                           <div>
-                            <h4 className="text-sm font-semibold mb-2">Stunts</h4>
+                            <h4 className="text-sm font-semibold mb-2">Abilities</h4>
                             <ul className="space-y-1">
-                              {character.stunts.map((stunt, idx) => (
-                                <li key={idx} className="text-sm text-muted-foreground">• {stunt}</li>
+                              {character.abilities.map((ability, idx) => (
+                                <li key={idx} className="text-sm text-muted-foreground">
+                                  • {ability}
+                                </li>
                               ))}
                             </ul>
                           </div>
                         )}
 
-                        {character.stress && (
-                          <div>
-                            <h4 className="text-sm font-semibold mb-2">Stress Tracks</h4>
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">Physical:</span>
-                                <div className="flex gap-1">
-                                  {Array.from({ length: character.stress.physical }).map((_, i) => (
-                                    <div key={i} className="w-4 h-4 border-2 border-primary rounded" />
-                                  ))}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">Mental:</span>
-                                <div className="flex gap-1">
-                                  {Array.from({ length: character.stress.mental }).map((_, i) => (
-                                    <div key={i} className="w-4 h-4 border-2 border-primary rounded" />
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {character.consequences && character.consequences.length > 0 && (
-                          <div>
-                            <h4 className="text-sm font-semibold mb-2">Consequences</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {character.consequences.map((consequence, idx) => (
-                                <Badge key={idx} variant="outline">{consequence}</Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        <div>
-                          <h4 className="text-sm font-semibold mb-2">Refresh</h4>
-                          <Badge>{character.refresh || 3} Fate Points</Badge>
-                        </div>
-
-                        {character.equipment && character.equipment.length > 0 && (
+                        {!!character.equipment?.length && (
                           <div>
                             <h4 className="text-sm font-semibold mb-2">Equipment</h4>
                             <div className="flex flex-wrap gap-2">
                               {character.equipment.map((item, idx) => (
-                                <Badge key={idx} variant="outline">{item}</Badge>
+                                <Badge key={idx} variant="outline">
+                                  {item}
+                                </Badge>
                               ))}
                             </div>
                           </div>
@@ -770,23 +740,27 @@ export default function CharacterReviewScreen() {
                       </TabsContent>
 
                       <TabsContent value="connections" className="space-y-4">
-                        {character.connections?.locations && character.connections.locations.length > 0 && (
+                        {!!character.connections?.locations?.length && (
                           <div>
                             <h4 className="text-sm font-semibold mb-2">Connected Locations</h4>
                             <div className="flex flex-wrap gap-2">
                               {character.connections.locations.map((loc: string, locIdx: number) => (
-                                <Badge key={locIdx} variant="secondary">{loc}</Badge>
+                                <Badge key={locIdx} variant="secondary">
+                                  {loc}
+                                </Badge>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {character.connections?.hooks && character.connections.hooks.length > 0 && (
+                        {!!character.connections?.hooks?.length && (
                           <div>
                             <h4 className="text-sm font-semibold mb-2">Story Hooks</h4>
                             <div className="flex flex-wrap gap-2">
                               {character.connections.hooks.map((hook: string, hookIdx: number) => (
-                                <Badge key={hookIdx} variant="outline">{hook}</Badge>
+                                <Badge key={hookIdx} variant="outline">
+                                  {hook}
+                                </Badge>
                               ))}
                             </div>
                           </div>
@@ -800,7 +774,7 @@ export default function CharacterReviewScreen() {
           </div>
 
           {/* Party Bonds */}
-          {lineup.bonds && lineup.bonds.length > 0 && (
+          {!!lineup.bonds?.length && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -815,13 +789,9 @@ export default function CharacterReviewScreen() {
                     <div key={bondIdx} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium">
-                            {lineup.characters[bond.character1Index]?.name}
-                          </span>
+                          <span className="font-medium">{lineup.characters[bond.character1Index]?.name}</span>
                           <Badge variant="secondary">{bond.relationship}</Badge>
-                          <span className="font-medium">
-                            {lineup.characters[bond.character2Index]?.name}
-                          </span>
+                          <span className="font-medium">{lineup.characters[bond.character2Index]?.name}</span>
                         </div>
                         <p className="text-sm text-muted-foreground">{bond.description}</p>
                       </div>
@@ -857,15 +827,8 @@ export default function CharacterReviewScreen() {
                 <Button variant="outline" onClick={() => setShowRemixDialog(false)}>
                   Cancel
                 </Button>
-                <Button 
-                  onClick={handleRemixLineup}
-                  disabled={isRegenerating || !remixBrief.trim()}
-                >
-                  {isRegenerating ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Sparkles className="h-4 w-4 mr-2" />
-                  )}
+                <Button onClick={handleRemixLineup} disabled={isRegenerating || !remixBrief.trim()}>
+                  {isRegenerating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
                   Remix Lineup
                 </Button>
               </DialogFooter>
