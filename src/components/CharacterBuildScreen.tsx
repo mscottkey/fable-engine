@@ -1,10 +1,21 @@
+// src/components/CharacterBuildScreen.tsx
+// Production-grade version with proper state management
+
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { getPartySlots } from '@/services/partyService';
-import { transformSeedsToCharacterSeeds, type CharacterLineup } from '@/services/characterService';
 import { useToast } from '@/hooks/use-toast';
 import { CharacterGenerationScreen } from '@/components/CharacterGenerationScreen';
+import { CharacterGenerationErrorBoundary } from '@/components/ErrorBoundary';
+import { 
+  getGameWithRelations, 
+  getExistingCharacterLineup,
+  subscribeToGameUpdates,
+  transitionGameState,
+  withRetry,
+  DatabaseError 
+} from '@/services/database/gameService';
+import { transformSeedsToCharacterSeeds } from '@/services/characterService';
+import { Loader2 } from 'lucide-react';
 
 export default function CharacterBuildScreen() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -14,90 +25,137 @@ export default function CharacterBuildScreen() {
   const [game, setGame] = useState<any>(null);
   const [storyOverview, setStoryOverview] = useState<any>(null);
   const [characterSeeds, setCharacterSeeds] = useState<any[]>([]);
+  const [existingLineup, setExistingLineup] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [generationComplete, setGenerationComplete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Load data on mount and subscribe to changes
   useEffect(() => {
-    if (gameId) {
-      loadGameData();
-    }
+    if (!gameId) return;
+
+    loadGameData();
+
+    // Subscribe to real-time updates
+    const unsubscribe = subscribeToGameUpdates(gameId, (payload) => {
+      console.log('Real-time update:', payload);
+      loadGameData(); // Reload on any change
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, [gameId]);
 
   const loadGameData = async () => {
-    setIsLoading(true);
-    try {
-      // Load game and campaign seed with story overview
-      const { data: gameData, error: gameError } = await supabase
-        .from('games')
-        .select(`
-          *,
-          campaign_seeds (*)
-        `)
-        .eq('id', gameId)
-        .single();
+    if (!gameId) return;
 
-      if (gameError) throw gameError;
-      
-      // Extract story overview from campaign seed's story_overview_draft
-      const storyOverviewData = (gameData.campaign_seeds as any)?.story_overview_draft;
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Use retry logic for resilience
+      const gameData = await withRetry(() => getGameWithRelations(gameId), {
+        maxRetries: 3,
+        retryDelay: 1000
+      });
+
+      console.log('Loaded game data:', gameData);
+
+      // Validate game is in correct state
+      if (gameData.status !== 'characters' && gameData.status !== 'lobby') {
+        throw new Error(
+          `Game is in ${gameData.status} state. Cannot generate characters.`
+        );
+      }
+
+      // Extract story overview from campaign seed
+      const storyOverviewData = gameData.campaign_seeds?.story_overview_draft;
       if (!storyOverviewData) {
-        throw new Error('No story overview found for this game');
+        throw new Error('No story overview found. Please complete story creation first.');
       }
 
       setGame(gameData);
       setStoryOverview(storyOverviewData);
 
-      // Load party slots with character seeds
-      const slots = await getPartySlots(gameId!);
-      const slotsWithSeeds = slots.filter(slot => 
-        (slot.status === 'ready' || slot.status === 'locked') && slot.character_seeds?.length > 0
-      );
+      // Check if lineup already exists (CRITICAL: prevents regeneration waste)
+      const lineup = await getExistingCharacterLineup(gameId);
+      
+      if (lineup) {
+        console.log('Found existing character lineup, loading it instead of regenerating');
+        setExistingLineup(lineup);
+        
+        // Navigate directly to review screen with existing data
+        navigate(`/game/${gameId}/characters-review`, {
+          state: {
+            lineup: lineup.lineup_json,
+            storyOverview: storyOverviewData,
+            slots: gameData.party_slots,
+            fromExisting: true
+          }
+        });
+        return;
+      }
+
+      // Extract character seeds from party slots
+      const slotsWithSeeds = gameData.party_slots?.filter((slot: any) => 
+        (slot.status === 'ready' || slot.status === 'locked') && 
+        slot.character_seeds?.length > 0
+      ) || [];
 
       if (slotsWithSeeds.length === 0) {
-        toast({
-          title: "No Character Seeds",
-          description: "No players have completed their character setup yet.",
-          variant: "destructive"
-        });
-        navigate(`/lobby/${gameId}`);
-        return;
+        throw new Error('No players have completed their character setup yet.');
       }
 
       // Transform to character seeds format
       const seeds = transformSeedsToCharacterSeeds(slotsWithSeeds);
       setCharacterSeeds(seeds);
 
+      // Transition game to 'characters' state if it's in 'lobby'
+      if (gameData.status === 'lobby') {
+        try {
+          await transitionGameState(gameId, 'characters');
+          console.log('Transitioned game to characters state');
+        } catch (transitionError) {
+          console.error('Failed to transition game state:', transitionError);
+          // Non-fatal, continue with generation
+        }
+      }
+
     } catch (error) {
       console.error('Error loading game data:', error);
+      
+      const errorMessage = error instanceof DatabaseError 
+        ? error.message 
+        : error instanceof Error 
+        ? error.message 
+        : 'Failed to load game data';
+      
+      setError(errorMessage);
+      
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to load game data",
+        title: "Error Loading Game",
+        description: errorMessage,
         variant: "destructive"
       });
-      navigate(`/lobby/${gameId}`);
+
+      // Navigate back to lobby after showing error
+      setTimeout(() => {
+        navigate(`/lobby/${gameId}`);
+      }, 3000);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGenerationComplete = useCallback((lineup: any, metrics: any) => {
-    console.log('Generation complete, navigating to review');
-    console.log('Received lineup structure:', lineup);
+    console.log('Generation complete');
+    console.log('Received lineup:', lineup);
     
-    setGenerationComplete(true);
-    
-    // Transform the lineup structure to match what CharacterReviewScreen expects
+    // Normalize character structure (handle both wrapped and unwrapped)
     const rawCharacters = lineup.characterLineup || lineup.characters || [];
-    
-    // Unwrap characters if they're wrapped in { slot, character } objects
-    const characters = rawCharacters.map((item: any) => {
-      if (item.character) {
-        // If wrapped, unwrap it
-        return item.character;
-      }
-      // If already flat, return as-is
-      return item;
-    });
+    const characters = rawCharacters.map((item: any) => 
+      item.character ? item.character : item
+    );
     
     const transformedLineup = {
       characters,
@@ -107,35 +165,78 @@ export default function CharacterBuildScreen() {
     
     console.log('Transformed lineup:', transformedLineup);
     
-    // Navigate to character review screen with required state data
+    // Transition to char_review state before navigating
+    transitionGameState(gameId!, 'char_review')
+      .then(() => {
+        console.log('Transitioned to char_review state');
+      })
+      .catch((err) => {
+        console.error('Failed to transition to char_review:', err);
+        // Non-fatal, continue
+      });
+    
+    // Navigate to character review screen
     navigate(`/game/${gameId}/characters-review`, {
       state: {
         lineup: transformedLineup,
         storyOverview,
         slots: characterSeeds,
-        metrics
+        metrics,
+        fromGeneration: true
       }
     });
   }, [navigate, gameId, storyOverview, characterSeeds]);
 
   const handleBack = useCallback(() => {
-    navigate(`/lobby/${gameId}`);
-  }, [navigate, gameId]);
+    // Transition back to lobby if user cancels
+    if (gameId && game?.status === 'characters') {
+      transitionGameState(gameId, 'lobby')
+        .then(() => {
+          navigate(`/lobby/${gameId}`);
+        })
+        .catch(() => {
+          // Just navigate even if transition fails
+          navigate(`/lobby/${gameId}`);
+        });
+    } else {
+      navigate(`/lobby/${gameId}`);
+    }
+  }, [navigate, gameId, game]);
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-foreground">Loading game data...</div>
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <div className="text-foreground">Loading game data...</div>
+        </div>
       </div>
     );
   }
 
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center space-y-4 max-w-md">
+          <div className="text-destructive font-semibold">Error</div>
+          <div className="text-muted-foreground">{error}</div>
+          <div className="text-sm text-muted-foreground">
+            Redirecting to lobby...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Missing required data
   if (!game || !storyOverview || characterSeeds.length === 0) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Unable to start character generation</h2>
-          <p className="text-muted-foreground mb-4">Missing required data for character creation.</p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <h2 className="text-xl font-semibold">Unable to Start Character Generation</h2>
+          <p className="text-muted-foreground">Missing required data for character creation.</p>
           <button 
             onClick={handleBack}
             className="text-primary hover:underline"
@@ -147,24 +248,28 @@ export default function CharacterBuildScreen() {
     );
   }
 
-  if (generationComplete) {
+  // Already have lineup, shouldn't reach here (should have navigated)
+  if (existingLineup) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Characters Generated!</h2>
-          <p className="text-muted-foreground mb-4">Redirecting to character review...</p>
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <div className="text-foreground">Loading existing characters...</div>
         </div>
       </div>
     );
   }
 
+  // Render generation screen wrapped in error boundary
   return (
-    <CharacterGenerationScreen
-      game={game}
-      storyOverview={storyOverview}
-      characterSeeds={characterSeeds}
-      onComplete={handleGenerationComplete}
-      onBack={handleBack}
-    />
+    <CharacterGenerationErrorBoundary onRetry={loadGameData}>
+      <CharacterGenerationScreen
+        game={game}
+        storyOverview={storyOverview}
+        characterSeeds={characterSeeds}
+        onComplete={handleGenerationComplete}
+        onBack={handleBack}
+      />
+    </CharacterGenerationErrorBoundary>
   );
 }
