@@ -11,12 +11,14 @@ import { StoryOverview } from '@/types/storyOverview';
 interface StoryGenerationScreenProps {
   campaignSeed: CampaignSeed;
   onComplete: (storyOverview: StoryOverview, metrics: any) => void;
+  onResume: (storyOverview: StoryOverview) => void;
   onBack: () => void;
 }
 
 export const StoryGenerationScreen: React.FC<StoryGenerationScreenProps> = ({
   campaignSeed,
   onComplete,
+  onResume,
   onBack
 }) => {
   const [progress, setProgress] = useState(0);
@@ -120,12 +122,17 @@ export const StoryGenerationScreen: React.FC<StoryGenerationScreenProps> = ({
           model: 'google/gemini-2.5-flash',
           tokensUsed: response.tokensUsed || 0,
           cost: response.cost || 0,
-          latency: response.latency || 0
+          latency: response.latency || 0,
+          cached: response.cached || false
         };
         setMetrics(newMetrics);
         
         setTimeout(() => {
-          onComplete(response.story, newMetrics);
+          if (response.cached) {
+            onResume(response.story);
+          } else {
+            onComplete(response.story, newMetrics);
+          }
         }, 1000);
       } else {
         throw new Error(response.error || 'Unknown error occurred');
@@ -137,6 +144,23 @@ export const StoryGenerationScreen: React.FC<StoryGenerationScreenProps> = ({
   };
 
   useEffect(() => {
+    // Check if story is already generated
+    if (campaignSeed.generation_status === 'story_generated' && campaignSeed.story_overview_draft) {
+      setStatus('complete');
+      const cachedStory = campaignSeed.story_overview_draft as unknown as StoryOverview;
+      setTimeout(() => {
+        onResume(cachedStory);
+      }, 1000);
+      return;
+    }
+    
+    // Check if generation failed and offer retry
+    if (campaignSeed.generation_status === 'story_failed') {
+      setStatus('error');
+      setError('Previous generation attempt failed. Click retry to try again.');
+      return;
+    }
+    
     generateStory();
   }, []);
 
@@ -244,7 +268,7 @@ export const StoryGenerationScreen: React.FC<StoryGenerationScreenProps> = ({
               {status === 'complete' && (
                 <div className="space-y-4">
                   <div className="text-sm text-green-600">
-                    ✓ Story overview generated successfully!
+                    ✓ Story overview {metrics?.cached ? 'loaded from cache' : 'generated successfully'}!
                   </div>
                   {metrics && (
                     <div className="grid grid-cols-2 gap-4 text-xs">
@@ -257,7 +281,7 @@ export const StoryGenerationScreen: React.FC<StoryGenerationScreenProps> = ({
                     </div>
                   )}
                   <div className="text-sm text-muted-foreground">
-                    Proceeding to review screen...
+                    {metrics?.cached ? 'Resuming from previous session...' : 'Proceeding to review screen...'}
                   </div>
                 </div>
               )}

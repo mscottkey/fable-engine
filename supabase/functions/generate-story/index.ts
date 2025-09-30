@@ -210,6 +210,35 @@ serve(async (req) => {
       });
     }
 
+    // Check if generation is already in progress or completed
+    if (seed.generation_status === 'story_generating') {
+      return new Response(JSON.stringify({ error: 'Story generation already in progress' }), {
+        status: 409,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // If story is already generated, return it
+    if (seed.generation_status === 'story_generated' && seed.story_overview_draft) {
+      return new Response(JSON.stringify({ 
+        success: true, 
+        story: seed.story_overview_draft,
+        cached: true 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Mark generation as starting
+    await supabase
+      .from('campaign_seeds')
+      .update({ 
+        generation_status: 'story_generating',
+        generation_attempts: (seed.generation_attempts || 0) + 1,
+        last_generation_at: new Date().toISOString()
+      })
+      .eq('id', seedId);
+
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
     if (!lovableApiKey) {
       return new Response(JSON.stringify({ error: 'AI service not configured' }), {
@@ -375,6 +404,12 @@ ADDITIONAL RULES
             content
           );
 
+          // Update status to failed
+          await supabase
+            .from('campaign_seeds')
+            .update({ generation_status: 'story_failed' })
+            .eq('id', seedId);
+
           return new Response(JSON.stringify({ error: 'Failed to generate valid JSON' }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -400,7 +435,17 @@ ADDITIONAL RULES
       content
     );
 
+    // Save the generated story and update status
+    await supabase
+      .from('campaign_seeds')
+      .update({ 
+        generation_status: 'story_generated',
+        story_overview_draft: storyData
+      })
+      .eq('id', seedId);
+
     return new Response(JSON.stringify({
+      success: true,
       story: storyData,
       tokensUsed: data.usage?.total_tokens || 0,
       cost: calculatedCost,
@@ -411,6 +456,29 @@ ADDITIONAL RULES
 
   } catch (error) {
     console.error('Function error:', error);
+    
+    // Update status to failed on any error
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        {
+          global: {
+            headers: {
+              Authorization: req.headers.get('Authorization') || ''
+            }
+          }
+        }
+      );
+      
+      await supabase
+        .from('campaign_seeds')
+        .update({ generation_status: 'story_failed' })
+        .eq('id', (await req.clone().json()).seedId);
+    } catch (updateError) {
+      console.error('Failed to update status on error:', updateError);
+    }
+    
     return new Response(JSON.stringify({ 
       error: error instanceof Error ? error.message : 'Unknown error' 
     }), {

@@ -109,9 +109,12 @@ export type Database = {
           created_at: string
           difficulty_desc: string
           difficulty_label: Database["public"]["Enums"]["difficulty_label"]
+          generation_attempts: number | null
+          generation_status: string | null
           genre: Database["public"]["Enums"]["genre"]
           hooks: Json
           id: string
+          last_generation_at: string | null
           name: string
           notable_locations: Json
           original_user_prompt: string | null
@@ -122,6 +125,7 @@ export type Database = {
           seed: number
           setting: string
           source_type: string | null
+          story_overview_draft: Json | null
           tone_levers: Json
           tone_vibe: string
           user_id: string
@@ -132,9 +136,12 @@ export type Database = {
           created_at?: string
           difficulty_desc: string
           difficulty_label: Database["public"]["Enums"]["difficulty_label"]
+          generation_attempts?: number | null
+          generation_status?: string | null
           genre: Database["public"]["Enums"]["genre"]
           hooks: Json
           id?: string
+          last_generation_at?: string | null
           name: string
           notable_locations: Json
           original_user_prompt?: string | null
@@ -145,6 +152,7 @@ export type Database = {
           seed: number
           setting: string
           source_type?: string | null
+          story_overview_draft?: Json | null
           tone_levers: Json
           tone_vibe: string
           user_id: string
@@ -155,9 +163,12 @@ export type Database = {
           created_at?: string
           difficulty_desc?: string
           difficulty_label?: Database["public"]["Enums"]["difficulty_label"]
+          generation_attempts?: number | null
+          generation_status?: string | null
           genre?: Database["public"]["Enums"]["genre"]
           hooks?: Json
           id?: string
+          last_generation_at?: string | null
           name?: string
           notable_locations?: Json
           original_user_prompt?: string | null
@@ -168,6 +179,7 @@ export type Database = {
           seed?: number
           setting?: string
           source_type?: string | null
+          story_overview_draft?: Json | null
           tone_levers?: Json
           tone_vibe?: string
           user_id?: string

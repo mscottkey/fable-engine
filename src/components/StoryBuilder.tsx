@@ -31,6 +31,11 @@ export const StoryBuilder: React.FC<StoryBuilderProps> = ({
     setStep('reviewing');
   };
 
+  const handleResume = (overview: StoryOverview) => {
+    setStoryOverview(overview);
+    setStep('reviewing');
+  };
+
   const handleRegenerateSection = async (section: keyof StoryOverview, feedback?: string) => {
     if (!storyOverview) return;
     
@@ -92,6 +97,7 @@ export const StoryBuilder: React.FC<StoryBuilderProps> = ({
       <StoryGenerationScreen
         campaignSeed={campaignSeed}
         onComplete={handleGenerationComplete}
+        onResume={handleResume}
         onBack={onBack}
       />
     );

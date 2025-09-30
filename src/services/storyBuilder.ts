@@ -152,6 +152,12 @@ export async function saveStoryOverview(
       return { success: false, error: error.message };
     }
 
+    // Update campaign seed status to approved
+    await supabase
+      .from('campaign_seeds')
+      .update({ generation_status: 'story_approved' })
+      .eq('id', seedId);
+
     return { success: true, id: data.id };
   } catch (error) {
     console.error('Save story overview error:', error);

@@ -55,4 +55,5 @@ export interface AIGenerationResponse {
   tokensUsed?: number;
   cost?: number;
   latency?: number;
+  cached?: boolean;
 }
