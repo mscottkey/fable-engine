@@ -85,7 +85,9 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
       setMetrics(newMetrics);
       
       setTimeout(() => {
-        onComplete(response, newMetrics);
+        console.log('About to call onComplete with:', response);
+        // TEMPORARILY COMMENT OUT TO TEST
+        // onComplete(response, newMetrics);
       }, 1000);
     } catch (err) {
       setStatus('error');

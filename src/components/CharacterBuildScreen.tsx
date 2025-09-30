@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { getPartySlots } from '@/services/partyService';
@@ -79,14 +79,15 @@ export default function CharacterBuildScreen() {
     }
   };
 
-  const handleGenerationComplete = (lineup: CharacterLineup, metrics: any) => {
+  const handleGenerationComplete = useCallback((lineup: CharacterLineup, metrics: any) => {
+    console.log('Generation complete, navigating to review');
     // Navigate to character review screen
     navigate(`/game/${gameId}/characters-review`);
-  };
+  }, [navigate, gameId]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     navigate(`/lobby/${gameId}`);
-  };
+  }, [navigate, gameId]);
 
   if (isLoading) {
     return (
