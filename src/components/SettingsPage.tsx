@@ -25,7 +25,6 @@ interface UserProfile {
 }
 
 const PRONOUN_OPTIONS = [
-  { value: '', label: 'Select pronouns...' },
   { value: 'they/them', label: 'they/them' },
   { value: 'she/her', label: 'she/her' },
   { value: 'he/him', label: 'he/him' },
