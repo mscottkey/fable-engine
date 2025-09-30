@@ -35,20 +35,20 @@ function AppLayout({ children, user }: { children: React.ReactNode; user: User |
   }
 
   const handleBackToAdventures = () => {
-    // This will be handled by the Dashboard component
-    setSidebarKey(prev => prev + 1);
+    window.location.href = '/';
   };
 
   const handleOpenSettings = () => {
-    // This will be handled by the Dashboard component  
+    // For now, just navigate back to dashboard - settings will be handled by Dashboard component
+    window.location.href = '/';
   };
 
   const handleSelectGame = (gameId: string) => {
-    // This will be handled by the Dashboard component
+    window.location.href = `/lobby/${gameId}`;
   };
 
   const handleResumeSeed = (seedId: string) => {
-    // This will be handled by the Dashboard component
+    window.location.href = '/';
   };
 
   return (
