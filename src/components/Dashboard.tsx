@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,19 +18,19 @@ type DashboardState = 'adventures' | 'story-builder' | 'game' | 'settings';
 
 export function Dashboard({ user }: DashboardProps) {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { seedId } = useParams<{ seedId?: string }>();
   const [state, setState] = useState<DashboardState>('adventures');
   const [currentGameId, setCurrentGameId] = useState<string | null>(null);
   const [campaignSeed, setCampaignSeed] = useState<CampaignSeed | null>(null);
   const [sidebarKey, setSidebarKey] = useState(0);
 
-  const handleResumeSeed = useCallback(async (seedId: string) => {
+  const handleResumeSeed = useCallback(async (seedIdToLoad: string) => {
     try {
       // Fetch the campaign seed to resume story building
       const { data: seed, error } = await supabase
         .from('campaign_seeds')
         .select('*')
-        .eq('id', seedId)
+        .eq('id', seedIdToLoad)
         .single();
 
       if (error || !seed) {
@@ -45,15 +45,16 @@ export function Dashboard({ user }: DashboardProps) {
     }
   }, []);
 
-  // Check for seed ID in query params on mount
+  // Check for seed ID in route params
   useEffect(() => {
-    const seedId = searchParams.get('seed');
     if (seedId) {
       handleResumeSeed(seedId);
-      // Clear the query param after handling
-      setSearchParams({});
+    } else {
+      // If no seedId in params, show adventures
+      setState('adventures');
+      setCampaignSeed(null);
     }
-  }, [searchParams, handleResumeSeed, setSearchParams]);
+  }, [seedId, handleResumeSeed]);
 
   const handleStartStoryBuilder = (seed: CampaignSeed) => {
     setCampaignSeed(seed);
@@ -98,9 +99,7 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   const handleBackToAdventures = () => {
-    setState('adventures');
-    setCurrentGameId(null);
-    setCampaignSeed(null);
+    navigate('/');
   };
 
   const handleOpenSettings = () => {

@@ -193,8 +193,8 @@ function AppLayout({ children, user }: { children: React.ReactNode; user: User |
   }, [navigate, toast]);
 
   const handleResumeSeed = useCallback((seedId: string) => {
-    // Navigate to dashboard with seed ID as query param
-    navigate(`/?seed=${seedId}`);
+    // Navigate to story route with seed ID
+    navigate(`/story/${seedId}`);
   }, [navigate]);
 
   // ============================================================================
@@ -290,6 +290,10 @@ function AppLayoutWrapper({ user }: { user: User | null }) {
         <Route 
           path="/" 
           element={user ? <Dashboard user={user} /> : <LandingPage onShowAuth={() => navigate('/auth')} />} 
+        />
+        <Route 
+          path="/story/:seedId" 
+          element={user ? <Dashboard user={user} /> : <Navigate to="/auth" replace />} 
         />
         <Route 
           path="/auth" 
