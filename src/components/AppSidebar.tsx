@@ -50,7 +50,7 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
       collapsible="icon"
       // Let the component control layout using CSS vars:
       // 18rem expanded (~288px), 4.25rem collapsed (68px incl. padding)
-      className="group [--sidebar-width:18rem] [--sidebar-width-icon:4.25rem]"
+      className="group [--sidebar-width:14.5rem] [--sidebar-width-icon:4.25rem]"
     >
       <SidebarHeader className="bg-sidebar border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3 group-data-[state=collapsed]:justify-center">
