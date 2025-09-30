@@ -788,10 +788,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_access_game: {
-        Args: { _game_id: string; _user_id: string }
-        Returns: boolean
-      }
       can_add_game_member: {
         Args: { _game_id: string; _user_id: string }
         Returns: boolean
