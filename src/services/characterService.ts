@@ -159,24 +159,52 @@ export async function saveCharacterLineup(
     costUsd: number;
   }
 ): Promise<string> {
-  const { data, error } = await supabase
+  // Check for existing lineup first
+  const { data: existingLineup } = await supabase
     .from('character_lineups')
-    .insert({
-      game_id: gameId,
-      seed_id: seedId,
-      story_overview_id: storyOverviewId,
-      lineup_json: lineup as any,
-      provider: metadata.provider,
-      model: metadata.model,
-      input_tokens: metadata.inputTokens,
-      output_tokens: metadata.outputTokens,
-      cost_usd: metadata.costUsd
-    })
     .select('id')
-    .single();
+    .eq('game_id', gameId)
+    .maybeSingle();
 
-  if (error) throw error;
-  return data.id;
+  if (existingLineup) {
+    // Update existing lineup
+    const { data, error } = await supabase
+      .from('character_lineups')
+      .update({
+        lineup_json: lineup as any,
+        provider: metadata.provider,
+        model: metadata.model,
+        input_tokens: metadata.inputTokens,
+        output_tokens: metadata.outputTokens,
+        cost_usd: metadata.costUsd
+      })
+      .eq('id', existingLineup.id)
+      .select('id')
+      .single();
+
+    if (error) throw error;
+    return data.id;
+  } else {
+    // Insert new lineup
+    const { data, error } = await supabase
+      .from('character_lineups')
+      .insert({
+        game_id: gameId,
+        seed_id: seedId,
+        story_overview_id: storyOverviewId,
+        lineup_json: lineup as any,
+        provider: metadata.provider,
+        model: metadata.model,
+        input_tokens: metadata.inputTokens,
+        output_tokens: metadata.outputTokens,
+        cost_usd: metadata.costUsd
+      })
+      .select('id')
+      .single();
+
+    if (error) throw error;
+    return data.id;
+  }
 }
 
 // Save individual characters
@@ -186,6 +214,14 @@ export async function saveCharacters(
   lineup: CharacterLineup,
   slots: any[]
 ): Promise<void> {
+  // Check for existing characters for this game
+  const { data: existingChars } = await supabase
+    .from('characters')
+    .select('id, slot_id')
+    .eq('game_id', gameId);
+
+  const existingSlotIds = new Set(existingChars?.map(c => c.slot_id) || []);
+
   const characters = lineup.characters.map((character, index) => ({
     game_id: gameId,
     seed_id: seedId,
@@ -195,11 +231,29 @@ export async function saveCharacters(
     status: 'approved' as const
   }));
 
-  const { error } = await supabase
-    .from('characters')
-    .insert(characters);
+  // Update existing characters and insert new ones
+  for (const character of characters) {
+    if (existingSlotIds.has(character.slot_id)) {
+      // Update existing character
+      const { error } = await supabase
+        .from('characters')
+        .update({
+          pc_json: character.pc_json,
+          status: character.status
+        })
+        .eq('game_id', gameId)
+        .eq('slot_id', character.slot_id);
 
-  if (error) throw error;
+      if (error) throw error;
+    } else {
+      // Insert new character
+      const { error } = await supabase
+        .from('characters')
+        .insert(character);
+
+      if (error) throw error;
+    }
+  }
 }
 
 // Get character lineup for a game
