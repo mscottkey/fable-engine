@@ -381,26 +381,31 @@ export default function CharacterReviewScreen() {
         {/* Character Cards */}
         <div className="grid gap-6 mb-8">
             {(lineup.characters || []).map((char: any, index) => {
-              // Normalize character data to handle both old and new schemas
+              // Normalize character data to handle both old and new Fate schemas
               const character = {
                 name: char.name || '',
                 pronouns: char.pronouns || '',
                 concept: char.concept || '',
                 background: char.background || char.description || '',
-                mechanicalRole: char.mechanicalRole || char.role || '',
-                socialRole: char.socialRole || '',
-                explorationRole: char.explorationRole || '',
-                primaryArchetype: char.primaryArchetype || char.archetype || '',
-                secondaryArchetype: char.secondaryArchetype || '',
-                personalityTraits: char.personalityTraits || [],
-                motivations: char.motivations || (char.personalQuest ? [char.personalQuest] : []),
-                flaws: char.flaws || [],
+                // Fate mechanics
+                aspects: char.aspects || {
+                  highConcept: char.primaryArchetype || char.archetype || '',
+                  trouble: '',
+                  aspect3: '',
+                  aspect4: '',
+                  aspect5: ''
+                },
+                skills: char.skills || [],
+                stunts: char.stunts || [],
+                stress: char.stress || { physical: 2, mental: 2 },
+                consequences: char.consequences || ['Mild', 'Moderate', 'Severe'],
+                refresh: char.refresh || 3,
+                // Story integration
                 connections: char.connections || {
                   locations: char.locationBonds || [],
                   hooks: char.storyHooks || []
                 },
-                equipment: char.equipment || [],
-                abilities: char.abilities || []
+                equipment: char.equipment || []
               };
               
               return (
@@ -456,50 +461,88 @@ export default function CharacterReviewScreen() {
                       <p className="text-sm text-muted-foreground mt-1">{character.background}</p>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm font-medium">Motivations</Label>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {(character.motivations || []).map((motivation, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">{motivation}</Badge>
-                          ))}
+                    <div>
+                      <Label className="text-sm font-medium">Aspects</Label>
+                      <div className="space-y-2 mt-1">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <span className="text-xs font-semibold text-primary">High Concept:</span>
+                          <p className="text-sm">{character.aspects.highConcept}</p>
                         </div>
-                      </div>
-                      
-                      <div>
-                        <Label className="text-sm font-medium">Flaws</Label>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {(character.flaws || []).map((flaw, i) => (
-                            <Badge key={i} variant="outline" className="text-xs">{flaw}</Badge>
-                          ))}
+                        <div className="p-2 bg-destructive/10 rounded-lg">
+                          <span className="text-xs font-semibold text-destructive">Trouble:</span>
+                          <p className="text-sm">{character.aspects.trouble}</p>
                         </div>
+                        {character.aspects.aspect3 && (
+                          <div className="p-2 bg-muted rounded-lg">
+                            <p className="text-sm">{character.aspects.aspect3}</p>
+                          </div>
+                        )}
+                        {character.aspects.aspect4 && (
+                          <div className="p-2 bg-muted rounded-lg">
+                            <p className="text-sm">{character.aspects.aspect4}</p>
+                          </div>
+                        )}
+                        {character.aspects.aspect5 && (
+                          <div className="p-2 bg-muted rounded-lg">
+                            <p className="text-sm">{character.aspects.aspect5}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </TabsContent>
                   
                   <TabsContent value="mechanics" className="space-y-4">
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label className="text-sm font-medium">Mechanical Role</Label>
-                        <Badge variant="default">{character.mechanicalRole}</Badge>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Social Role</Label>
-                        <Badge variant="secondary">{character.socialRole}</Badge>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Exploration Role</Label>
-                        <Badge variant="outline">{character.explorationRole}</Badge>
+                    <div>
+                      <Label className="text-sm font-medium">Skills</Label>
+                      <div className="grid grid-cols-2 gap-2 mt-1">
+                        {(character.skills || [])
+                          .filter((skill: any) => skill.rating > 0)
+                          .sort((a: any, b: any) => b.rating - a.rating)
+                          .map((skill: any, i: number) => (
+                            <div key={i} className="flex items-center justify-between p-2 bg-muted rounded-lg">
+                              <span className="text-sm">{skill.name}</span>
+                              <Badge variant="secondary">+{skill.rating}</Badge>
+                            </div>
+                          ))}
                       </div>
                     </div>
                     
                     <div>
-                      <Label className="text-sm font-medium">Archetypes</Label>
-                      <div className="flex gap-2 mt-1">
-                        <Badge>{character.primaryArchetype}</Badge>
-                        {character.secondaryArchetype && (
-                          <Badge variant="outline">{character.secondaryArchetype}</Badge>
-                        )}
+                      <Label className="text-sm font-medium">Stunts</Label>
+                      <div className="space-y-2 mt-1">
+                        {(character.stunts || []).map((stunt: string, i: number) => (
+                          <div key={i} className="p-2 bg-muted rounded-lg">
+                            <p className="text-sm">{stunt}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Stress</Label>
+                        <div className="space-y-1 mt-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs">Physical:</span>
+                            <div className="flex gap-1">
+                              {Array.from({ length: character.stress.physical }).map((_, i) => (
+                                <div key={i} className="w-4 h-4 border border-foreground rounded"></div>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs">Mental:</span>
+                            <div className="flex gap-1">
+                              {Array.from({ length: character.stress.mental }).map((_, i) => (
+                                <div key={i} className="w-4 h-4 border border-foreground rounded"></div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Refresh</Label>
+                        <Badge className="mt-1">{character.refresh}</Badge>
                       </div>
                     </div>
                   </TabsContent>

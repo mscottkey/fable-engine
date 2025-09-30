@@ -260,9 +260,25 @@ async function loadPromptTemplate(path: string): Promise<string> {
     // In a real implementation, you'd load from your prompts directory
     // For now, return basic templates
     if (path.includes('system.v2.md')) {
-      return `You are an expert AI Game Master creating memorable player characters. 
-      Follow the provided requirements exactly and return valid JSON only.
-      Respect player preferences while ensuring party balance and story integration.`;
+      return `You are The Fablist, an expert AI Game Master creating memorable player characters for Fate Core/Accelerated RPG.
+      
+CORE PRINCIPLES:
+- Create characters using Fate Core mechanics (aspects, skills, stunts, stress, consequences)
+- Respect player preferences while ensuring party balance and story integration
+- Generate meaningful PC-to-PC bonds that create party dynamics
+- Tie characters to story locations and hooks
+- Follow the provided requirements exactly and return valid JSON only
+
+FATE MECHANICS REQUIREMENTS:
+- High Concept: A defining aspect that captures the character's essence
+- Trouble: A complication that drives drama
+- 3 Additional Aspects: Relationships, beliefs, or characteristics
+- Skills: Rated from +0 to +4 (Great Pyramid: 1 at +4, 2 at +3, 3 at +2, 4 at +1)
+- Stunts: 3 special abilities tied to skills
+- Stress: Physical and Mental stress tracks
+- Consequences: Mild/Moderate/Severe slots
+
+Always generate at least 2-3 bonds between different PCs in the party.`;
     }
     
     if (path.includes('repair.v2.md')) {
@@ -296,40 +312,57 @@ ${seeds}
 CONSTRAINTS
 - For each slot, follow the mode: respect/suggest/decide
 - Tie each PC to at least one location and one hook
+- Generate FATE CORE/ACCELERATED characters with proper mechanics
+- Create 2-3 bonds between DIFFERENT PCs (not NPCs)
 - Keep output STRICT JSON
-- Ensure party has complementary roles and skills
+- Ensure party has complementary skills
 - All content must be IP-safe
 
-SCHEMA REQUIREMENTS
-Return a JSON object with:
-- characters: Array of character objects (one per slot)
-- bonds: Array of character relationship objects
-- coverage: Object describing party capabilities
-
+FATE CHARACTER SCHEMA
 Each character must include:
 - name (string)
 - pronouns (string)
-- concept (string)
-- background (string)
-- mechanicalRole (string)
-- socialRole (string)
-- explorationRole (string)
-- primaryArchetype (string)
-- secondaryArchetype (string, optional)
-- personalityTraits (array of strings)
-- motivations (array of strings)
-- flaws (array of strings)
-- connections (object with locations and hooks arrays)
-- equipment (array of strings)
-- abilities (array of strings)
+- concept (string) - brief character summary
+- background (string) - 2-3 paragraphs of backstory
 
-Each bond must include:
-- character1Index (number)
-- character2Index (number)
-- relationship (string)
-- description (string)
+FATE MECHANICS:
+- aspects (object):
+  - highConcept (string) - defining aspect
+  - trouble (string) - complicating aspect  
+  - aspect3 (string)
+  - aspect4 (string)
+  - aspect5 (string)
+- skills (array of objects):
+  - name (string) - skill name
+  - rating (number) - 0 to 4
+  - Must follow Great Pyramid: 1 skill at +4, 2 at +3, 3 at +2, 4 at +1, rest at +0
+- stunts (array of strings) - 3 special abilities
+- stress (object):
+  - physical (number) - usually 2-4 boxes
+  - mental (number) - usually 2-4 boxes
+- consequences (array of strings) - ["Mild", "Moderate", "Severe"]
 
-Return the complete lineup following this exact schema.`;
+STORY INTEGRATION:
+- connections (object):
+  - locations (array of strings) - location names from story
+  - hooks (array of strings) - story hook names
+- refresh (number) - usually 3
+- equipment (array of strings) - notable gear
+
+BONDS SCHEMA (CRITICAL - MUST INCLUDE):
+Generate 2-3 bonds between DIFFERENT player characters (not NPCs):
+- character1Index (number) - index in characters array
+- character2Index (number) - different PC index
+- relationship (string) - type of bond (Ally, Rival, Family, etc.)
+- description (string) - how they know each other
+
+COVERAGE OBJECT:
+- archetypesCovered (array of strings)
+- skillsCovered (array of strings) - key skills represented
+- storyHooksAddressed (array of strings)
+- locationsAddressed (array of strings)
+
+Return complete JSON with characters array, bonds array (with PC-to-PC bonds), and coverage object.`;
   }
   
   if (template.includes('regen/pc.v1.hbs')) {
