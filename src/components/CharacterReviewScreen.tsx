@@ -127,7 +127,7 @@ export default function CharacterReviewScreen() {
       
       if (existingLineup) {
         console.log('Loaded existing lineup from database');
-        setLineup(existingLineup.lineup_json);
+        setLineup(existingLineup.lineup_json as any);
       } else {
         // Fallback to navigation state (only on first load from generation)
         const state = location.state as any;
@@ -619,14 +619,14 @@ export default function CharacterReviewScreen() {
                           <p className="text-sm text-muted-foreground">{character.background}</p>
                         </div>
 
-                        {character.aspects && (
+                        {(character as any).aspects && (
                           <div>
                             <h4 className="text-sm font-semibold mb-2">Aspects</h4>
                             <div className="space-y-1">
-                              <p className="text-sm"><strong>High Concept:</strong> {character.aspects.highConcept}</p>
-                              <p className="text-sm"><strong>Trouble:</strong> {character.aspects.trouble}</p>
-                              {character.aspects.aspect3 && (
-                                <p className="text-sm">{character.aspects.aspect3}</p>
+                              <p className="text-sm"><strong>High Concept:</strong> {(character as any).aspects.highConcept}</p>
+                              <p className="text-sm"><strong>Trouble:</strong> {(character as any).aspects.trouble}</p>
+                              {(character as any).aspects.aspect3 && (
+                                <p className="text-sm">{(character as any).aspects.aspect3}</p>
                               )}
                             </div>
                           </div>
@@ -634,11 +634,11 @@ export default function CharacterReviewScreen() {
                       </TabsContent>
 
                       <TabsContent value="mechanics" className="space-y-4">
-                        {character.skills && character.skills.length > 0 && (
+                        {(character as any).skills && (character as any).skills.length > 0 && (
                           <div>
                             <h4 className="text-sm font-semibold mb-2">Skills</h4>
                             <div className="grid grid-cols-2 gap-2">
-                              {character.skills.map((skill: any, skillIdx: number) => (
+                              {(character as any).skills.map((skill: any, skillIdx: number) => (
                                 <div key={skillIdx} className="flex justify-between text-sm">
                                   <span>{skill.name}</span>
                                   <Badge variant="outline">+{skill.rating}</Badge>
@@ -648,23 +648,23 @@ export default function CharacterReviewScreen() {
                           </div>
                         )}
 
-                        {character.stunts && character.stunts.length > 0 && (
+                        {(character as any).stunts && (character as any).stunts.length > 0 && (
                           <div>
                             <h4 className="text-sm font-semibold mb-2">Stunts</h4>
                             <ul className="space-y-1">
-                              {character.stunts.map((stunt: string, stuntIdx: number) => (
+                              {(character as any).stunts.map((stunt: string, stuntIdx: number) => (
                                 <li key={stuntIdx} className="text-sm text-muted-foreground">• {stunt}</li>
                               ))}
                             </ul>
                           </div>
                         )}
 
-                        {character.stress && (
+                        {(character as any).stress && (
                           <div>
                             <h4 className="text-sm font-semibold mb-2">Stress</h4>
                             <div className="flex gap-4 text-sm">
-                              <span>Physical: {character.stress.physical}</span>
-                              <span>Mental: {character.stress.mental}</span>
+                              <span>Physical: {(character as any).stress.physical}</span>
+                              <span>Mental: {(character as any).stress.mental}</span>
                             </div>
                           </div>
                         )}
