@@ -177,7 +177,7 @@ export function CharacterSeedDialog({ open, onOpenChange, slot, gameId, genre, o
     try {
       // Claim slot if not already claimed
       if (slot.status === 'empty') {
-        await claimPartySlot(slot.id);
+        await claimPartySlot(slot.id, gameId);
       }
 
       // Prepare seed data

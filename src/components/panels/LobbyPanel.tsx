@@ -111,7 +111,13 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
   };
 
   const handleSlotClick = (slot: any) => {
-    if (slot.status === 'empty' || slot.claimed_by === userMember?.user_id) {
+    // Only allow claiming empty slots if user doesn't already have one claimed
+    const userHasClaimedSlot = slots.some(s => s.claimed_by === userMember?.user_id);
+    
+    if (slot.status === 'empty' && !userHasClaimedSlot) {
+      setSelectedSlot(slot);
+      setShowCharacterSeed(true);
+    } else if (slot.claimed_by === userMember?.user_id) {
       setSelectedSlot(slot);
       setShowCharacterSeed(true);
     }
@@ -177,14 +183,18 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
           <div>
             <h2 className="text-lg font-semibold mb-3">Party</h2>
             <div className="grid gap-3">
-              {slots.map((slot) => (
-                <PartySlotCard
-                  key={slot.id}
-                  slot={slot}
-                  onClick={() => handleSlotClick(slot)}
-                  isHost={isHost}
-                />
-              ))}
+              {slots.map((slot) => {
+                const userHasClaimedSlot = slots.some(s => s.claimed_by === userMember?.user_id);
+                return (
+                  <PartySlotCard
+                    key={slot.id}
+                    slot={slot}
+                    onClick={() => handleSlotClick(slot)}
+                    isHost={isHost}
+                    userHasClaimedSlot={userHasClaimedSlot}
+                  />
+                );
+              })}
             </div>
           </div>
         </div>

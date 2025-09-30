@@ -10,9 +10,10 @@ interface PartySlotCardProps {
   isHost: boolean;
   canDelete?: boolean;
   onDelete?: () => void;
+  userHasClaimedSlot?: boolean;
 }
 
-export function PartySlotCard({ slot, onClick, isHost, canDelete, onDelete }: PartySlotCardProps) {
+export function PartySlotCard({ slot, onClick, isHost, canDelete, onDelete, userHasClaimedSlot }: PartySlotCardProps) {
   const getSlotIcon = () => {
     switch (slot.status) {
       case 'empty':
@@ -69,6 +70,7 @@ export function PartySlotCard({ slot, onClick, isHost, canDelete, onDelete }: Pa
   };
 
   const isClickable = () => {
+    if (slot.status === 'empty' && userHasClaimedSlot) return false;
     return slot.status === 'empty' || 
            (slot.status === 'reserved' && slot.claimed_by) ||
            (slot.status === 'ready' && slot.claimed_by);
@@ -149,13 +151,15 @@ export function PartySlotCard({ slot, onClick, isHost, canDelete, onDelete }: Pa
           <Button 
             variant="ghost" 
             className="w-full mt-2"
+            disabled={userHasClaimedSlot}
             onClick={(e) => {
               e.stopPropagation();
-              onClick();
+              if (!userHasClaimedSlot) onClick();
             }}
+            title={userHasClaimedSlot ? "You already have a claimed slot" : "Claim this slot"}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Claim Slot
+            {userHasClaimedSlot ? "Already Claimed" : "Claim Slot"}
           </Button>
         )}
         

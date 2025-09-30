@@ -194,11 +194,26 @@ export async function getPartySlots(gameId: string) {
 }
 
 // Claim a party slot
-export async function claimPartySlot(slotId: string): Promise<void> {
+export async function claimPartySlot(slotId: string, gameId: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
     throw new Error('User must be authenticated to claim slot');
+  }
+
+  // Check if user already has a claimed slot in this game
+  const { data: existingSlots, error: checkError } = await supabase
+    .from('party_slots')
+    .select('id')
+    .eq('game_id', gameId)
+    .eq('claimed_by', user.id);
+
+  if (checkError) {
+    throw new Error(`Failed to check existing slots: ${checkError.message}`);
+  }
+
+  if (existingSlots && existingSlots.length > 0) {
+    throw new Error('You have already claimed a slot in this game');
   }
 
   const { error } = await supabase
