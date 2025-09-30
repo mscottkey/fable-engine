@@ -32,9 +32,33 @@ export function Dashboard({ user }: DashboardProps) {
     navigate(`/lobby/${gameId}`);
   };
 
-  const handleSelectGame = (gameId: string) => {
-    setCurrentGameId(gameId);
-    setState('game');
+  const handleSelectGame = async (gameId: string) => {
+    try {
+      // Fetch the game to check its status
+      const { data: game, error } = await supabase
+        .from('games')
+        .select('id, status')
+        .eq('id', gameId)
+        .single();
+
+      if (error || !game) {
+        console.error('Failed to fetch game:', error);
+        return;
+      }
+
+      setCurrentGameId(gameId);
+      
+      // Route based on game status
+      if (game.status === 'lobby') {
+        // Navigate to lobby page for character onboarding
+        navigate(`/lobby/${gameId}`);
+      } else {
+        // For setup or playing status, go to game interface
+        setState('game');
+      }
+    } catch (error) {
+      console.error('Error selecting game:', error);
+    }
   };
 
   const handleResumeSeed = async (seedId: string) => {
