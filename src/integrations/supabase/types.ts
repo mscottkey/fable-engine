@@ -347,6 +347,8 @@ export type Database = {
           seed_id: string
           slot_id: string
           status: string
+          status_changed_at: string | null
+          updated_at: string | null
           user_id: string | null
           version: number
         }
@@ -358,6 +360,8 @@ export type Database = {
           seed_id: string
           slot_id: string
           status?: string
+          status_changed_at?: string | null
+          updated_at?: string | null
           user_id?: string | null
           version?: number
         }
@@ -369,6 +373,8 @@ export type Database = {
           seed_id?: string
           slot_id?: string
           status?: string
+          status_changed_at?: string | null
+          updated_at?: string | null
           user_id?: string | null
           version?: number
         }
@@ -476,6 +482,9 @@ export type Database = {
           party_size: number | null
           seed_id: string
           status: string
+          status_changed_at: string | null
+          status_changed_by: string | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
@@ -487,6 +496,9 @@ export type Database = {
           party_size?: number | null
           seed_id: string
           status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
@@ -498,6 +510,9 @@ export type Database = {
           party_size?: number | null
           seed_id?: string
           status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -509,6 +524,80 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      generation_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          current_stage: string | null
+          error_message: string | null
+          game_id: string
+          id: string
+          job_type: string
+          progress: number | null
+          result: Json | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_stage?: string | null
+          error_message?: string | null
+          game_id: string
+          id?: string
+          job_type: string
+          progress?: number | null
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_stage?: string | null
+          error_message?: string | null
+          game_id?: string
+          id?: string
+          job_type?: string
+          progress?: number | null
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_jobs_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      idempotency_keys: {
+        Row: {
+          created_at: string
+          expires_at: string
+          key: string
+          result: Json
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          key: string
+          result: Json
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          key?: string
+          result?: Json
+        }
+        Relationships: []
       }
       model_pricing: {
         Row: {
@@ -549,6 +638,8 @@ export type Database = {
           index_in_party: number
           reserved_by: string | null
           status: string
+          status_changed_at: string | null
+          updated_at: string | null
         }
         Insert: {
           claimed_by?: string | null
@@ -558,6 +649,8 @@ export type Database = {
           index_in_party: number
           reserved_by?: string | null
           status?: string
+          status_changed_at?: string | null
+          updated_at?: string | null
         }
         Update: {
           claimed_by?: string | null
@@ -567,6 +660,8 @@ export type Database = {
           index_in_party?: number
           reserved_by?: string | null
           status?: string
+          status_changed_at?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -689,6 +784,28 @@ export type Database = {
       can_manage_party_slots: {
         Args: { _game_id: string; _user_id: string }
         Returns: boolean
+      }
+      can_transition_game_state: {
+        Args: { p_game_id: string; p_new_status: string }
+        Returns: {
+          can_transition: boolean
+          error_message: string
+        }[]
+      }
+      cleanup_expired_idempotency_keys: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      transition_game_state: {
+        Args: {
+          p_game_id: string
+          p_new_status: string
+          p_skip_validation?: boolean
+        }
+        Returns: {
+          error_message: string
+          success: boolean
+        }[]
       }
     }
     Enums: {
