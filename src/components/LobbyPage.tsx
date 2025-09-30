@@ -76,12 +76,12 @@ export function LobbyPage() {
         return;
       }
 
-      // Get game and membership - specify which foreign key to use
+      // Get game and membership
       const { data: gameData, error: gameError } = await supabase
         .from('games')
         .select(`
           *,
-          campaign_seeds!fk_games_seed_id (*)
+          campaign_seeds (*)
         `)
         .eq('id', gameId)
         .single();
