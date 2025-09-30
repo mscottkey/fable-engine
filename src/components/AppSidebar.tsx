@@ -68,7 +68,7 @@ export function AppSidebar({ user, onBackToAdventures, gameStarted }: AppSidebar
     <Sidebar className={open ? "w-72" : "w-[75px]"} collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4 bg-sidebar">
         <div className="flex items-center gap-3">
-          <div className={`${open ? "w-12 h-12" : "w-10 h-10"} rounded-lg flex items-center justify-center bg-sidebar-accent`}>
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-sidebar-accent">
             <img src={logoSvg} alt="RoleplAI GM Logo" className="w-full h-full object-contain" />
           </div>
           {open && (
