@@ -268,11 +268,11 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSee
                       <SidebarMenuButton
                         onClick={() => handleItemSelect(game)}
                         isActive={isActive}
-                        className={
+                        className={`${
                           isActive
                             ? "bg-sidebar-primary/10 text-sidebar-primary border-sidebar-primary/20"
                             : "text-sidebar-foreground hover:bg-sidebar-accent"
-                        }
+                        } h-auto min-h-[3rem] py-2`}
                         aria-label={`${statusInfo.label}: ${game.name}`}
                       >
                         <div className="flex items-center gap-2 min-w-0 flex-1">
