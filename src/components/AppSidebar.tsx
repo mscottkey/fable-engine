@@ -1,5 +1,5 @@
 import { User } from "@supabase/supabase-js";
-import { Home, Settings, LogOut, Dice6, Plus, Clock, RefreshCw, AlertCircle, CheckCircle, Loader2, Play, Pause, MoreVertical, Trash2 } from "lucide-react";
+import { Home, Settings, LogOut, Dice6, Plus, Clock, RefreshCw, AlertCircle, CheckCircle, Loader2, Play, Pause, MoreVertical, Trash2, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import logoSvg from "@/assets/logo.svg";
@@ -106,13 +106,34 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSee
 
   const getStatusInfo = (game: any) => {
     if (game.type === 'game') {
-      return {
-        icon: Play,
-        label: 'Playing',
-        color: 'text-accent',
-        bgColor: 'bg-accent/20',
-        description: 'Ready to play'
-      };
+      // Handle different game statuses
+      switch (game.status) {
+        case 'setup':
+          return {
+            icon: Settings,
+            label: 'Setup',
+            color: 'text-muted-foreground',
+            bgColor: 'bg-muted/40',
+            description: 'Setting up game'
+          };
+        case 'lobby':
+          return {
+            icon: Users,
+            label: 'Lobby',
+            color: 'text-blue-500',
+            bgColor: 'bg-blue-500/20',
+            description: 'Waiting for players'
+          };
+        case 'playing':
+        default:
+          return {
+            icon: Play,
+            label: 'Playing',
+            color: 'text-accent',
+            bgColor: 'bg-accent/20',
+            description: 'Game in progress'
+          };
+      }
     }
 
     switch (game.status) {
