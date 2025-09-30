@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,8 +26,16 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<any>(null);
   const [currentStage, setCurrentStage] = useState('preparing');
+  const hasStarted = useRef(false);
 
-  const generateCharacters = async () => {
+  const generateCharacters = useCallback(async () => {
+    // Prevent multiple simultaneous generations
+    if (hasStarted.current) {
+      console.log('Generation already started, skipping');
+      return;
+    }
+    
+    hasStarted.current = true;
     console.log('generateCharacters called, current status:', status);
     
     setStatus('generating');
@@ -82,8 +90,9 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
     } catch (err) {
       setStatus('error');
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      hasStarted.current = false; // Reset on error so retry can work
     }
-  };
+  }, [game.id, characterSeeds, storyOverview, onComplete]);
 
   useEffect(() => {
     console.log('useEffect triggered, starting character generation');
@@ -92,6 +101,7 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
   }, []); // Empty dependency array to run only once
 
   const retry = () => {
+    hasStarted.current = false; // Reset the flag
     generateCharacters();
   };
 
