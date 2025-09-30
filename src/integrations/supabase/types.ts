@@ -202,7 +202,7 @@ export type Database = {
           output_tokens: number
           provider: string
           seed_id: string
-          story_overview_id: string
+          story_overview_id: string | null
         }
         Insert: {
           cost_usd?: number
@@ -215,7 +215,7 @@ export type Database = {
           output_tokens?: number
           provider: string
           seed_id: string
-          story_overview_id: string
+          story_overview_id?: string | null
         }
         Update: {
           cost_usd?: number
@@ -228,7 +228,7 @@ export type Database = {
           output_tokens?: number
           provider?: string
           seed_id?: string
-          story_overview_id?: string
+          story_overview_id?: string | null
         }
         Relationships: [
           {

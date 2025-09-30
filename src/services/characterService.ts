@@ -149,7 +149,7 @@ export async function remixLineup(
 export async function saveCharacterLineup(
   gameId: string,
   seedId: string,
-  storyOverviewId: string,
+  storyOverviewId: string | null,
   lineup: CharacterLineup,
   metadata: {
     provider: string;

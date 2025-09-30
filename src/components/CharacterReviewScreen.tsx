@@ -328,7 +328,7 @@ export default function CharacterReviewScreen() {
       const lineupId = await saveCharacterLineup(
         gameId,
         game.seed_id,
-        storyOverview.id || game.seed_id, // Fallback to seed_id if story doesn't have id
+        null, // Story data is in campaign_seeds.story_overview_draft, not a separate table
         sanitizedLineup,
         {
           provider: 'lovable-ai',
