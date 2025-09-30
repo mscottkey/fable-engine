@@ -173,15 +173,20 @@ serve(async (req) => {
       });
     }
 
-    // Get user from auth header
+    // Create client with user auth context
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            Authorization: authHeader
+          }
+        }
+      }
     );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Invalid auth token' }), {
@@ -190,13 +195,12 @@ serve(async (req) => {
       });
     }
 
-    // Get campaign seed
+    // Get campaign seed - using maybeSingle to avoid throwing on not found
     const { data: seed, error: seedError } = await supabase
       .from('campaign_seeds')
       .select('*')
       .eq('id', seedId)
-      .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (seedError || !seed) {
       console.error('Seed fetch error:', seedError);
