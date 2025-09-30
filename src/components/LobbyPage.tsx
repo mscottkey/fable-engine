@@ -159,25 +159,22 @@ export function LobbyPage() {
     }
   };
 
+  // Use state transitions
   const handleLockParty = async () => {
-    if (!gameId) return;
-    
     try {
-      await lockParty(gameId);
-      toast({
-        title: "Party Locked!",
-        description: "Transitioning to character generation...",
-      });
+      await transitionGameState(gameId, 'characters');
       navigate(`/game/${gameId}/build-characters`);
-    } catch (error: any) {
-      toast({
-        title: "Failed to Lock Party",
-        description: error.message,
-        variant: "destructive",
-      });
+    } catch (error) {
+      if (error instanceof InvalidStateTransitionError) {
+        toast({
+          title: "Cannot Lock Party",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
     }
   };
-
+    
   const handleAddSlot = async () => {
     if (!gameId) return;
     
