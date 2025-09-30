@@ -658,79 +658,104 @@ export default function CharacterReviewScreen() {
                           <p className="text-sm text-muted-foreground">{character.background}</p>
                         </div>
 
-                        {character.personalityTraits && character.personalityTraits.length > 0 && (
+                        {character.aspects && (
                           <div>
-                            <h4 className="text-sm font-semibold mb-2">Personality Traits</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {character.personalityTraits.map((trait, idx) => (
-                                <Badge key={idx} variant="secondary">{trait}</Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {character.motivations && character.motivations.length > 0 && (
-                          <div>
-                            <h4 className="text-sm font-semibold mb-2">Motivations</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {character.motivations.map((motivation, idx) => (
-                                <Badge key={idx} variant="outline">{motivation}</Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {character.flaws && character.flaws.length > 0 && (
-                          <div>
-                            <h4 className="text-sm font-semibold mb-2">Flaws</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {character.flaws.map((flaw, idx) => (
-                                <Badge key={idx} variant="destructive">{flaw}</Badge>
-                              ))}
+                            <h4 className="text-sm font-semibold mb-2">Aspects</h4>
+                            <div className="space-y-2">
+                              <div>
+                                <span className="text-xs font-medium text-muted-foreground">High Concept:</span>
+                                <p className="text-sm">{character.aspects.highConcept}</p>
+                              </div>
+                              <div>
+                                <span className="text-xs font-medium text-muted-foreground">Trouble:</span>
+                                <p className="text-sm">{character.aspects.trouble}</p>
+                              </div>
+                              <div>
+                                <span className="text-xs font-medium text-muted-foreground">Aspect 3:</span>
+                                <p className="text-sm">{character.aspects.aspect3}</p>
+                              </div>
+                              <div>
+                                <span className="text-xs font-medium text-muted-foreground">Aspect 4:</span>
+                                <p className="text-sm">{character.aspects.aspect4}</p>
+                              </div>
+                              <div>
+                                <span className="text-xs font-medium text-muted-foreground">Aspect 5:</span>
+                                <p className="text-sm">{character.aspects.aspect5}</p>
+                              </div>
                             </div>
                           </div>
                         )}
                       </TabsContent>
 
                       <TabsContent value="mechanics" className="space-y-4">
-                        <div>
-                          <h4 className="text-sm font-semibold mb-2">Roles</h4>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">Mechanical:</span>
-                              <Badge>{character.mechanicalRole}</Badge>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">Social:</span>
-                              <Badge>{character.socialRole}</Badge>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">Exploration:</span>
-                              <Badge>{character.explorationRole}</Badge>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <h4 className="text-sm font-semibold mb-2">Archetypes</h4>
-                          <div className="flex gap-2">
-                            <Badge variant="secondary">{character.primaryArchetype}</Badge>
-                            {character.secondaryArchetype && (
-                              <Badge variant="outline">{character.secondaryArchetype}</Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        {character.abilities && character.abilities.length > 0 && (
+                        {character.skills && character.skills.length > 0 && (
                           <div>
-                            <h4 className="text-sm font-semibold mb-2">Abilities</h4>
+                            <h4 className="text-sm font-semibold mb-2">Skills</h4>
+                            <div className="space-y-1">
+                              {character.skills
+                                .sort((a, b) => b.rating - a.rating)
+                                .map((skill, idx) => (
+                                  <div key={idx} className="flex items-center justify-between text-sm">
+                                    <span>{skill.name}</span>
+                                    <Badge variant={skill.rating >= 3 ? "default" : "secondary"}>
+                                      +{skill.rating}
+                                    </Badge>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {character.stunts && character.stunts.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-2">Stunts</h4>
                             <ul className="space-y-1">
-                              {character.abilities.map((ability, idx) => (
-                                <li key={idx} className="text-sm text-muted-foreground">• {ability}</li>
+                              {character.stunts.map((stunt, idx) => (
+                                <li key={idx} className="text-sm text-muted-foreground">• {stunt}</li>
                               ))}
                             </ul>
                           </div>
                         )}
+
+                        {character.stress && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-2">Stress Tracks</h4>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">Physical:</span>
+                                <div className="flex gap-1">
+                                  {Array.from({ length: character.stress.physical }).map((_, i) => (
+                                    <div key={i} className="w-4 h-4 border-2 border-primary rounded" />
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">Mental:</span>
+                                <div className="flex gap-1">
+                                  {Array.from({ length: character.stress.mental }).map((_, i) => (
+                                    <div key={i} className="w-4 h-4 border-2 border-primary rounded" />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {character.consequences && character.consequences.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-2">Consequences</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {character.consequences.map((consequence, idx) => (
+                                <Badge key={idx} variant="outline">{consequence}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div>
+                          <h4 className="text-sm font-semibold mb-2">Refresh</h4>
+                          <Badge>{character.refresh || 3} Fate Points</Badge>
+                        </div>
 
                         {character.equipment && character.equipment.length > 0 && (
                           <div>

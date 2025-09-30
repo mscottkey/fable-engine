@@ -17,25 +17,40 @@ export interface CharacterSeed {
   keepName?: boolean;
 }
 
+export interface FateAspects {
+  highConcept: string;
+  trouble: string;
+  aspect3: string;
+  aspect4: string;
+  aspect5: string;
+}
+
+export interface FateSkill {
+  name: string;
+  rating: number; // 0-4
+}
+
+export interface FateStress {
+  physical: number;
+  mental: number;
+}
+
 export interface Character {
   name: string;
   pronouns: string;
   concept: string;
   background: string;
-  mechanicalRole: string;
-  socialRole: string;
-  explorationRole: string;
-  primaryArchetype: string;
-  secondaryArchetype?: string;
-  personalityTraits: string[];
-  motivations: string[];
-  flaws: string[];
+  aspects: FateAspects;
+  skills: FateSkill[];
+  stunts: string[];
+  stress: FateStress;
+  consequences: string[];
+  refresh: number;
   connections: {
     locations: string[];
     hooks: string[];
   };
   equipment: string[];
-  abilities: string[];
 }
 
 export interface CharacterLineup {
