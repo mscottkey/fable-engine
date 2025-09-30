@@ -9,6 +9,7 @@ import { JoinGamePage } from "@/components/JoinGamePage";
 import { LobbyPage } from "@/components/LobbyPage";
 import { GameInterface } from "@/components/GameInterface";
 import CharacterBuildScreen from "@/components/CharacterBuildScreen";
+import CharacterReviewScreen from "@/components/CharacterReviewScreen";
 import { useParams } from "react-router-dom";
 
 function GameInterfaceWrapper() {
@@ -57,6 +58,7 @@ function App() {
         <Route path="/join/:gameId" element={<JoinGamePage />} />
         <Route path="/lobby/:gameId" element={user ? <LobbyPage /> : <Navigate to="/auth" />} />
         <Route path="/game/:gameId/build-characters" element={user ? <CharacterBuildScreen /> : <Navigate to="/auth" />} />
+        <Route path="/game/:gameId/characters-review" element={user ? <CharacterReviewScreen /> : <Navigate to="/auth" />} />
         <Route path="/game/:gameId" element={user ? <GameInterfaceWrapper /> : <Navigate to="/auth" />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
