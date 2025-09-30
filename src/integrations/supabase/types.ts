@@ -111,7 +111,7 @@ export type Database = {
           difficulty_desc: string
           difficulty_label: Database["public"]["Enums"]["difficulty_label"]
           generation_attempts: number | null
-          generation_status: string | null
+          generation_status: string
           genre: Database["public"]["Enums"]["genre"]
           hooks: Json
           id: string
@@ -139,7 +139,7 @@ export type Database = {
           difficulty_desc: string
           difficulty_label: Database["public"]["Enums"]["difficulty_label"]
           generation_attempts?: number | null
-          generation_status?: string | null
+          generation_status?: string
           genre: Database["public"]["Enums"]["genre"]
           hooks: Json
           id?: string
@@ -167,7 +167,7 @@ export type Database = {
           difficulty_desc?: string
           difficulty_label?: Database["public"]["Enums"]["difficulty_label"]
           generation_attempts?: number | null
-          generation_status?: string | null
+          generation_status?: string
           genre?: Database["public"]["Enums"]["genre"]
           hooks?: Json
           id?: string
