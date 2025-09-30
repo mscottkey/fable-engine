@@ -1,7 +1,6 @@
 import { useDeviceShell } from '@/lib/useDeviceShell';
 import { WebShell, MobileShell } from '@/components/shells';
 import { ChatPanel, StoryboardPanel, LobbyPanel } from '@/components/panels';
-import { GameHeader } from '@/components/GameHeader';
 
 interface GameInterfaceProps {
   gameId: string;
@@ -15,12 +14,9 @@ export function GameInterface({ gameId }: GameInterfaceProps) {
     console.log('FAB action triggered');
   };
 
-  const header = <GameHeader gameId={gameId} />;
-
   if (shell === 'desktop') {
     return (
       <WebShell
-        header={header}
         left={<ChatPanel gameId={gameId} />}
         right={<StoryboardPanel gameId={gameId} />}
       />
@@ -29,7 +25,6 @@ export function GameInterface({ gameId }: GameInterfaceProps) {
 
   return (
     <MobileShell
-      header={header}
       tabs={{
         chat: <ChatPanel gameId={gameId} />,
         board: <StoryboardPanel gameId={gameId} />,
