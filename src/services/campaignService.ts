@@ -67,6 +67,42 @@ export async function createGame(seedId: string, name: string, characters: Chara
   return data.id;
 }
 
+export async function softDeleteGame(gameId: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('User must be authenticated to delete game');
+  }
+
+  const { error } = await supabase
+    .from('games')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', gameId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    throw new Error(`Failed to delete game: ${error.message}`);
+  }
+}
+
+export async function softDeleteCampaignSeed(seedId: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('User must be authenticated to delete campaign seed');
+  }
+
+  const { error } = await supabase
+    .from('campaign_seeds')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', seedId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    throw new Error(`Failed to delete campaign seed: ${error.message}`);
+  }
+}
+
 export async function getUserGames() {
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -74,7 +110,7 @@ export async function getUserGames() {
     throw new Error('User must be authenticated to fetch games');
   }
 
-  // Get completed games
+  // Get completed games (excluding soft-deleted ones)
   const { data: games, error: gamesError } = await supabase
     .from('games')
     .select(`
@@ -82,17 +118,19 @@ export async function getUserGames() {
       campaign_seeds (*)
     `)
     .eq('user_id', user.id)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (gamesError) {
     throw new Error(`Failed to fetch games: ${gamesError.message}`);
   }
 
-  // Get campaign seeds that haven't become full games yet
+  // Get campaign seeds that haven't become full games yet (excluding soft-deleted ones)
   const { data: seeds, error: seedsError } = await supabase
     .from('campaign_seeds')
     .select('*')
     .eq('user_id', user.id)
+    .is('deleted_at', null)
     .not('generation_status', 'eq', 'story_approved')
     .order('created_at', { ascending: false });
 

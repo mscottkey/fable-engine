@@ -1,10 +1,10 @@
 import { User } from "@supabase/supabase-js";
-import { Home, Settings, LogOut, Dice6, Plus, Clock, RefreshCw, AlertCircle, CheckCircle, Loader2, Play, Pause } from "lucide-react";
+import { Home, Settings, LogOut, Dice6, Plus, Clock, RefreshCw, AlertCircle, CheckCircle, Loader2, Play, Pause, MoreVertical, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import logoSvg from "@/assets/logo.svg";
 import { useToast } from "@/hooks/use-toast";
-import { getUserGames } from "@/services/campaignService";
+import { getUserGames, softDeleteGame, softDeleteCampaignSeed } from "@/services/campaignService";
 import {
   Sidebar,
   SidebarContent,
@@ -20,6 +20,23 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AppSidebarProps {
   user: User;
@@ -154,6 +171,31 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSee
     }
   };
 
+  const handleDeleteItem = async (game: any) => {
+    try {
+      if (game.type === 'game') {
+        await softDeleteGame(game.id);
+      } else {
+        await softDeleteCampaignSeed(game.id);
+      }
+      
+      // Refresh the games list
+      await loadGames();
+      
+      toast({
+        title: "Deleted successfully",
+        description: `${game.type === 'game' ? 'Game' : 'Campaign'} "${game.name}" has been moved to trash.`,
+      });
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete item. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Sidebar
       collapsible="icon"
@@ -264,36 +306,79 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSee
                   const isActive = game.type === 'game' ? currentGameId === game.id : false;
                   
                   return (
-                    <SidebarMenuItem key={`${game.type}-${game.id}`}>
-                      <SidebarMenuButton
-                        onClick={() => handleItemSelect(game)}
-                        isActive={isActive}
-                        className={`${
-                          isActive
-                            ? "bg-sidebar-primary/10 text-sidebar-primary border-sidebar-primary/20"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent"
-                        } h-auto min-h-[3rem] py-2`}
-                        aria-label={`${statusInfo.label}: ${game.name}`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          <StatusIcon className={`h-4 w-4 shrink-0 ${statusInfo.color} ${statusInfo.animate || ''}`} />
-                          {open && (
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="truncate font-medium text-sm">{game.name}</span>
-                                <span className={`text-xs px-2 py-1 rounded-md font-medium ${statusInfo.color} ${statusInfo.bgColor} border border-current/20`}>
-                                  {statusInfo.label}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-sidebar-foreground/60 mt-0.5">
-                                <Clock className="h-3 w-3" />
-                                {formatGameDate(game.created_at)}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
+                     <SidebarMenuItem key={`${game.type}-${game.id}`}>
+                       <div className="flex items-center gap-1 group">
+                         <SidebarMenuButton
+                           onClick={() => handleItemSelect(game)}
+                           isActive={isActive}
+                           className={`${
+                             isActive
+                               ? "bg-sidebar-primary/10 text-sidebar-primary border-sidebar-primary/20"
+                               : "text-sidebar-foreground hover:bg-sidebar-accent"
+                           } h-auto min-h-[3rem] py-2 flex-1`}
+                           aria-label={`${statusInfo.label}: ${game.name}`}
+                         >
+                           <div className="flex items-center gap-2 min-w-0 flex-1">
+                             <StatusIcon className={`h-4 w-4 shrink-0 ${statusInfo.color} ${statusInfo.animate || ''}`} />
+                             {open && (
+                               <div className="min-w-0 flex-1">
+                                 <div className="flex items-center justify-between gap-2">
+                                   <span className="truncate font-medium text-sm">{game.name}</span>
+                                   <span className={`text-xs px-2 py-1 rounded-md font-medium ${statusInfo.color} ${statusInfo.bgColor} border border-current/20`}>
+                                     {statusInfo.label}
+                                   </span>
+                                 </div>
+                                 <div className="flex items-center gap-1 text-xs text-sidebar-foreground/60 mt-0.5">
+                                   <Clock className="h-3 w-3" />
+                                   {formatGameDate(game.created_at)}
+                                 </div>
+                               </div>
+                             )}
+                           </div>
+                         </SidebarMenuButton>
+                         
+                         {open && (
+                           <DropdownMenu>
+                             <DropdownMenuTrigger asChild>
+                               <Button
+                                 variant="ghost"
+                                 size="sm"
+                                 className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-sidebar-accent shrink-0"
+                               >
+                                 <MoreVertical className="h-4 w-4" />
+                               </Button>
+                             </DropdownMenuTrigger>
+                             <DropdownMenuContent align="end">
+                               <AlertDialog>
+                                 <AlertDialogTrigger asChild>
+                                   <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                     <Trash2 className="h-4 w-4 mr-2" />
+                                     Delete
+                                   </DropdownMenuItem>
+                                 </AlertDialogTrigger>
+                                 <AlertDialogContent>
+                                   <AlertDialogHeader>
+                                     <AlertDialogTitle>Delete {game.type === 'game' ? 'Game' : 'Campaign'}?</AlertDialogTitle>
+                                     <AlertDialogDescription>
+                                       Are you sure you want to delete "{game.name}"? This action will move it to trash where it can be recovered later.
+                                     </AlertDialogDescription>
+                                   </AlertDialogHeader>
+                                   <AlertDialogFooter>
+                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                     <AlertDialogAction
+                                       onClick={() => handleDeleteItem(game)}
+                                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                     >
+                                       Delete
+                                     </AlertDialogAction>
+                                   </AlertDialogFooter>
+                                 </AlertDialogContent>
+                               </AlertDialog>
+                             </DropdownMenuContent>
+                           </DropdownMenu>
+                         )}
+                       </div>
+                     </SidebarMenuItem>
                   );
                 })
               )}

@@ -107,6 +107,7 @@ export type Database = {
         Row: {
           constraints: Json | null
           created_at: string
+          deleted_at: string | null
           difficulty_desc: string
           difficulty_label: Database["public"]["Enums"]["difficulty_label"]
           generation_attempts: number | null
@@ -134,6 +135,7 @@ export type Database = {
         Insert: {
           constraints?: Json | null
           created_at?: string
+          deleted_at?: string | null
           difficulty_desc: string
           difficulty_label: Database["public"]["Enums"]["difficulty_label"]
           generation_attempts?: number | null
@@ -161,6 +163,7 @@ export type Database = {
         Update: {
           constraints?: Json | null
           created_at?: string
+          deleted_at?: string | null
           difficulty_desc?: string
           difficulty_label?: Database["public"]["Enums"]["difficulty_label"]
           generation_attempts?: number | null
@@ -190,6 +193,7 @@ export type Database = {
       games: {
         Row: {
           created_at: string
+          deleted_at: string | null
           id: string
           name: string
           seed_id: string
@@ -198,6 +202,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name: string
           seed_id: string
@@ -206,6 +211,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           id?: string
           name?: string
           seed_id?: string
