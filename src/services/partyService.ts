@@ -1,5 +1,65 @@
 import { supabase } from '@/integrations/supabase/client';
 
+// Add a new party slot
+export async function addPartySlot(gameId: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('User must be authenticated');
+  }
+
+  // Get current slot count
+  const { data: slots, error: slotsError } = await supabase
+    .from('party_slots')
+    .select('index_in_party')
+    .eq('game_id', gameId)
+    .order('index_in_party', { ascending: false })
+    .limit(1);
+
+  if (slotsError) {
+    throw new Error(`Failed to get slot count: ${slotsError.message}`);
+  }
+
+  const nextIndex = slots?.length > 0 ? slots[0].index_in_party + 1 : 0;
+
+  const { error } = await supabase
+    .from('party_slots')
+    .insert({
+      game_id: gameId,
+      index_in_party: nextIndex,
+      status: 'empty'
+    });
+
+  if (error) {
+    throw new Error(`Failed to add slot: ${error.message}`);
+  }
+}
+
+// Delete a party slot
+export async function deletePartySlot(slotId: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('User must be authenticated');
+  }
+
+  // Delete any character seeds associated with this slot first
+  await supabase
+    .from('character_seeds')
+    .delete()
+    .eq('slot_id', slotId);
+
+  // Delete the slot
+  const { error } = await supabase
+    .from('party_slots')
+    .delete()
+    .eq('id', slotId);
+
+  if (error) {
+    throw new Error(`Failed to delete slot: ${error.message}`);
+  }
+}
+
 // Generate a random invite code (6-8 uppercase alphanumeric)
 export function generateInviteCode(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

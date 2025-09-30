@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { getPartySlots, lockParty, updatePartySize, createGameInvite } from '@/services/partyService';
+import { getPartySlots, lockParty, createGameInvite, addPartySlot, deletePartySlot } from '@/services/partyService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PartySlotCard } from '@/components/PartySlotCard';
 import { HostControls } from '@/components/HostControls';
 import { CharacterSeedDialog } from '@/components/CharacterSeedDialog';
-import { Loader2, Users, Lock, CheckCircle } from 'lucide-react';
+import { Loader2, Users, Lock, CheckCircle, Plus, Trash2 } from 'lucide-react';
 
 export function LobbyPage() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -178,19 +178,38 @@ export function LobbyPage() {
     }
   };
 
-  const handlePartySizeChange = async (newSize: number) => {
+  const handleAddSlot = async () => {
     if (!gameId) return;
     
     try {
-      await updatePartySize(gameId, newSize);
+      await addPartySlot(gameId);
       await loadPartySlots();
       toast({
-        title: "Party Size Updated",
-        description: `Party size set to ${newSize} players.`,
+        title: "Slot Added",
+        description: "A new player slot has been added to the party.",
       });
     } catch (error: any) {
       toast({
-        title: "Failed to Update Size",
+        title: "Failed to Add Slot",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteSlot = async (slotId: string) => {
+    if (!gameId) return;
+    
+    try {
+      await deletePartySlot(slotId);
+      await loadPartySlots();
+      toast({
+        title: "Slot Removed",
+        description: "The player slot has been removed from the party.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to Remove Slot",
         description: error.message,
         variant: "destructive",
       });
@@ -280,8 +299,6 @@ export function LobbyPage() {
           <HostControls
             gameId={gameId!}
             inviteCode={inviteCode}
-            partySize={getTotalSlots()}
-            onPartySizeChange={handlePartySizeChange}
           />
         )}
 
@@ -293,8 +310,26 @@ export function LobbyPage() {
               slot={slot}
               onClick={() => handleSlotClick(slot)}
               isHost={userMember?.role === 'host'}
+              canDelete={userMember?.role === 'host' && slots.length > 1 && !game.party_locked}
+              onDelete={() => handleDeleteSlot(slot.id)}
             />
           ))}
+          
+          {/* Add Slot Card */}
+          {userMember?.role === 'host' && !game.party_locked && slots.length < 8 && (
+            <Card className="transition-all duration-200 cursor-pointer hover:shadow-md hover:scale-105 border-dashed border-2">
+              <CardContent className="flex flex-col items-center justify-center h-full min-h-[200px] p-6">
+                <Button
+                  variant="ghost"
+                  onClick={handleAddSlot}
+                  className="flex flex-col items-center gap-2 h-auto p-4"
+                >
+                  <Plus className="h-8 w-8 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Add Player</span>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Lock Party Button */}

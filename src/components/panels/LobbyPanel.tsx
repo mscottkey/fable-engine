@@ -166,8 +166,6 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
             <HostControls 
               gameId={gameId} 
               inviteCode={inviteCode}
-              partySize={game.party_size || 4}
-              onPartySizeChange={() => loadPartySlots()}
             />
           )}
         </div>

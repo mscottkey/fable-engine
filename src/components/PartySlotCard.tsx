@@ -2,15 +2,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Plus, CheckCircle, Clock, Lock } from 'lucide-react';
+import { User, Plus, CheckCircle, Clock, Lock, Trash2 } from 'lucide-react';
 
 interface PartySlotCardProps {
   slot: any;
   onClick: () => void;
   isHost: boolean;
+  canDelete?: boolean;
+  onDelete?: () => void;
 }
 
-export function PartySlotCard({ slot, onClick, isHost }: PartySlotCardProps) {
+export function PartySlotCard({ slot, onClick, isHost, canDelete, onDelete }: PartySlotCardProps) {
   const getSlotIcon = () => {
     switch (slot.status) {
       case 'empty':
@@ -91,10 +93,25 @@ export function PartySlotCard({ slot, onClick, isHost }: PartySlotCardProps) {
             </Avatar>
             <span className="truncate">{getDisplayName()}</span>
           </div>
-          <Badge variant={getSlotVariant()} className="flex items-center gap-1 text-xs">
-            {getSlotIcon()}
-            <span className="capitalize">{slot.status}</span>
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={getSlotVariant()} className="flex items-center gap-1 text-xs">
+              {getSlotIcon()}
+              <span className="capitalize">{slot.status}</span>
+            </Badge>
+            {canDelete && onDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
         </CardTitle>
       </CardHeader>
       

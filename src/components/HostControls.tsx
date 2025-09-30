@@ -11,14 +11,11 @@ import { Share2, QrCode, Copy, Users, Link as LinkIcon } from 'lucide-react';
 interface HostControlsProps {
   gameId: string;
   inviteCode: string;
-  partySize: number;
-  onPartySizeChange: (newSize: number) => void;
 }
 
-export function HostControls({ gameId, inviteCode, partySize, onPartySizeChange }: HostControlsProps) {
+export function HostControls({ gameId, inviteCode }: HostControlsProps) {
   const { toast } = useToast();
   const [showQRCode, setShowQRCode] = useState(false);
-  const [newPartySize, setNewPartySize] = useState(partySize);
 
   const getInviteLink = () => {
     return `${window.location.origin}/join/${gameId}?code=${inviteCode}`;
@@ -56,11 +53,6 @@ export function HostControls({ gameId, inviteCode, partySize, onPartySizeChange 
     }
   };
 
-  const handlePartySizeSubmit = () => {
-    if (newPartySize >= 3 && newPartySize <= 6 && newPartySize !== partySize) {
-      onPartySizeChange(newPartySize);
-    }
-  };
 
   const generateQRCode = () => {
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(getInviteLink())}`;
@@ -75,40 +67,11 @@ export function HostControls({ gameId, inviteCode, partySize, onPartySizeChange 
           Host Controls
         </CardTitle>
         <CardDescription>
-          Manage your party and share invite codes
+          Invite players to your game
         </CardDescription>
       </CardHeader>
       
       <CardContent className="space-y-6">
-        {/* Party Size Control */}
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">Party Size</Label>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <Input
-                type="number"
-                min={3}
-                max={6}
-                value={newPartySize}
-                onChange={(e) => setNewPartySize(parseInt(e.target.value) || 3)}
-                className="w-20"
-              />
-            </div>
-            <Button 
-              onClick={handlePartySizeSubmit}
-              disabled={newPartySize === partySize || newPartySize < 3 || newPartySize > 6}
-              variant="outline"
-              size="sm"
-            >
-              Update
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Current: {partySize} players (3-6 allowed)
-          </p>
-        </div>
-
         {/* Invite Code Display */}
         <div className="space-y-3">
           <Label className="text-sm font-medium">Game Code</Label>
