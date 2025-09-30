@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { LandingPage } from "@/components/LandingPage";
 import { AuthPage } from "@/components/AuthPage";
 import { Dashboard } from "@/components/Dashboard";
+import { JoinGamePage } from "@/components/JoinGamePage";
+import { LobbyPage } from "@/components/LobbyPage";
 import { Toaster } from "@/components/ui/toaster";
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -22,7 +23,6 @@ function App() {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -40,29 +40,17 @@ function App() {
     );
   }
 
-  if (showAuth) {
-    return (
-      <>
-        <AuthPage onBack={() => setShowAuth(false)} />
-        <Toaster />
-      </>
-    );
-  }
-
-  if (user) {
-    return (
-      <>
-        <Dashboard user={user} />
-        <Toaster />
-      </>
-    );
-  }
-
   return (
-    <>
-      <LandingPage onShowAuth={() => setShowAuth(true)} />
+    <Router>
+      <Routes>
+        <Route path="/" element={user ? <Dashboard user={user} /> : <LandingPage onShowAuth={() => {}} />} />
+        <Route path="/auth" element={<AuthPage onBack={() => {}} />} />
+        <Route path="/join/:gameId" element={<JoinGamePage />} />
+        <Route path="/lobby/:gameId" element={user ? <LobbyPage /> : <Navigate to="/auth" />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
       <Toaster />
-    </>
+    </Router>
   );
 }
 

@@ -190,12 +190,168 @@ export type Database = {
         }
         Relationships: []
       }
+      character_seeds: {
+        Row: {
+          archetype_prefs: Json | null
+          complexity: string | null
+          concept: string | null
+          created_at: string
+          display_name: string | null
+          game_id: string
+          id: string
+          keep_name: boolean
+          mechanics_comfort: string | null
+          must_have: Json | null
+          no_thanks: Json | null
+          pronouns: string | null
+          role_tags_interest: Json | null
+          slot_id: string
+          timezone: string | null
+          tone_comfort: Json | null
+          tts_voice: string | null
+          updated_at: string
+          user_id: string
+          violence_comfort: string | null
+        }
+        Insert: {
+          archetype_prefs?: Json | null
+          complexity?: string | null
+          concept?: string | null
+          created_at?: string
+          display_name?: string | null
+          game_id: string
+          id?: string
+          keep_name?: boolean
+          mechanics_comfort?: string | null
+          must_have?: Json | null
+          no_thanks?: Json | null
+          pronouns?: string | null
+          role_tags_interest?: Json | null
+          slot_id: string
+          timezone?: string | null
+          tone_comfort?: Json | null
+          tts_voice?: string | null
+          updated_at?: string
+          user_id: string
+          violence_comfort?: string | null
+        }
+        Update: {
+          archetype_prefs?: Json | null
+          complexity?: string | null
+          concept?: string | null
+          created_at?: string
+          display_name?: string | null
+          game_id?: string
+          id?: string
+          keep_name?: boolean
+          mechanics_comfort?: string | null
+          must_have?: Json | null
+          no_thanks?: Json | null
+          pronouns?: string | null
+          role_tags_interest?: Json | null
+          slot_id?: string
+          timezone?: string | null
+          tone_comfort?: Json | null
+          tts_voice?: string | null
+          updated_at?: string
+          user_id?: string
+          violence_comfort?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_seeds_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_seeds_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "party_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_invites: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string | null
+          game_id: string
+          id: string
+          max_uses: number
+          uses: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string | null
+          game_id: string
+          id?: string
+          max_uses?: number
+          uses?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string | null
+          game_id?: string
+          id?: string
+          max_uses?: number
+          uses?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_invites_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_members: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_members_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       games: {
         Row: {
           created_at: string
           deleted_at: string | null
           id: string
           name: string
+          party_locked: boolean
+          party_size: number | null
           seed_id: string
           status: string
           user_id: string
@@ -205,6 +361,8 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           name: string
+          party_locked?: boolean
+          party_size?: number | null
           seed_id: string
           status?: string
           user_id: string
@@ -214,6 +372,8 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           name?: string
+          party_locked?: boolean
+          party_size?: number | null
           seed_id?: string
           status?: string
           user_id?: string
@@ -257,6 +417,44 @@ export type Database = {
           provider?: string
         }
         Relationships: []
+      }
+      party_slots: {
+        Row: {
+          claimed_by: string | null
+          created_at: string
+          game_id: string
+          id: string
+          index_in_party: number
+          reserved_by: string | null
+          status: string
+        }
+        Insert: {
+          claimed_by?: string | null
+          created_at?: string
+          game_id: string
+          id?: string
+          index_in_party: number
+          reserved_by?: string | null
+          status?: string
+        }
+        Update: {
+          claimed_by?: string | null
+          created_at?: string
+          game_id?: string
+          id?: string
+          index_in_party?: number
+          reserved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "party_slots_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
