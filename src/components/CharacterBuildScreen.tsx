@@ -38,7 +38,7 @@ export default function CharacterBuildScreen() {
       if (gameError) throw gameError;
       
       // Extract story overview from campaign seed's story_overview_draft
-      const storyOverviewData = gameData.campaign_seeds?.story_overview_draft;
+      const storyOverviewData = (gameData.campaign_seeds as any)?.story_overview_draft;
       if (!storyOverviewData) {
         throw new Error('No story overview found for this game');
       }

@@ -356,10 +356,19 @@ ADDITIONAL RULES
       });
     }
 
-    // Try to parse JSON
+    // Clean up potential markdown formatting and try to parse JSON
     let storyData;
+    let cleanContent = content;
+    
+    // Remove potential ```json and ``` wrapper if present
+    if (content.includes('```json')) {
+      cleanContent = content.replace(/```json\s*\n?/g, '').replace(/\n?\s*```/g, '');
+    } else if (content.includes('```')) {
+      cleanContent = content.replace(/```\s*\n?/g, '').replace(/\n?\s*```/g, '');
+    }
+    
     try {
-      storyData = JSON.parse(content);
+      storyData = JSON.parse(cleanContent);
     } catch (parseError) {
       console.error('JSON parse error:', parseError);
       
