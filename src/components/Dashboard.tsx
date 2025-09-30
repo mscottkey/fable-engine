@@ -1,3 +1,14 @@
+import { useState } from "react";
+import { User } from "@supabase/supabase-js";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
+import { AdventureStarter } from "@/components/AdventureStarter";
+import { GameInterface } from "@/components/GameInterface";
+
+interface DashboardProps {
+  user: User;
+}
+
 export function Dashboard({ user }: DashboardProps) {
   const [gameStarted, setGameStarted] = useState(false);
   const [currentGameId, setCurrentGameId] = useState<string | null>(null);
