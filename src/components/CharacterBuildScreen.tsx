@@ -83,9 +83,16 @@ export default function CharacterBuildScreen() {
   const handleGenerationComplete = useCallback((lineup: CharacterLineup, metrics: any) => {
     console.log('Generation complete, navigating to review');
     setGenerationComplete(true);
-    // Navigate to character review screen
-    navigate(`/game/${gameId}/characters-review`);
-  }, [navigate, gameId]);
+    // Navigate to character review screen with required state data
+    navigate(`/game/${gameId}/characters-review`, {
+      state: {
+        lineup,
+        storyOverview,
+        slots: characterSeeds,
+        metrics
+      }
+    });
+  }, [navigate, gameId, storyOverview, characterSeeds]);
 
   const handleBack = useCallback(() => {
     navigate(`/lobby/${gameId}`);
