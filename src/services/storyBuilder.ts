@@ -182,6 +182,8 @@ export async function saveStoryOverview(
     }
 
     // Add the user as the host to game members
+    console.log('Adding user as host to game:', { gameId: gameData.id, userId: userData.user.id });
+    
     const { error: memberError } = await supabase
       .from('game_members')
       .insert({
@@ -192,8 +194,11 @@ export async function saveStoryOverview(
 
     if (memberError) {
       console.error('Error adding host to game:', memberError);
-      return { success: false, error: 'Failed to add host to game' };
+      console.error('Failed to add user as host - Game ID:', gameData.id, 'User ID:', userData.user.id);
+      return { success: false, error: `Failed to add host to game: ${memberError.message}` };
     }
+
+    console.log('Successfully added user as host to game');
 
     // Create initial party slots for the default party size
     const slotsToCreate = Array.from({ length: 4 }, (_, index) => ({
