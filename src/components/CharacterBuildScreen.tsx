@@ -49,7 +49,7 @@ export default function CharacterBuildScreen() {
       // Load party slots with character seeds
       const slots = await getPartySlots(gameId!);
       const slotsWithSeeds = slots.filter(slot => 
-        slot.status === 'ready' && slot.character_seeds?.length > 0
+        (slot.status === 'ready' || slot.status === 'locked') && slot.character_seeds?.length > 0
       );
 
       if (slotsWithSeeds.length === 0) {
