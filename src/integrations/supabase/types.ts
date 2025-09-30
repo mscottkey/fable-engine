@@ -101,6 +101,20 @@ export type Database = {
             referencedRelation: "model_pricing"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_ai_events_game_id"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_ai_events_seed_id"
+            columns: ["seed_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_seeds"
+            referencedColumns: ["id"]
+          },
         ]
       }
       campaign_seeds: {
@@ -252,6 +266,27 @@ export type Database = {
             referencedRelation: "story_overviews"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_character_lineups_game_id"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_character_lineups_seed_id"
+            columns: ["seed_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_seeds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_character_lineups_story_overview_id"
+            columns: ["story_overview_id"]
+            isOneToOne: false
+            referencedRelation: "story_overviews"
+            referencedColumns: ["id"]
+          },
         ]
       }
       character_seeds: {
@@ -336,6 +371,20 @@ export type Database = {
             referencedRelation: "party_slots"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_character_seeds_game_id"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_character_seeds_slot_id"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "party_slots"
+            referencedColumns: ["id"]
+          },
         ]
       }
       characters: {
@@ -394,6 +443,27 @@ export type Database = {
             referencedRelation: "party_slots"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_characters_game_id"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_characters_seed_id"
+            columns: ["seed_id"]
+            isOneToOne: false
+            referencedRelation: "character_seeds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_characters_slot_id"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "party_slots"
+            referencedColumns: ["id"]
+          },
         ]
       }
       game_invites: {
@@ -426,6 +496,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_game_invites_game_id"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "game_invites_game_id_fkey"
             columns: ["game_id"]
             isOneToOne: false
@@ -457,6 +534,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_game_members_game_id"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "game_members_game_id_fkey"
             columns: ["game_id"]
@@ -501,6 +585,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_games_seed_id"
+            columns: ["seed_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_seeds"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "games_seed_id_fkey"
             columns: ["seed_id"]
@@ -569,6 +660,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_party_slots_game_id"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "party_slots_game_id_fkey"
             columns: ["game_id"]
@@ -675,7 +773,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_story_overviews_seed_id"
+            columns: ["seed_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_seeds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
