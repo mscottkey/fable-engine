@@ -29,8 +29,11 @@ export function Dashboard({ user }: DashboardProps) {
   };
 
   const handleStoryComplete = (gameId: string) => {
-    // Navigate to the lobby for character onboarding instead of directly to game
-    navigate(`/lobby/${gameId}`);
+    console.log('Story completed, navigating to game:', gameId);
+    // Add a small delay to ensure the database transaction is fully committed
+    setTimeout(() => {
+      navigate(`/lobby/${gameId}`);
+    }, 100);
   };
 
   const handleSelectGame = async (gameId: string) => {
