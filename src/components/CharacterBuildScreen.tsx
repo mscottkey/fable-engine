@@ -25,27 +25,26 @@ export default function CharacterBuildScreen() {
   const loadGameData = async () => {
     setIsLoading(true);
     try {
-      // Load game and story overview
+      // Load game and campaign seed with story overview
       const { data: gameData, error: gameError } = await supabase
         .from('games')
         .select(`
           *,
-          campaign_seeds (
-            *,
-            story_overviews (*)
-          )
+          campaign_seeds (*)
         `)
         .eq('id', gameId)
         .single();
 
       if (gameError) throw gameError;
       
-      if (!gameData.campaign_seeds?.story_overviews?.[0]) {
+      // Extract story overview from campaign seed's story_overview_draft
+      const storyOverviewData = gameData.campaign_seeds?.story_overview_draft;
+      if (!storyOverviewData) {
         throw new Error('No story overview found for this game');
       }
 
       setGame(gameData);
-      setStoryOverview(gameData.campaign_seeds.story_overviews[0]);
+      setStoryOverview(storyOverviewData);
 
       // Load party slots with character seeds
       const slots = await getPartySlots(gameId!);
