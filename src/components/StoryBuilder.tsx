@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface StoryBuilderProps {
   campaignSeed: CampaignSeed;
-  onComplete: (storyOverviewId: string) => void;
+  onComplete: (gameId: string) => void; // Changed from storyOverviewId to gameId
   onBack: () => void;
 }
 
@@ -79,8 +79,8 @@ export const StoryBuilder: React.FC<StoryBuilderProps> = ({
     setIsLoading(true);
     try {
       const response = await saveStoryOverview(campaignSeed.id, finalOverview, name);
-      if (response.success && response.id) {
-        onComplete(response.id);
+      if (response.success && response.id && response.gameId) {
+        onComplete(response.gameId); // Pass gameId instead of storyOverviewId
       } else {
         throw new Error(response.error || 'Failed to save story overview');
       }

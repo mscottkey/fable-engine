@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { User } from "@supabase/supabase-js";
+import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +16,7 @@ interface DashboardProps {
 type DashboardState = 'adventures' | 'story-builder' | 'game';
 
 export function Dashboard({ user }: DashboardProps) {
+  const navigate = useNavigate();
   const [state, setState] = useState<DashboardState>('adventures');
   const [currentGameId, setCurrentGameId] = useState<string | null>(null);
   const [campaignSeed, setCampaignSeed] = useState<CampaignSeed | null>(null);
@@ -25,12 +27,9 @@ export function Dashboard({ user }: DashboardProps) {
     setState('story-builder');
   };
 
-  const handleStoryComplete = (storyOverviewId: string) => {
-    // For now, we'll create a game with the story overview
-    // In the future, this might be a separate step
-    setCurrentGameId(storyOverviewId);
-    setState('game');
-    setSidebarKey(prev => prev + 1); // Refresh sidebar to show new game
+  const handleStoryComplete = (gameId: string) => {
+    // Navigate to the lobby for character onboarding instead of directly to game
+    navigate(`/lobby/${gameId}`);
   };
 
   const handleSelectGame = (gameId: string) => {

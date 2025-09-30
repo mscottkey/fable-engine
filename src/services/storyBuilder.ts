@@ -130,7 +130,7 @@ export async function saveStoryOverview(
   seedId: string,
   overview: StoryOverview,
   name: string
-): Promise<{ success: boolean; id?: string; error?: string }> {
+): Promise<{ success: boolean; id?: string; gameId?: string; error?: string }> {
   try {
     const { data, error } = await supabase
       .from('story_overviews')
@@ -158,7 +158,60 @@ export async function saveStoryOverview(
       .update({ generation_status: 'story_approved' })
       .eq('id', seedId);
 
-    return { success: true, id: data.id };
+    // Create a game for this approved story
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    const { data: gameData, error: gameError } = await supabase
+      .from('games')
+      .insert({
+        user_id: userData.user.id,
+        seed_id: seedId,
+        name: name, // Use the name parameter instead of finalOverview.name
+        status: 'lobby',
+        party_size: 4 // Default party size
+      })
+      .select()
+      .single();
+
+    if (gameError) {
+      console.error('Error creating game:', gameError);
+      return { success: false, error: 'Failed to create game' };
+    }
+
+    // Add the user as the host to game members
+    const { error: memberError } = await supabase
+      .from('game_members')
+      .insert({
+        game_id: gameData.id,
+        user_id: userData.user.id,
+        role: 'host'
+      });
+
+    if (memberError) {
+      console.error('Error adding host to game:', memberError);
+      return { success: false, error: 'Failed to add host to game' };
+    }
+
+    // Create initial party slots for the default party size
+    const slotsToCreate = Array.from({ length: 4 }, (_, index) => ({
+      game_id: gameData.id,
+      index_in_party: index,
+      status: 'empty'
+    }));
+
+    const { error: slotsError } = await supabase
+      .from('party_slots')
+      .insert(slotsToCreate);
+
+    if (slotsError) {
+      console.error('Error creating party slots:', slotsError);
+      return { success: false, error: 'Failed to create party slots' };
+    }
+
+    return { success: true, id: data.id, gameId: gameData.id };
   } catch (error) {
     console.error('Save story overview error:', error);
     return { 

@@ -12,7 +12,8 @@ import { useParams } from "react-router-dom";
 
 function GameInterfaceWrapper() {
   const { gameId } = useParams<{ gameId: string }>();
-  return <GameInterface gameId={gameId || ''} />;
+  if (!gameId) return <div>Game not found</div>;
+  return <GameInterface gameId={gameId} />;
 }
 import { Toaster } from "@/components/ui/toaster";
 
