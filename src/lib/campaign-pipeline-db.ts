@@ -1,7 +1,7 @@
 // File: src/lib/campaign-pipeline-db.ts
 // Database operations for Phases 3-6
 
-import { supabase } from '@/integrations/supabase/client';
+import { createClient } from '@/integrations/supabase/client';
 import type { 
   Phase3Output, 
   Phase4Output, 
@@ -27,6 +27,7 @@ export async function savePhase3Factions(
     cost: number;
   }
 ): Promise<{ success: boolean; id?: string; error?: string }> {
+  const supabase = createClient();
 
   try {
     const { data: result, error } = await supabase
@@ -60,6 +61,7 @@ export async function savePhase3Factions(
 export async function getLatestPhase3Factions(
   gameId: string
 ): Promise<{ success: boolean; data?: Phase3Output; factionsId?: string; error?: string }> {
+  const supabase = createClient();
 
   try {
     const { data: result, error } = await supabase
@@ -76,9 +78,9 @@ export async function getLatestPhase3Factions(
     return {
       success: true,
       data: {
-        factions: result.factions_json as any,
-        relationships: result.relationships as any,
-        fronts: result.fronts as string[],
+        factions: result.factions_json,
+        relationships: result.relationships,
+        fronts: result.fronts,
       },
       factionsId: result.id,
     };
@@ -101,6 +103,7 @@ export async function savePhase4Nodes(
     cost: number;
   }
 ): Promise<{ success: boolean; id?: string; error?: string }> {
+  const supabase = createClient();
 
   try {
     const { data: result, error } = await supabase
@@ -143,6 +146,7 @@ export async function savePhase5Arcs(
     cost: number;
   }
 ): Promise<{ success: boolean; id?: string; error?: string }> {
+  const supabase = createClient();
 
   try {
     const { data: result, error } = await supabase
@@ -185,6 +189,7 @@ export async function savePhase6Resolutions(
     cost: number;
   }
 ): Promise<{ success: boolean; id?: string; error?: string }> {
+  const supabase = createClient();
 
   try {
     const { data: result, error } = await supabase
@@ -223,6 +228,7 @@ export async function checkCampaignCompletion(gameId: string): Promise<{
   phase6: boolean;
   allComplete: boolean;
 }> {
+  const supabase = createClient();
 
   const [p3, p4, p5, p6] = await Promise.all([
     supabase.from('factions').select('id').eq('game_id', gameId).eq('status', 'approved').single(),

@@ -1,2 +1,5 @@
 // File: src/ai/flows/index.ts
-// Phase 3-6 flows are pending implementation
+export * from './phase3-factions';
+export * from './phase4-nodes';
+export * from './phase5-arcs';
+export * from './phase6-resolutions';
