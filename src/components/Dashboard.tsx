@@ -7,13 +7,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdventureStarter } from "@/components/AdventureStarter";
 import { GameInterface } from "@/components/GameInterface";
 import { StoryBuilder } from "@/components/StoryBuilder";
+import SettingsPage from "@/components/SettingsPage";
 import { CampaignSeed } from "@/types/database";
 
 interface DashboardProps {
   user: User;
 }
 
-type DashboardState = 'adventures' | 'story-builder' | 'game';
+type DashboardState = 'adventures' | 'story-builder' | 'game' | 'settings';
 
 export function Dashboard({ user }: DashboardProps) {
   const navigate = useNavigate();
@@ -88,6 +89,10 @@ export function Dashboard({ user }: DashboardProps) {
     setCampaignSeed(null);
   };
 
+  const handleOpenSettings = () => {
+    setState('settings');
+  };
+
   return (
     <SidebarProvider>
       <div className="flex min-h-dvh w-full bg-background">
@@ -95,6 +100,7 @@ export function Dashboard({ user }: DashboardProps) {
           key={sidebarKey}
           user={user}
           onBackToAdventures={handleBackToAdventures}
+          onOpenSettings={handleOpenSettings}
           onSelectGame={handleSelectGame}
           onResumeSeed={handleResumeSeed}
           gameStarted={state === 'game'}
@@ -115,6 +121,9 @@ export function Dashboard({ user }: DashboardProps) {
             )}
             {state === 'game' && currentGameId && (
               <GameInterface gameId={currentGameId} />
+            )}
+            {state === 'settings' && (
+              <SettingsPage onBack={handleBackToAdventures} />
             )}
           </main>
         </SidebarInset>

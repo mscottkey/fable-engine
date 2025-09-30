@@ -459,7 +459,16 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          default_archetype_prefs: Json | null
+          default_complexity: string | null
+          default_mechanics_comfort: string | null
+          default_must_have: Json | null
+          default_no_thanks: Json | null
           default_pronouns: string | null
+          default_role_tags_interest: Json | null
+          default_timezone: string | null
+          default_tone_comfort: Json | null
+          default_violence_comfort: string | null
           default_voice_uri: string | null
           display_name: string | null
           id: string
@@ -467,7 +476,16 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_archetype_prefs?: Json | null
+          default_complexity?: string | null
+          default_mechanics_comfort?: string | null
+          default_must_have?: Json | null
+          default_no_thanks?: Json | null
           default_pronouns?: string | null
+          default_role_tags_interest?: Json | null
+          default_timezone?: string | null
+          default_tone_comfort?: Json | null
+          default_violence_comfort?: string | null
           default_voice_uri?: string | null
           display_name?: string | null
           id: string
@@ -475,7 +493,16 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_archetype_prefs?: Json | null
+          default_complexity?: string | null
+          default_mechanics_comfort?: string | null
+          default_must_have?: Json | null
+          default_no_thanks?: Json | null
           default_pronouns?: string | null
+          default_role_tags_interest?: Json | null
+          default_timezone?: string | null
+          default_tone_comfort?: Json | null
+          default_violence_comfort?: string | null
           default_voice_uri?: string | null
           display_name?: string | null
           id?: string

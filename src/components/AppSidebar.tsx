@@ -41,13 +41,14 @@ import {
 interface AppSidebarProps {
   user: User;
   onBackToAdventures: () => void;
+  onOpenSettings: () => void;
   onSelectGame?: (gameId: string) => void;
   onResumeSeed?: (seedId: string) => void;
   gameStarted: boolean;
   currentGameId?: string | null;
 }
 
-export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSeed, gameStarted, currentGameId }: AppSidebarProps) {
+export function AppSidebar({ user, onBackToAdventures, onOpenSettings, onSelectGame, onResumeSeed, gameStarted, currentGameId }: AppSidebarProps) {
   const { open } = useSidebar();
   const { toast } = useToast();
   const [games, setGames] = useState<any[]>([]);
@@ -411,6 +412,7 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSee
       <SidebarFooter className="bg-sidebar border-t border-sidebar-border p-4 space-y-2">
         <Button
           variant="ghost"
+          onClick={onOpenSettings}
           className="w-full justify-start hover:bg-sidebar-accent hover:text-sidebar-foreground text-sidebar-foreground"
           aria-label="Settings"
         >

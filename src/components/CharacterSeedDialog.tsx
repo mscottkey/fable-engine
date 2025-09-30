@@ -51,11 +51,61 @@ export function CharacterSeedDialog({ open, onOpenChange, slot, gameId, genre, o
     if (open && slot) {
       loadExistingSeed();
       if (!slot.claimed_by) {
-        // Reset form for new slot
-        resetForm();
+        // Load user defaults for new slot
+        loadUserDefaults();
       }
     }
   }, [open, slot]);
+
+  const loadUserDefaults = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setDisplayName(profile.display_name || '');
+        setPronouns(profile.default_pronouns || '');
+        setComplexity(profile.default_complexity || '');
+        setMechanicsComfort(profile.default_mechanics_comfort || '');
+        setViolenceComfort(profile.default_violence_comfort || '');
+        setTimezone(profile.default_timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+        
+        // Load archetype preferences
+        const archetypePrefs = profile.default_archetype_prefs as Record<string, boolean> || {};
+        const preferredArchetypes = Object.entries(archetypePrefs)
+          .filter(([_, value]) => value)
+          .map(([key, _]) => key);
+        setSelectedArchetypes(preferredArchetypes);
+        
+        // Load role tag interests
+        setSelectedRoleTags((profile.default_role_tags_interest as string[]) || []);
+        
+        // Load must-have and no-thanks defaults
+        setMustHave((profile.default_must_have as string[]) || []);
+        setNoThanks((profile.default_no_thanks as string[]) || []);
+        
+        // Load tone comfort as lines/veils
+        const toneComfort = profile.default_tone_comfort as Record<string, number> || {};
+        const lines = Object.entries(toneComfort)
+          .filter(([_, value]) => value <= 2) // Low comfort = lines
+          .map(([key, _]) => key);
+        const veils = Object.entries(toneComfort)
+          .filter(([_, value]) => value >= 4) // High comfort = veils  
+          .map(([key, _]) => key);
+        
+        setLinesContent(lines.join(', '));
+        setVeilsContent(veils.join(', '));
+      }
+    } catch (error) {
+      console.error('Error loading user defaults:', error);
+    }
+  };
 
   const resetForm = () => {
     setDisplayName('');
@@ -241,12 +291,21 @@ export function CharacterSeedDialog({ open, onOpenChange, slot, gameId, genre, o
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="pronouns">Pronouns</Label>
-                  <Input
-                    id="pronouns"
-                    placeholder="they/them, she/her, he/him, etc."
-                    value={pronouns}
-                    onChange={(e) => setPronouns(e.target.value)}
-                  />
+                  <Select value={pronouns} onValueChange={setPronouns}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select pronouns..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Select pronouns...</SelectItem>
+                      <SelectItem value="they/them">they/them</SelectItem>
+                      <SelectItem value="she/her">she/her</SelectItem>
+                      <SelectItem value="he/him">he/him</SelectItem>
+                      <SelectItem value="she/they">she/they</SelectItem>
+                      <SelectItem value="he/they">he/they</SelectItem>
+                      <SelectItem value="any pronouns">any pronouns</SelectItem>
+                      <SelectItem value="ask me">ask me</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               
