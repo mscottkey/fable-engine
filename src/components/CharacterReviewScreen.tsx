@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   getGameWithRelations,
   getExistingCharacterLineup,
@@ -127,7 +128,7 @@ export default function CharacterReviewScreen() {
       
       if (existingLineup) {
         console.log('Loaded existing lineup from database');
-        setLineup(existingLineup.lineup_json);
+        setLineup(existingLineup.lineup_json as unknown as CharacterLineup);
       } else {
         // Fallback to navigation state (only on first load from generation)
         const state = location.state as any;
@@ -363,7 +364,7 @@ export default function CharacterReviewScreen() {
         lineupId = await saveCharacterLineup(
           gameId,
           game.seed_id,
-          game.seed_id, // Use seed_id as fallback for story_overview_id
+          null, // Story data is in campaign_seeds.story_overview_draft
           sanitizedLineup,
           {
             provider: 'lovable-ai',
@@ -657,52 +658,87 @@ export default function CharacterReviewScreen() {
                           <p className="text-sm text-muted-foreground">{character.background}</p>
                         </div>
 
-                        {character.aspects && (
+                        {character.personalityTraits && character.personalityTraits.length > 0 && (
                           <div>
-                            <h4 className="text-sm font-semibold mb-2">Aspects</h4>
-                            <div className="space-y-1">
-                              <p className="text-sm"><strong>High Concept:</strong> {character.aspects.highConcept}</p>
-                              <p className="text-sm"><strong>Trouble:</strong> {character.aspects.trouble}</p>
-                              {character.aspects.aspect3 && (
-                                <p className="text-sm">{character.aspects.aspect3}</p>
-                              )}
+                            <h4 className="text-sm font-semibold mb-2">Personality Traits</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {character.personalityTraits.map((trait, idx) => (
+                                <Badge key={idx} variant="secondary">{trait}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {character.motivations && character.motivations.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-2">Motivations</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {character.motivations.map((motivation, idx) => (
+                                <Badge key={idx} variant="outline">{motivation}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {character.flaws && character.flaws.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-2">Flaws</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {character.flaws.map((flaw, idx) => (
+                                <Badge key={idx} variant="destructive">{flaw}</Badge>
+                              ))}
                             </div>
                           </div>
                         )}
                       </TabsContent>
 
                       <TabsContent value="mechanics" className="space-y-4">
-                        {character.skills && character.skills.length > 0 && (
-                          <div>
-                            <h4 className="text-sm font-semibold mb-2">Skills</h4>
-                            <div className="grid grid-cols-2 gap-2">
-                              {character.skills.map((skill: any, skillIdx: number) => (
-                                <div key={skillIdx} className="flex justify-between text-sm">
-                                  <span>{skill.name}</span>
-                                  <Badge variant="outline">+{skill.rating}</Badge>
-                                </div>
-                              ))}
+                        <div>
+                          <h4 className="text-sm font-semibold mb-2">Roles</h4>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">Mechanical:</span>
+                              <Badge>{character.mechanicalRole}</Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">Social:</span>
+                              <Badge>{character.socialRole}</Badge>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">Exploration:</span>
+                              <Badge>{character.explorationRole}</Badge>
                             </div>
                           </div>
-                        )}
+                        </div>
 
-                        {character.stunts && character.stunts.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-semibold mb-2">Archetypes</h4>
+                          <div className="flex gap-2">
+                            <Badge variant="secondary">{character.primaryArchetype}</Badge>
+                            {character.secondaryArchetype && (
+                              <Badge variant="outline">{character.secondaryArchetype}</Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {character.abilities && character.abilities.length > 0 && (
                           <div>
-                            <h4 className="text-sm font-semibold mb-2">Stunts</h4>
+                            <h4 className="text-sm font-semibold mb-2">Abilities</h4>
                             <ul className="space-y-1">
-                              {character.stunts.map((stunt: string, stuntIdx: number) => (
-                                <li key={stuntIdx} className="text-sm text-muted-foreground">• {stunt}</li>
+                              {character.abilities.map((ability, idx) => (
+                                <li key={idx} className="text-sm text-muted-foreground">• {ability}</li>
                               ))}
                             </ul>
                           </div>
                         )}
 
-                        {character.stress && (
+                        {character.equipment && character.equipment.length > 0 && (
                           <div>
-                            <h4 className="text-sm font-semibold mb-2">Stress</h4>
-                            <div className="flex gap-4 text-sm">
-                              <span>Physical: {character.stress.physical}</span>
-                              <span>Mental: {character.stress.mental}</span>
+                            <h4 className="text-sm font-semibold mb-2">Equipment</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {character.equipment.map((item, idx) => (
+                                <Badge key={idx} variant="outline">{item}</Badge>
+                              ))}
                             </div>
                           </div>
                         )}
