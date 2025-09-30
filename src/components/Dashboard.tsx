@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,10 +18,42 @@ type DashboardState = 'adventures' | 'story-builder' | 'game' | 'settings';
 
 export function Dashboard({ user }: DashboardProps) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [state, setState] = useState<DashboardState>('adventures');
   const [currentGameId, setCurrentGameId] = useState<string | null>(null);
   const [campaignSeed, setCampaignSeed] = useState<CampaignSeed | null>(null);
   const [sidebarKey, setSidebarKey] = useState(0);
+
+  const handleResumeSeed = useCallback(async (seedId: string) => {
+    try {
+      // Fetch the campaign seed to resume story building
+      const { data: seed, error } = await supabase
+        .from('campaign_seeds')
+        .select('*')
+        .eq('id', seedId)
+        .single();
+
+      if (error || !seed) {
+        console.error('Failed to fetch campaign seed:', error);
+        return;
+      }
+
+      setCampaignSeed(seed);
+      setState('story-builder');
+    } catch (error) {
+      console.error('Error resuming seed:', error);
+    }
+  }, []);
+
+  // Check for seed ID in query params on mount
+  useEffect(() => {
+    const seedId = searchParams.get('seed');
+    if (seedId) {
+      handleResumeSeed(seedId);
+      // Clear the query param after handling
+      setSearchParams({});
+    }
+  }, [searchParams, handleResumeSeed, setSearchParams]);
 
   const handleStartStoryBuilder = (seed: CampaignSeed) => {
     setCampaignSeed(seed);
@@ -62,27 +94,6 @@ export function Dashboard({ user }: DashboardProps) {
       }
     } catch (error) {
       console.error('Error selecting game:', error);
-    }
-  };
-
-  const handleResumeSeed = async (seedId: string) => {
-    try {
-      // Fetch the campaign seed to resume story building
-      const { data: seed, error } = await supabase
-        .from('campaign_seeds')
-        .select('*')
-        .eq('id', seedId)
-        .single();
-
-      if (error || !seed) {
-        console.error('Failed to fetch campaign seed:', error);
-        return;
-      }
-
-      setCampaignSeed(seed);
-      setState('story-builder');
-    } catch (error) {
-      console.error('Error resuming seed:', error);
     }
   };
 

@@ -193,15 +193,9 @@ function AppLayout({ children, user }: { children: React.ReactNode; user: User |
   }, [navigate, toast]);
 
   const handleResumeSeed = useCallback((seedId: string) => {
-    // Navigate to dashboard which will show the seed and allow resuming story builder
-    navigate('/');
-    
-    // Optional: Show toast to guide user
-    toast({
-      title: "Resume Story Creation",
-      description: "Continue building your story from where you left off.",
-    });
-  }, [navigate, toast]);
+    // Navigate to dashboard with seed ID as query param
+    navigate(`/?seed=${seedId}`);
+  }, [navigate]);
 
   // ============================================================================
   // Render
