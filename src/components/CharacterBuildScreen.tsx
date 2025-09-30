@@ -14,7 +14,11 @@ import {
   withRetry,
   DatabaseError 
 } from '@/services/database/gameService';
-import { transformSeedsToCharacterSeeds } from '@/services/characterService';
+import { 
+  transformSeedsToCharacterSeeds, 
+  saveCharacterLineup, 
+  saveCharacters 
+} from '@/services/characterService';
 import { Loader2 } from 'lucide-react';
 
 export default function CharacterBuildScreen() {
@@ -148,8 +152,8 @@ export default function CharacterBuildScreen() {
   };
 
   const handleGenerationComplete = useCallback(async (lineup: any, metrics: any) => {
-    console.log('Generation complete');
-    console.log('Received lineup:', lineup);
+    console.log('Generation complete, saving and navigating to review');
+    console.log('Received lineup structure:', lineup);
     
     // Normalize character structure (handle both wrapped and unwrapped)
     const rawCharacters = lineup.characterLineup || lineup.characters || [];
@@ -165,30 +169,56 @@ export default function CharacterBuildScreen() {
     
     console.log('Transformed lineup:', transformedLineup);
     
-    // CRITICAL: Transition to char_review state BEFORE navigating
     try {
-      await transitionGameState(gameId!, 'char_review');
-      console.log('Successfully transitioned to char_review state');
-    } catch (err) {
-      console.error('Failed to transition to char_review:', err);
-      // Show error but continue - the CharacterReviewScreen will handle it
+      // CRITICAL FIX: Save draft lineup to database BEFORE navigating
+      // This ensures the workflow validator sees that characters exist
+      if (!game || !storyOverview) {
+        throw new Error('Missing game or story overview data');
+      }
+
+      // Save the lineup as a draft
+      await saveCharacterLineup(
+        gameId!,
+        game.seed_id,
+        null, // Story data is in campaign_seeds.story_overview_draft
+        transformedLineup,
+        {
+          provider: 'lovable-ai',
+          model: 'google/gemini-2.5-flash',
+          inputTokens: metrics?.inputTokens || 0,
+          outputTokens: metrics?.outputTokens || 0,
+          costUsd: metrics?.cost || 0
+        }
+      );
+
+      // Save individual characters as draft status
+      await saveCharacters(
+        gameId!, 
+        game.seed_id, 
+        transformedLineup, 
+        game.party_slots || []
+      );
+
+      console.log('Draft lineup saved to database');
+
+      // Now navigate to character review screen with required state data
+      navigate(`/game/${gameId}/characters-review`, {
+        state: {
+          lineup: transformedLineup,
+          storyOverview,
+          slots: characterSeeds,
+          metrics
+        }
+      });
+    } catch (error) {
+      console.error('Error saving draft lineup:', error);
       toast({
-        title: "State Transition Warning",
-        description: "Game state may not have updated correctly. Characters can still be reviewed.",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save character lineup",
+        variant: "destructive"
       });
     }
-    
-    // Navigate to character review screen
-    navigate(`/game/${gameId}/characters-review`, {
-      state: {
-        lineup: transformedLineup,
-        storyOverview,
-        slots: characterSeeds,
-        metrics,
-        fromGeneration: true
-      }
-    });
-  }, [navigate, gameId, storyOverview, characterSeeds, toast]);
+  }, [navigate, gameId, storyOverview, characterSeeds, game, toast]);
 
   const handleBack = useCallback(() => {
     // Transition back to lobby if user cancels
