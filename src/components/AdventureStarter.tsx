@@ -13,15 +13,15 @@ import { sanitizeUserPrompt, type SanitizationResult } from "@/services/ipSaniti
 import { AIGMAvatar } from "@/components/AIGMAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { buildCampaignSeed } from "@/services/campaignBuilder";
-import { saveCampaignSeed, createGame } from "@/services/campaignService";
+import { saveCampaignSeed } from "@/services/campaignService";
 import { useToast } from "@/hooks/use-toast";
-import type { Genre as DatabaseGenre, Character } from "@/types/database";
+import type { Genre as DatabaseGenre, CampaignSeed } from "@/types/database";
 
 interface AdventureStarterProps {
-  onStartGame: (gameId: string) => void;
+  onStartStoryBuilder: (campaignSeed: CampaignSeed) => void;
 }
 
-export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
+export function AdventureStarter({ onStartStoryBuilder }: AdventureStarterProps) {
   const [gameIdea, setGameIdea] = useState("");
   const [detectedGenre, setDetectedGenre] = useState<Genre | 'generic'>('generic');
   const [inferredGenre, setInferredGenre] = useState<Genre | null>(null);
@@ -143,21 +143,21 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
       // Save to database
       const seedId = await saveCampaignSeed(campaignData);
       
-      // Create default characters
-      const defaultCharacters: Character[] = [
-        { id: "1", playerName: "Player 1", characterName: "Character 1", concept: "Determined hero" },
-        { id: "2", playerName: "Player 2", characterName: "Character 2", concept: "Clever ally" },
-      ];
+      // Fetch the saved campaign seed for the story builder
+      const { data: savedSeed, error: seedError } = await supabase
+        .from('campaign_seeds')
+        .select('*')
+        .eq('id', seedId)
+        .single();
 
-      // Create game
-      const gameId = await createGame(seedId, scenario.title, defaultCharacters);
+      if (seedError) throw seedError;
       
       toast({
-        title: "Adventure Started!",
-        description: `Created "${scenario.title}" adventure`,
+        title: "Seed Created!",
+        description: `Starting story builder for "${scenario.title}"`,
       });
 
-      onStartGame(gameId);
+      onStartStoryBuilder(savedSeed);
     } catch (error) {
       console.error('Failed to start adventure:', error);
       toast({
@@ -252,21 +252,21 @@ export function AdventureStarter({ onStartGame }: AdventureStarterProps) {
 
       if (error) throw error;
       
-      // Create default characters
-      const defaultCharacters: Character[] = [
-        { id: "1", playerName: "Player 1", characterName: "Character 1", concept: "Determined hero" },
-        { id: "2", playerName: "Player 2", characterName: "Character 2", concept: "Clever ally" },
-      ];
+      // Fetch the saved campaign seed for the story builder
+      const { data: savedSeed, error: seedError } = await supabase
+        .from('campaign_seeds')
+        .select('*')
+        .eq('id', data.id)
+        .single();
 
-      // Create game
-      const gameId = await createGame(data.id, campaignData.name, defaultCharacters);
+      if (seedError) throw seedError;
       
       toast({
-        title: "Adventure Started!",
-        description: "Created custom adventure",
+        title: "Seed Created!",
+        description: "Starting story builder for custom adventure",
       });
 
-      onStartGame(gameId);
+      onStartStoryBuilder(savedSeed);
     } catch (error) {
       console.error('Failed to start adventure:', error);
       toast({

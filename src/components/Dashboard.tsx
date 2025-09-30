@@ -4,23 +4,36 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AdventureStarter } from "@/components/AdventureStarter";
 import { GameInterface } from "@/components/GameInterface";
+import { StoryBuilder } from "@/components/StoryBuilder";
+import { CampaignSeed } from "@/types/database";
 
 interface DashboardProps {
   user: User;
 }
 
-export function Dashboard({ user }: DashboardProps) {
-  const [gameStarted, setGameStarted] = useState(false);
-  const [currentGameId, setCurrentGameId] = useState<string | null>(null);
+type DashboardState = 'adventures' | 'story-builder' | 'game';
 
-  const handleStartGame = (gameId: string) => {
-    setCurrentGameId(gameId);
-    setGameStarted(true);
+export function Dashboard({ user }: DashboardProps) {
+  const [state, setState] = useState<DashboardState>('adventures');
+  const [currentGameId, setCurrentGameId] = useState<string | null>(null);
+  const [campaignSeed, setCampaignSeed] = useState<CampaignSeed | null>(null);
+
+  const handleStartStoryBuilder = (seed: CampaignSeed) => {
+    setCampaignSeed(seed);
+    setState('story-builder');
+  };
+
+  const handleStoryComplete = (storyOverviewId: string) => {
+    // For now, we'll create a game with the story overview
+    // In the future, this might be a separate step
+    setCurrentGameId(storyOverviewId);
+    setState('game');
   };
 
   const handleBackToAdventures = () => {
-    setGameStarted(false);
+    setState('adventures');
     setCurrentGameId(null);
+    setCampaignSeed(null);
   };
 
   return (
@@ -29,15 +42,23 @@ export function Dashboard({ user }: DashboardProps) {
         <AppSidebar
           user={user}
           onBackToAdventures={handleBackToAdventures}
-          gameStarted={gameStarted}
+          gameStarted={state === 'game'}
         />
         {/* SidebarInset applies the left offset using CSS vars; allow content to shrink */}
         <SidebarInset className="min-w-0">
           <main className="flex-1 min-w-0">
-            {gameStarted && currentGameId ? (
+            {state === 'adventures' && (
+              <AdventureStarter onStartStoryBuilder={handleStartStoryBuilder} />
+            )}
+            {state === 'story-builder' && campaignSeed && (
+              <StoryBuilder
+                campaignSeed={campaignSeed}
+                onComplete={handleStoryComplete}
+                onBack={handleBackToAdventures}
+              />
+            )}
+            {state === 'game' && currentGameId && (
               <GameInterface gameId={currentGameId} />
-            ) : (
-              <AdventureStarter onStartGame={handleStartGame} />
             )}
           </main>
         </SidebarInset>
