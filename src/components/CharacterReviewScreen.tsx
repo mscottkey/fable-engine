@@ -301,6 +301,22 @@ export default function CharacterReviewScreen() {
     );
   }
 
+  if (!lineup || !storyOverview) {
+  if (!lineup || !storyOverview) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-foreground">Loading character lineup...</div>
+      </div>
+    );
+  }
+
+  return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-foreground">Loading character lineup...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
       <div className="container mx-auto px-4 py-8">
