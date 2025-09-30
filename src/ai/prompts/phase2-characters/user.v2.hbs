@@ -1,0 +1,34 @@
+STORY OVERVIEW
+{{json overview}}
+
+PLAYERS: {{players}}   GAME_ID: {{gameId}}
+
+CHARACTER SEEDS (one per slot, index-based)
+{{json seeds}}
+
+CONSTRAINTS
+- For each slot:
+  - mode=respect → must honor name/pronouns/archetypePrefs and avoid noThanks (unless content advisories forbid)
+  - mode=suggest → bias strongly toward preferences; may adapt for party coverage and tone
+  - mode=decide → design freely, consistent with overview & session zero
+- Tie each PC to at least one location and one hook
+- Keep output STRICT JSON (schema v2)
+- Ensure party has complementary roles and skills
+- All content must be IP-safe (no copyrighted names, places, or concepts)
+
+SCHEMA REQUIREMENTS
+Return a JSON object with:
+- characters: Array of character objects (one per slot)
+- bonds: Array of character relationship objects
+- coverage: Object describing party capabilities
+
+Each character must include:
+- name, pronouns, concept, background
+- mechanicalRole, socialRole, explorationRole
+- primaryArchetype, secondaryArchetype
+- personalityTraits, motivations, flaws
+- connections (to locations and hooks)
+- equipment, abilities
+
+RETURN
+The full lineup JSON per the schema.

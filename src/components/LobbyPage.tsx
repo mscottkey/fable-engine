@@ -168,7 +168,7 @@ export function LobbyPage() {
         title: "Party Locked!",
         description: "Transitioning to character generation...",
       });
-      navigate(`/game/${gameId}`);
+      navigate(`/game/${gameId}/build-characters`);
     } catch (error: any) {
       toast({
         title: "Failed to Lock Party",

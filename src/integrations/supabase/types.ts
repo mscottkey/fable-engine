@@ -190,6 +190,70 @@ export type Database = {
         }
         Relationships: []
       }
+      character_lineups: {
+        Row: {
+          cost_usd: number
+          created_at: string
+          game_id: string
+          id: string
+          input_tokens: number
+          lineup_json: Json
+          model: string
+          output_tokens: number
+          provider: string
+          seed_id: string
+          story_overview_id: string
+        }
+        Insert: {
+          cost_usd?: number
+          created_at?: string
+          game_id: string
+          id?: string
+          input_tokens?: number
+          lineup_json: Json
+          model: string
+          output_tokens?: number
+          provider: string
+          seed_id: string
+          story_overview_id: string
+        }
+        Update: {
+          cost_usd?: number
+          created_at?: string
+          game_id?: string
+          id?: string
+          input_tokens?: number
+          lineup_json?: Json
+          model?: string
+          output_tokens?: number
+          provider?: string
+          seed_id?: string
+          story_overview_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_lineups_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_lineups_seed_id_fkey"
+            columns: ["seed_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_seeds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "character_lineups_story_overview_id_fkey"
+            columns: ["story_overview_id"]
+            isOneToOne: false
+            referencedRelation: "story_overviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_seeds: {
         Row: {
           archetype_prefs: Json | null
@@ -267,6 +331,64 @@ export type Database = {
           },
           {
             foreignKeyName: "character_seeds_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: false
+            referencedRelation: "party_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      characters: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          pc_json: Json
+          seed_id: string
+          slot_id: string
+          status: string
+          user_id: string | null
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          pc_json: Json
+          seed_id: string
+          slot_id: string
+          status?: string
+          user_id?: string | null
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          pc_json?: Json
+          seed_id?: string
+          slot_id?: string
+          status?: string
+          user_id?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "characters_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "characters_seed_id_fkey"
+            columns: ["seed_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_seeds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "characters_slot_id_fkey"
             columns: ["slot_id"]
             isOneToOne: false
             referencedRelation: "party_slots"
