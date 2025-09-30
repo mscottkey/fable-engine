@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { User } from "@supabase/supabase-js";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { supabase } from "@/integrations/supabase/client";
 import { AdventureStarter } from "@/components/AdventureStarter";
 import { GameInterface } from "@/components/GameInterface";
 import { StoryBuilder } from "@/components/StoryBuilder";
@@ -37,6 +38,27 @@ export function Dashboard({ user }: DashboardProps) {
     setState('game');
   };
 
+  const handleResumeSeed = async (seedId: string) => {
+    try {
+      // Fetch the campaign seed to resume story building
+      const { data: seed, error } = await supabase
+        .from('campaign_seeds')
+        .select('*')
+        .eq('id', seedId)
+        .single();
+
+      if (error || !seed) {
+        console.error('Failed to fetch campaign seed:', error);
+        return;
+      }
+
+      setCampaignSeed(seed);
+      setState('story-builder');
+    } catch (error) {
+      console.error('Error resuming seed:', error);
+    }
+  };
+
   const handleBackToAdventures = () => {
     setState('adventures');
     setCurrentGameId(null);
@@ -51,6 +73,7 @@ export function Dashboard({ user }: DashboardProps) {
           user={user}
           onBackToAdventures={handleBackToAdventures}
           onSelectGame={handleSelectGame}
+          onResumeSeed={handleResumeSeed}
           gameStarted={state === 'game'}
           currentGameId={currentGameId}
         />

@@ -74,7 +74,8 @@ export async function getUserGames() {
     throw new Error('User must be authenticated to fetch games');
   }
 
-  const { data, error } = await supabase
+  // Get completed games
+  const { data: games, error: gamesError } = await supabase
     .from('games')
     .select(`
       *,
@@ -83,9 +84,48 @@ export async function getUserGames() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
-  if (error) {
-    throw new Error(`Failed to fetch games: ${error.message}`);
+  if (gamesError) {
+    throw new Error(`Failed to fetch games: ${gamesError.message}`);
   }
 
-  return data;
+  // Get campaign seeds that haven't become full games yet
+  const { data: seeds, error: seedsError } = await supabase
+    .from('campaign_seeds')
+    .select('*')
+    .eq('user_id', user.id)
+    .not('generation_status', 'eq', 'story_approved')
+    .order('created_at', { ascending: false });
+
+  if (seedsError) {
+    throw new Error(`Failed to fetch campaign seeds: ${seedsError.message}`);
+  }
+
+  // Combine and format the results
+  const combinedResults = [
+    // Completed games
+    ...(games || []).map(game => ({
+      id: game.id,
+      name: game.name,
+      created_at: game.created_at,
+      type: 'game' as const,
+      status: 'playing',
+      campaign_seed: game.campaign_seeds
+    })),
+    // In-progress campaign seeds
+    ...(seeds || []).map(seed => ({
+      id: seed.id,
+      name: seed.name,
+      created_at: seed.created_at,
+      type: 'seed' as const,
+      status: seed.generation_status || 'seed_created',
+      campaign_seed: seed
+    }))
+  ];
+
+  // Sort by creation date (most recent first)
+  combinedResults.sort((a, b) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+  return combinedResults;
 }

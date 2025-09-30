@@ -1,5 +1,5 @@
 import { User } from "@supabase/supabase-js";
-import { Home, Settings, LogOut, Dice6, Plus, Clock, RefreshCw } from "lucide-react";
+import { Home, Settings, LogOut, Dice6, Plus, Clock, RefreshCw, AlertCircle, CheckCircle, Loader2, Play, Pause } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import logoSvg from "@/assets/logo.svg";
@@ -25,11 +25,12 @@ interface AppSidebarProps {
   user: User;
   onBackToAdventures: () => void;
   onSelectGame?: (gameId: string) => void;
+  onResumeSeed?: (seedId: string) => void;
   gameStarted: boolean;
   currentGameId?: string | null;
 }
 
-export function AppSidebar({ user, onBackToAdventures, onSelectGame, gameStarted, currentGameId }: AppSidebarProps) {
+export function AppSidebar({ user, onBackToAdventures, onSelectGame, onResumeSeed, gameStarted, currentGameId }: AppSidebarProps) {
   const { open } = useSidebar();
   const { toast } = useToast();
   const [games, setGames] = useState<any[]>([]);
@@ -83,6 +84,67 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, gameStarted
     } else {
       const diffInDays = Math.floor(diffInHours / 24);
       return `${diffInDays}d ago`;
+    }
+  };
+
+  const getStatusInfo = (game: any) => {
+    if (game.type === 'game') {
+      return {
+        icon: Play,
+        label: 'Playing',
+        color: 'text-green-500',
+        description: 'Ready to play'
+      };
+    }
+
+    switch (game.status) {
+      case 'seed_created':
+        return {
+          icon: Pause,
+          label: 'Setup',
+          color: 'text-blue-500',
+          description: 'Ready to generate story'
+        };
+      case 'story_generating':
+        return {
+          icon: Loader2,
+          label: 'Generating',
+          color: 'text-yellow-500',
+          description: 'Creating story...',
+          animate: 'animate-spin'
+        };
+      case 'story_generated':
+        return {
+          icon: CheckCircle,
+          label: 'Review',
+          color: 'text-purple-500',
+          description: 'Story ready for review'
+        };
+      case 'story_failed':
+        return {
+          icon: AlertCircle,
+          label: 'Failed',
+          color: 'text-red-500',
+          description: 'Generation failed'
+        };
+      default:
+        return {
+          icon: Dice6,
+          label: 'Unknown',
+          color: 'text-gray-500',
+          description: 'Unknown status'
+        };
+    }
+  };
+
+  const handleItemSelect = (game: any) => {
+    if (game.type === 'game') {
+      handleGameSelect(game.id);
+    } else {
+      // For seeds, resume the story building process
+      if (onResumeSeed) {
+        onResumeSeed(game.id);
+      }
     }
   };
 
@@ -190,31 +252,44 @@ export function AppSidebar({ user, onBackToAdventures, onSelectGame, gameStarted
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ) : (
-                games.map((game) => (
-                  <SidebarMenuItem key={game.id}>
-                    <SidebarMenuButton
-                      onClick={() => handleGameSelect(game.id)}
-                      isActive={currentGameId === game.id}
-                      className={
-                        currentGameId === game.id
-                          ? "bg-sidebar-primary/10 text-sidebar-primary border-sidebar-primary/20"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent"
-                      }
-                      aria-label={`Play ${game.name}`}
-                    >
-                      <Dice6 className="h-5 w-5 shrink-0" />
-                      {open && (
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate font-medium">{game.name}</div>
-                          <div className="flex items-center gap-1 text-xs text-sidebar-foreground/60">
-                            <Clock className="h-3 w-3" />
-                            {formatGameDate(game.created_at)}
-                          </div>
+                games.map((game) => {
+                  const statusInfo = getStatusInfo(game);
+                  const StatusIcon = statusInfo.icon;
+                  const isActive = game.type === 'game' ? currentGameId === game.id : false;
+                  
+                  return (
+                    <SidebarMenuItem key={`${game.type}-${game.id}`}>
+                      <SidebarMenuButton
+                        onClick={() => handleItemSelect(game)}
+                        isActive={isActive}
+                        className={
+                          isActive
+                            ? "bg-sidebar-primary/10 text-sidebar-primary border-sidebar-primary/20"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent"
+                        }
+                        aria-label={`${statusInfo.label}: ${game.name}`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <StatusIcon className={`h-4 w-4 shrink-0 ${statusInfo.color} ${statusInfo.animate || ''}`} />
+                          {open && (
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate font-medium text-sm">{game.name}</span>
+                                <span className={`text-xs px-1.5 py-0.5 rounded-full bg-opacity-20 ${statusInfo.color} bg-current`}>
+                                  {statusInfo.label}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 text-xs text-sidebar-foreground/60">
+                                <Clock className="h-3 w-3" />
+                                {formatGameDate(game.created_at)}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })
               )}
             </SidebarMenu>
           </SidebarGroupContent>
