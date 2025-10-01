@@ -2,6 +2,7 @@
 // Intent Detection Flow - Classifies player actions for off-rails warnings
 
 import { supabase } from '@/integrations/supabase/client';
+import { callLlm } from '../llm';
 
 export interface IntentClassification {
   isOnTrack: boolean;
@@ -50,13 +51,20 @@ ${playerAction}
 
 Classify this action's intent.`;
 
-    const { data, error } = await supabase.functions.invoke('classify-intent', {
-      body: { systemPrompt, userPrompt }
+    // Call LLM directly (like Phase flows do)
+    const response = await callLlm({
+      provider: 'google',
+      model: 'gemini-2.5-flash',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      maxTokens: 500,
+      responseFormat: 'json'
     });
 
-    if (error) throw error;
-
-    const result = data;
+    const result = JSON.parse(response.content);
     const isOnTrack = result.classification === 'on-track';
     const confidence = result.confidence;
 

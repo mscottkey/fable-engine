@@ -10,7 +10,7 @@
 // file content (string). We expose a loadPrompt(relativePath) helper that
 // matches the previous API (relative to the prompts directory).
 
-const _promptModules = import.meta.glob('./**/*.{md,hbs}', { as: 'raw', eager: true }) as Record<
+const _promptModules = import.meta.glob('./**/*.{md,hbs}', { query: '?raw', import: 'default', eager: true }) as Record<
   string,
   string
 >;
