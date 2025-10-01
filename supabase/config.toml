@@ -12,3 +12,24 @@ verify_jwt = false
 
 [functions.generate-characters]
 verify_jwt = false
+
+[functions.generate-phase1]
+verify_jwt = false
+
+[functions.generate-phase2]
+verify_jwt = false
+
+[functions.generate-phase3]
+verify_jwt = false
+
+[functions.generate-phase4]
+verify_jwt = false
+
+[functions.generate-phase5]
+verify_jwt = false
+
+[functions.generate-phase6]
+verify_jwt = false
+
+[functions.detect-intent]
+verify_jwt = false
