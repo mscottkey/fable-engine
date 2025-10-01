@@ -1,94 +1,118 @@
 // Story Builder Service - Manages Phase 1 story generation and regeneration
 
 import { supabase } from "@/integrations/supabase/client";
-import { getPromptTemplate } from '@/ai/prompts';
+import { generatePhase1Story } from '@/ai/flows';
 import type { StoryOverview, AIGenerationRequest, AIGenerationResponse } from "@/types/storyOverview";
-
-const STORY_SCHEMA = {
-  type: "object",
-  properties: {
-    expandedSetting: { type: "string" },
-    notableLocations: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          name: { type: "string" },
-          description: { type: "string" }
-        },
-        required: ["name", "description"]
-      }
-    },
-    toneManifesto: {
-      type: "object",
-      properties: {
-        vibe: { type: "string" },
-        levers: {
-          type: "object",
-          properties: {
-            pace: { type: "string" },
-            danger: { type: "string" },
-            morality: { type: "string" },
-            scale: { type: "string" }
-          },
-          required: ["pace", "danger", "morality", "scale"]
-        },
-        expanded: { type: "string" }
-      },
-      required: ["vibe", "levers", "expanded"]
-    },
-    storyHooks: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          title: { type: "string" },
-          description: { type: "string" }
-        },
-        required: ["title", "description"]
-      }
-    },
-    coreConflict: { type: "string" },
-    sessionZero: {
-      type: "object",
-      properties: {
-        openQuestions: { type: "array", items: { type: "string" } },
-        contentAdvisories: { type: "array", items: { type: "string" } },
-        calibrationLevers: { type: "array", items: { type: "string" } }
-      },
-      required: ["openQuestions", "contentAdvisories", "calibrationLevers"]
-    }
-  },
-  required: ["expandedSetting", "notableLocations", "toneManifesto", "storyHooks", "coreConflict", "sessionZero"]
-};
 
 export async function generateStoryOverview(request: AIGenerationRequest): Promise<AIGenerationResponse> {
   try {
-    const { data: functionData, error: functionError } = await supabase.functions.invoke('generate-story', {
-      body: {
-        ...request,
-        schema: STORY_SCHEMA
-      }
-    });
-
-    if (functionError) {
-      console.error('Story generation error:', functionError);
+    // Get user ID
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return {
         success: false,
-        error: functionError.message || 'Failed to generate story'
+        error: 'User not authenticated'
       };
     }
 
+    // Fetch the campaign seed
+    const { data: seed, error: seedError } = await supabase
+      .from('campaign_seeds')
+      .select('*')
+      .eq('id', request.seedId)
+      .maybeSingle();
+
+    if (seedError || !seed) {
+      return {
+        success: false,
+        error: 'Campaign seed not found'
+      };
+    }
+
+    // Check if generation is already in progress
+    if (seed.generation_status === 'story_generating') {
+      return {
+        success: false,
+        error: 'Story generation already in progress'
+      };
+    }
+
+    // If story is already generated and cached, return it
+    if (seed.generation_status === 'story_generated' && seed.story_overview_draft && request.type !== 'regen' && request.type !== 'remix') {
+      return {
+        success: true,
+        story: seed.story_overview_draft,
+        data: seed.story_overview_draft,
+        cached: true
+      };
+    }
+
+    // Mark generation as starting
+    await supabase
+      .from('campaign_seeds')
+      .update({
+        generation_status: 'story_generating',
+        generation_attempts: (seed.generation_attempts || 0) + 1,
+        last_generation_at: new Date().toISOString()
+      })
+      .eq('id', request.seedId);
+
+    // Call the new client-side flow
+    const result = await generatePhase1Story({
+      userId: user.id,
+      gameId: null,
+      seedId: request.seedId,
+      context: { seed },
+      type: request.type || 'initial',
+      section: request.section,
+      feedback: request.feedback,
+      remixBrief: request.remixBrief,
+      currentData: seed.story_overview_draft,
+    });
+
+    if (!result.success) {
+      // Update status to failed
+      await supabase
+        .from('campaign_seeds')
+        .update({ generation_status: 'story_failed' })
+        .eq('id', request.seedId);
+
+      return {
+        success: false,
+        error: result.error || 'Failed to generate story'
+      };
+    }
+
+    // Save the generated story and update status
+    await supabase
+      .from('campaign_seeds')
+      .update({
+        generation_status: 'story_generated',
+        story_overview_draft: result.data
+      })
+      .eq('id', request.seedId);
+
     return {
       success: true,
-      story: functionData.story,
-      data: functionData.story,
-      tokensUsed: functionData.tokensUsed,
-      cost: functionData.cost,
-      latency: functionData.latency
+      story: result.data as StoryOverview,
+      data: result.data as StoryOverview,
+      tokensUsed: result.metadata?.tokensUsed,
+      cost: result.metadata?.cost,
+      latency: result.metadata?.latency
     };
   } catch (error) {
     console.error('Story generation service error:', error);
+
+    // Update status to failed on any error
+    try {
+      await supabase
+        .from('campaign_seeds')
+        .update({ generation_status: 'story_failed' })
+        .eq('id', request.seedId);
+    } catch (updateError) {
+      console.error('Failed to update status on error:', updateError);
+    }
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred'

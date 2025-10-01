@@ -783,6 +783,209 @@ export type Database = {
           },
         ]
       }
+      ,
+      // Campaign tables for AI phases
+      factions: {
+        Row: {
+          id: string
+          game_id: string
+          seed_id: string
+          version: number
+          factions_json: Json
+          relationships: Json
+          fronts: Json
+          provider: string
+          model: string
+          input_tokens: number
+          output_tokens: number
+          cost_usd: number
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          game_id: string
+          seed_id: string
+          version?: number
+          factions_json: Json
+          relationships: Json
+          fronts?: Json
+          provider: string
+          model: string
+          input_tokens?: number
+          output_tokens?: number
+          cost_usd?: number
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          game_id?: string
+          seed_id?: string
+          version?: number
+          factions_json?: Json
+          relationships?: Json
+          fronts?: Json
+          provider?: string
+          model?: string
+          input_tokens?: number
+          output_tokens?: number
+          cost_usd?: number
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      ,
+      story_nodes: {
+        Row: {
+          id: string
+          game_id: string
+          seed_id: string
+          factions_id: string
+          version: number
+          nodes_json: Json
+          provider: string
+          model: string
+          input_tokens: number
+          output_tokens: number
+          cost_usd: number
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          game_id: string
+          seed_id: string
+          factions_id: string
+          version?: number
+          nodes_json: Json
+          provider: string
+          model: string
+          input_tokens?: number
+          output_tokens?: number
+          cost_usd?: number
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          game_id?: string
+          seed_id?: string
+          factions_id?: string
+          version?: number
+          nodes_json?: Json
+          provider?: string
+          model?: string
+          input_tokens?: number
+          output_tokens?: number
+          cost_usd?: number
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      ,
+      campaign_arcs: {
+        Row: {
+          id: string
+          game_id: string
+          seed_id: string
+          story_nodes_id: string
+          version: number
+          arcs_json: Json
+          provider: string
+          model: string
+          input_tokens: number
+          output_tokens: number
+          cost_usd: number
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          game_id: string
+          seed_id: string
+          story_nodes_id: string
+          version?: number
+          arcs_json: Json
+          provider: string
+          model: string
+          input_tokens?: number
+          output_tokens?: number
+          cost_usd?: number
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          game_id?: string
+          seed_id?: string
+          story_nodes_id?: string
+          version?: number
+          arcs_json?: Json
+          provider?: string
+          model?: string
+          input_tokens?: number
+          output_tokens?: number
+          cost_usd?: number
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      ,
+      resolutions: {
+        Row: {
+          id: string
+          game_id: string
+          seed_id: string
+          campaign_arcs_id: string
+          version: number
+          resolution_paths_json: Json
+          twist: string | null
+          provider: string
+          model: string
+          input_tokens: number
+          output_tokens: number
+          cost_usd: number
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          game_id: string
+          seed_id: string
+          campaign_arcs_id: string
+          version?: number
+          resolution_paths_json: Json
+          twist?: string | null
+          provider: string
+          model: string
+          input_tokens?: number
+          output_tokens?: number
+          cost_usd?: number
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          game_id?: string
+          seed_id?: string
+          campaign_arcs_id?: string
+          version?: number
+          resolution_paths_json?: Json
+          twist?: string | null
+          provider?: string
+          model?: string
+          input_tokens?: number
+          output_tokens?: number
+          cost_usd?: number
+          status?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

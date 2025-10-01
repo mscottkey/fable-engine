@@ -18,22 +18,31 @@ function loadPrompt(relativePath: string): string {
 
 export const PROMPT_TEMPLATES: Record<string, string> = {
   // Phase 1 prompts
-  'phase1/system@v1': '',
-  'phase1/user@v1': '',
-  'phase1/repair@v1': '',
-  
+  'phase1/system@v1': loadPrompt('phase1-story/system.v1.md'),
+  'phase1/user@v1': loadPrompt('phase1-story/user.v1.hbs'),
+  'phase1/repair@v1': loadPrompt('phase1-story/repair.v1.md'),
+
   // Phase 1 regeneration prompts
-  'phase1/regen/expandedSetting@v1': '',
-  'phase1/regen/notableLocations@v1': '',
-  'phase1/regen/toneManifesto@v1': '',
-  'phase1/regen/storyHooks@v1': '',
-  'phase1/regen/coreConflict@v1': '',
-  'phase1/regen/sessionZero@v1': '',
-  
+  'phase1/regen/expandedSetting@v1': loadPrompt('phase1-story/regen/expandedSetting.v1.hbs'),
+  'phase1/regen/notableLocations@v1': loadPrompt('phase1-story/regen/notableLocations.v1.hbs'),
+  'phase1/regen/toneManifesto@v1': loadPrompt('phase1-story/regen/toneManifesto.v1.hbs'),
+  'phase1/regen/storyHooks@v1': loadPrompt('phase1-story/regen/storyHooks.v1.hbs'),
+  'phase1/regen/coreConflict@v1': loadPrompt('phase1-story/regen/coreConflict.v1.hbs'),
+  'phase1/regen/sessionZero@v1': loadPrompt('phase1-story/regen/sessionZero.v1.hbs'),
+
   // Phase 1 remix prompts
-  'phase1/remix/system@v1': '',
-  'phase1/remix/user@v1': '',
-  
+  'phase1/remix/system@v1': loadPrompt('phase1-story/remix/system.v1.md'),
+  'phase1/remix/user@v1': loadPrompt('phase1-story/remix/user.v1.hbs'),
+
+  // Phase 2: Character Generation
+  'phase2/system@v2': loadPrompt('phase2-characters/system.v2.md'),
+  'phase2/user@v2': loadPrompt('phase2-characters/user.v2.hbs'),
+  'phase2/repair@v2': loadPrompt('phase2-characters/repair.v2.md'),
+  'phase2/regen/pc@v1': loadPrompt('phase2-characters/regen/pc.v1.hbs'),
+  'phase2/regen/bonds@v1': loadPrompt('phase2-characters/regen/bonds.v1.hbs'),
+  'phase2/remix/system@v2': loadPrompt('phase2-characters/remix/system.v2.md'),
+  'phase2/remix/user@v2': loadPrompt('phase2-characters/remix/user.v2.hbs'),
+
    // Phase 3: Factions & Clocks
   'phase3/system@v1': loadPrompt('phase3-factions/system.v1.md'),
   'phase3/user@v1': loadPrompt('phase3-factions/user.v1.hbs'),
@@ -85,6 +94,11 @@ export function getPromptTemplate(templateId: string): string {
     throw new Error(`Unknown prompt template ID: ${templateId}`);
   }
   return prompt;
+}
+
+// Alias for getPromptTemplate (used in flow handlers)
+export function getPrompt(templateId: string): string {
+  return getPromptTemplate(templateId);
 }
 
 // Extract version from template ID (e.g., "phase3/system@v1" -> "v1")

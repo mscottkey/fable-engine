@@ -1,16 +1,22 @@
-REGENERATE CHARACTER BONDS
+CURRENT CHARACTERS
+{{json characters}}
 
 STORY OVERVIEW
 {{json overview}}
 
-CURRENT PARTY
-{{json characters}}
+PLAYER FEEDBACK
+{{feedback}}
 
-CONSTRAINTS
-- Create meaningful relationships between characters
-- Include both positive and potential conflict relationships
-- Tie bonds to shared backgrounds or complementary goals
-- Ensure bonds enhance rather than replace individual motivations
+TASK
+Generate new bonds between these characters based on the feedback.
 
-RETURN
-Array of bond objects following the schema format.
+REQUIREMENTS
+- Create at least 2-3 bonds between DIFFERENT characters
+- Each bond must specify:
+  * character1Index (number)
+  * character2Index (number)
+  * relationship (string: Ally, Rival, Family, Mentor, etc.)
+  * description (string: how they know each other and why it matters)
+- Bonds should create interesting party dynamics and roleplay opportunities
+- Return only the bonds array as JSON
+- Output STRICT JSON only
