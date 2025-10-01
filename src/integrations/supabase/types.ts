@@ -1205,53 +1205,83 @@ export type Database = {
       }
       story_state: {
         Row: {
+          act_beats_completed: string[] | null
           act_progress: string | null
           active_hooks: Json | null
+          adapted_beats: Json | null
+          campaign_resolution_approaching: boolean | null
           character_relationships: Json | null
           completed_hooks: string[] | null
           current_act: string
+          current_act_number: number | null
+          current_beat_id: string | null
+          divergence_log: Json | null
           emerging_hooks: Json | null
+          estimated_sessions_remaining: number | null
           faction_standings: Json | null
+          final_act_triggered: boolean | null
           game_id: string
           id: string
+          key_info_revealed: string[] | null
           last_updated: string
           location_states: Json | null
           major_decisions: Json | null
           npc_states: Json | null
+          sessions_played: number | null
           updated_by: string | null
           world_facts: Json | null
         }
         Insert: {
+          act_beats_completed?: string[] | null
           act_progress?: string | null
           active_hooks?: Json | null
+          adapted_beats?: Json | null
+          campaign_resolution_approaching?: boolean | null
           character_relationships?: Json | null
           completed_hooks?: string[] | null
           current_act?: string
+          current_act_number?: number | null
+          current_beat_id?: string | null
+          divergence_log?: Json | null
           emerging_hooks?: Json | null
+          estimated_sessions_remaining?: number | null
           faction_standings?: Json | null
+          final_act_triggered?: boolean | null
           game_id: string
           id?: string
+          key_info_revealed?: string[] | null
           last_updated?: string
           location_states?: Json | null
           major_decisions?: Json | null
           npc_states?: Json | null
+          sessions_played?: number | null
           updated_by?: string | null
           world_facts?: Json | null
         }
         Update: {
+          act_beats_completed?: string[] | null
           act_progress?: string | null
           active_hooks?: Json | null
+          adapted_beats?: Json | null
+          campaign_resolution_approaching?: boolean | null
           character_relationships?: Json | null
           completed_hooks?: string[] | null
           current_act?: string
+          current_act_number?: number | null
+          current_beat_id?: string | null
+          divergence_log?: Json | null
           emerging_hooks?: Json | null
+          estimated_sessions_remaining?: number | null
           faction_standings?: Json | null
+          final_act_triggered?: boolean | null
           game_id?: string
           id?: string
+          key_info_revealed?: string[] | null
           last_updated?: string
           location_states?: Json | null
           major_decisions?: Json | null
           npc_states?: Json | null
+          sessions_played?: number | null
           updated_by?: string | null
           world_facts?: Json | null
         }
