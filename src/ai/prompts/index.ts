@@ -1,19 +1,28 @@
 // File: src/ai/prompts/index.ts
 // Centralized prompt registry mapping prompt_template_id -> string content
 
-import { readFileSync } from 'fs';
-import { join } from 'path';
+// Use Vite's import.meta.glob to load prompt files as raw strings at build time.
+// This avoids importing Node's `fs` module into browser bundles (which causes
+// the "Module 'fs' has been externalized" runtime error).
+//
+// The glob will eagerly load all .md and .hbs files in this directory and
+// return an object mapping file paths (e.g. './phase1-story/system.v1.md') ->
+// file content (string). We expose a loadPrompt(relativePath) helper that
+// matches the previous API (relative to the prompts directory).
 
-const PROMPTS_DIR = join(__dirname);
+const _promptModules = import.meta.glob('./**/*.{md,hbs}', { as: 'raw', eager: true }) as Record<
+  string,
+  string
+>;
 
-// Helper to load prompt file
 function loadPrompt(relativePath: string): string {
-  try {
-    return readFileSync(join(PROMPTS_DIR, relativePath), 'utf-8');
-  } catch (error) {
-    console.error(`Failed to load prompt: ${relativePath}`, error);
+  const key = `./${relativePath}`;
+  const content = _promptModules[key];
+  if (!content) {
+    console.error(`Failed to load prompt: ${relativePath}. Available keys:`, Object.keys(_promptModules));
     throw new Error(`Prompt file not found: ${relativePath}`);
   }
+  return content;
 }
 
 export const PROMPT_TEMPLATES: Record<string, string> = {
