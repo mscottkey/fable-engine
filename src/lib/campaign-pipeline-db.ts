@@ -29,7 +29,7 @@ export async function savePhase3Factions(
 ): Promise<{ success: boolean; id?: string; error?: string }> {
 
   try {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await (supabase as any)
       .from('factions')
       .insert({
         game_id: gameId,
@@ -62,7 +62,7 @@ export async function getLatestPhase3Factions(
 ): Promise<{ success: boolean; data?: Phase3Output; factionsId?: string; error?: string }> {
 
   try {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await (supabase as any)
       .from('factions')
       .select('*')
       .eq('game_id', gameId)
@@ -103,7 +103,7 @@ export async function savePhase4Nodes(
 ): Promise<{ success: boolean; id?: string; error?: string }> {
 
   try {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await (supabase as any)
       .from('story_nodes')
       .insert({
         game_id: gameId,
@@ -145,7 +145,7 @@ export async function savePhase5Arcs(
 ): Promise<{ success: boolean; id?: string; error?: string }> {
 
   try {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await (supabase as any)
       .from('campaign_arcs')
       .insert({
         game_id: gameId,
@@ -187,7 +187,7 @@ export async function savePhase6Resolutions(
 ): Promise<{ success: boolean; id?: string; error?: string }> {
 
   try {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await (supabase as any)
       .from('resolutions')
       .insert({
         game_id: gameId,
@@ -225,10 +225,10 @@ export async function checkCampaignCompletion(gameId: string): Promise<{
 }> {
 
   const [p3, p4, p5, p6] = await Promise.all([
-    supabase.from('factions').select('id').eq('game_id', gameId).eq('status', 'approved').single(),
-    supabase.from('story_nodes').select('id').eq('game_id', gameId).eq('status', 'approved').single(),
-    supabase.from('campaign_arcs').select('id').eq('game_id', gameId).eq('status', 'approved').single(),
-    supabase.from('resolutions').select('id').eq('game_id', gameId).eq('status', 'approved').single(),
+    (supabase as any).from('factions').select('id').eq('game_id', gameId).eq('status', 'approved').single(),
+    (supabase as any).from('story_nodes').select('id').eq('game_id', gameId).eq('status', 'approved').single(),
+    (supabase as any).from('campaign_arcs').select('id').eq('game_id', gameId).eq('status', 'approved').single(),
+    (supabase as any).from('resolutions').select('id').eq('game_id', gameId).eq('status', 'approved').single(),
   ]);
 
   const status = {

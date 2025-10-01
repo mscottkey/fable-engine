@@ -2,18 +2,40 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 
 export type AIFeature = 
-  | 'ip_sanitizer' 
-  | 'phase1_story' 
-  | 'characters' 
-  | 'phase2_factions' 
-  | 'phase3_nodes' 
-  | 'phase4_arcs' 
-  | 'phase5_resolutions' 
-  | 'runtime_turn' 
-  | 'qa_eval' 
+  | 'ip_sanitizer'
+  | 'phase1_story'
+  | 'characters'
+  | 'phase2_factions'
+  | 'phase3_nodes'
+  | 'phase3_factions'
+  | 'phase4_arcs'
+  | 'phase4_nodes'
+  | 'phase5_arcs'
+  | 'phase5_resolutions'
+  | 'runtime_turn'
+  | 'qa_eval'
   | 'other';
 
-export type AIPhase = 'phase0' | 'phase1' | 'phase2' | 'phase3' | 'phase4' | 'phase5' | 'runtime' | 'qa';
+export type AIPhase =
+  | 'phase0'
+  | 'phase1'
+  | 'phase2'
+  | 'phase3'
+  | 'phase4'
+  | 'phase5'
+  | 'phase3:remix'
+  | 'phase4:regen:node'
+  | 'phase4:regen:scene'
+  | 'phase4:remix'
+  | 'phase5:remix'
+  | 'phase5:remix'
+  | 'runtime'
+  | 'qa'
+  | 'phase5:remix'
+  | 'phase4:remix'
+  | 'phase3:remix'
+  | 'phase4:regen:node'
+  | 'phase4:regen:scene';
 
 export type ResponseMode = 'json' | 'freeform';
 
