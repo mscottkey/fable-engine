@@ -1,0 +1,86 @@
+# Current Narrative Turn
+
+## Story Context
+**Genre**: {{context.storyOverview.genre}}
+**Setting**: {{context.storyOverview.expandedSetting}}
+**Current Act**: Act {{context.storyState.current_act_number}} ({{context.storyState.act_progress}})
+**Tone**: {{context.storyOverview.toneManifesto.expanded}}
+
+## Current Beat
+{{#if context.currentBeat}}
+**Beat**: {{context.currentBeat.title}}
+**Description**: {{context.currentBeat.description}}
+**Objectives**:
+{{#each context.currentBeat.objectives}}
+- {{this}}
+{{/each}}
+**Key Info to Reveal**: {{context.currentBeat.completionConditions.requiredInfo}}
+**Beats Completed This Act**: {{context.storyState.act_beats_completed.length}}
+{{else}}
+*No active beat - adapt to player-driven story*
+{{/if}}
+
+## Campaign Progress
+**Sessions Played**: {{context.storyState.sessions_played}}
+**Key Information Revealed**: {{context.storyState.key_info_revealed.length}} pieces
+
+## Active Story Hooks
+{{#each context.storyState.active_hooks}}
+- **{{this.title}}**: {{this.status}} - {{this.progress_notes}}
+{{/each}}
+
+## World State
+{{#each context.storyState.world_facts}}
+- {{@key}}: {{this}}
+{{/each}}
+
+## NPCs in Play
+{{#each context.storyState.npc_states}}
+- **{{@key}}**: {{this.attitude}} | {{this.notes}}
+{{/each}}
+
+## Party
+{{#each context.characters}}
+### {{this.pc_json.name}} ({{this.pc_json.pronouns}})
+- **Concept**: {{this.pc_json.concept}}
+- **High Concept**: {{this.pc_json.aspects.highConcept}}
+- **Trouble**: {{this.pc_json.aspects.trouble}}
+{{/each}}
+
+## Recent Events (Last 10 Turns)
+{{#each context.recentEvents}}
+**Turn {{this.event_number}}**:
+{{#if this.player_action}}
+- **Action**: {{this.player_action}}
+{{/if}}
+{{#if this.narration}}
+- **GM**: {{this.narration}}
+{{/if}}
+---
+{{/each}}
+
+---
+
+## CURRENT PLAYER ACTION
+**Character**: {{characterName}}
+**Action**: {{playerAction}}
+
+---
+
+## Your Task
+
+Narrate what happens as a result of this action. Consider:
+1. **Beat Awareness**: Does this action advance current beat objectives? If completely off-track, create narrative bridge.
+2. **Skill Rolls**: Does this action require a skill roll? Calculate result and narrate outcome.
+3. **NPC/Environment Reactions**: How does the world respond?
+4. **Consequences**: What ripples from this choice? Update world state accordingly.
+5. **Information Reveal**: Does this action reveal key information from the beat? Track in `beatProgress.keyInfoRevealed`.
+6. **Beat Completion**: Have all required info pieces been revealed? Mark `beatComplete: true` if so.
+7. **Decision Point**: What comes next? Offer 3-4 options that advance the story.
+
+**Off-Rails Detection**: If player action is completely unrelated to current beat:
+- Honor their choice and narrate the result
+- In `gmNotes`, note the divergence: "Player diverged from [beat] by [action]"
+- Offer decision options that gently guide back to beat OR adapt beat to new direction
+
+Return your response in the required JSON format with `beatProgress` included.

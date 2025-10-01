@@ -79,6 +79,10 @@ export const PROMPT_TEMPLATES: Record<string, string> = {
   'phase6/regen/epilogue@v1': loadPrompt('phase6-resolution/regen/epilogue.v1.hbs'),
   'phase6/remix/system@v1': loadPrompt('phase6-resolution/remix/system.v1.md'),
   'phase6/remix/user@v1': loadPrompt('phase6-resolution/remix/user.v1.hbs'),
+
+  // GM Prompts for Game Sessions
+  'gm/system@v1': loadPrompt('gm/system.v1.md'),
+  'gm/narrate-turn@v1': loadPrompt('gm/narrate-turn.v1.hbs'),
 };
 
 // Template loading would be implemented here in a production system
