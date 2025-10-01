@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Sparkles, RefreshCw, CheckCircle2 } from 'lucide-react';
-import { generatePhase6Resolutions } from '@/ai/flows/phase6-resolutions';
+import { supabase } from '@/integrations/supabase/client';
 import type { Phase6Output } from '@/ai/schemas';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
@@ -40,19 +40,27 @@ export function Phase6Resolutions({
     setError(null);
     
     try {
-      const result = await generatePhase6Resolutions({
-        userId,
-        gameId,
-        seedId,
-        context: { overview, factions, nodes, arcs },
-        type: 'initial',
+      const { data: result, error: fnError } = await supabase.functions.invoke('generate-phase6', {
+        body: {
+          gameId,
+          seedId,
+          overview,
+          factions,
+          nodes,
+          arcs,
+          type: 'initial',
+        }
       });
-      
-      if (result.success && result.data) {
-        setData(result.data as Phase6Output);
-        setMetadata(result.metadata);
+
+      if (fnError) throw fnError;
+
+      const actualResult = result || { success: false, error: 'No result returned' };
+
+      if (actualResult.success && actualResult.data) {
+        setData(actualResult.data as Phase6Output);
+        setMetadata(actualResult.metadata);
       } else {
-        setError(result.error || 'Failed to generate resolutions');
+        throw new Error(actualResult.error || 'Failed to generate resolutions');
       }
     } catch (err) {
       setError((err as Error).message);

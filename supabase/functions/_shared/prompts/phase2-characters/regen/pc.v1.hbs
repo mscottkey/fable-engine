@@ -1,0 +1,29 @@
+CURRENT PARTY (excluding character being regenerated)
+{{json currentParty}}
+
+STORY OVERVIEW
+{{json overview}}
+
+CHARACTER SEED (index {{characterIndex}})
+{{json seed}}
+
+PLAYER FEEDBACK
+{{feedback}}
+
+TASK
+Regenerate the character at index {{characterIndex}} based on the feedback and seed preferences.
+
+FATE CORE REQUIREMENTS
+- Follow FATE Core mechanics (5 aspects, skill pyramid, 3 stunts, stress, consequences, refresh)
+- Skill pyramid: 1 at +4, 2 at +3, 3 at +2, 4 at +1
+- 3 stunts tied to skills
+- Physical and Mental stress (2-4 boxes each)
+- 3 consequence slots (Mild, Moderate, Severe)
+- Refresh: 3
+
+CONSTRAINTS
+- Complement the existing party members
+- Address the player's feedback
+- Maintain connections to story locations and hooks
+- Return only the character object (not full lineup)
+- Output STRICT JSON only

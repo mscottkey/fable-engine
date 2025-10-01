@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Sparkles, RefreshCw } from 'lucide-react';
-import { generatePhase4Nodes } from '@/ai/flows/phase4-nodes';
+import { supabase } from '@/integrations/supabase/client';
 import type { Phase4Output } from '@/ai/schemas';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
@@ -28,19 +28,25 @@ export function Phase4Nodes({ gameId, seedId, userId, overview, factions, onComp
     setError(null);
     
     try {
-      const result = await generatePhase4Nodes({
-        userId,
-        gameId,
-        seedId,
-        context: { overview, factions },
-        type: 'initial',
+      const { data: result, error: fnError } = await supabase.functions.invoke('generate-phase4', {
+        body: {
+          gameId,
+          seedId,
+          overview,
+          factions,
+          type: 'initial',
+        }
       });
-      
-      if (result.success && result.data) {
-        setData(result.data as Phase4Output);
-        setMetadata(result.metadata);
+
+      if (fnError) throw fnError;
+
+      const actualResult = result || { success: false, error: 'No result returned' };
+
+      if (actualResult.success && actualResult.data) {
+        setData(actualResult.data as Phase4Output);
+        setMetadata(actualResult.metadata);
       } else {
-        setError(result.error || 'Failed to generate nodes');
+        throw new Error(actualResult.error || 'Failed to generate nodes');
       }
     } catch (err) {
       setError((err as Error).message);

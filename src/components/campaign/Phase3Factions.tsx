@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, RefreshCw, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
-import { generatePhase3Factions } from '@/ai/flows/phase3-factions';
+import { supabase } from '@/integrations/supabase/client';
 import type { Phase3Output, Faction, ProjectClock } from '@/ai/schemas';
 import {
   Accordion,
@@ -65,13 +65,17 @@ export function Phase3Factions({
     setError(null);
     
     try {
-      const result = await generatePhase3Factions({
-        userId,
-        gameId,
-        seedId,
-        context: { overview, lineup },
-        type: 'initial',
+      const { data: result, error: fnError } = await supabase.functions.invoke('generate-phase3', {
+        body: {
+          gameId,
+          seedId,
+          overview,
+          lineup,
+          type: 'initial',
+        }
       });
+
+      if (fnError) throw fnError;
       
       if (result.success && result.data) {
         setData(result.data as Phase3Output);
@@ -94,18 +98,22 @@ export function Phase3Factions({
     setError(null);
     
     try {
-      const result = await generatePhase3Factions({
-        userId,
-        gameId,
-        seedId,
-        context: { overview, lineup },
-        type: 'regen',
-        targetId: regenTarget,
-        feedback: regenFeedback,
-        currentData: data,
+      const { data: result, error: fnError } = await supabase.functions.invoke('generate-phase3', {
+        body: {
+          gameId,
+          seedId,
+          overview,
+          lineup,
+          type: 'regen',
+          targetId: regenTarget,
+          feedback: regenFeedback,
+          currentData: data,
+        }
       });
-      
-      if (result.success && result.data) {
+
+      if (fnError) throw fnError;
+
+      if (result?.success && result.data) {
         // Merge regen result back into data
         const updated = { ...data };
         
@@ -151,18 +159,22 @@ export function Phase3Factions({
     setError(null);
     
     try {
-      const result = await generatePhase3Factions({
-        userId,
-        gameId,
-        seedId,
-        context: { overview, lineup },
-        type: 'remix',
-        remixBrief,
-        preserveNouns,
-        currentData: data,
+      const { data: result, error: fnError } = await supabase.functions.invoke('generate-phase3', {
+        body: {
+          gameId,
+          seedId,
+          overview,
+          lineup,
+          type: 'remix',
+          remixBrief,
+          preserveNouns,
+          currentData: data,
+        }
       });
-      
-      if (result.success && result.data) {
+
+      if (fnError) throw fnError;
+
+      if (result?.success && result.data) {
         setData(result.data as Phase3Output);
         setEditedData(result.data as Phase3Output);
         setMetadata(result.metadata);

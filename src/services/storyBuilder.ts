@@ -1,7 +1,6 @@
 // Story Builder Service - Manages Phase 1 story generation and regeneration
 
 import { supabase } from "@/integrations/supabase/client";
-import { generatePhase1Story } from '@/ai/flows';
 import type { StoryOverview, AIGenerationRequest, AIGenerationResponse } from "@/types/storyOverview";
 
 export async function generateStoryOverview(request: AIGenerationRequest): Promise<AIGenerationResponse> {
@@ -57,20 +56,20 @@ export async function generateStoryOverview(request: AIGenerationRequest): Promi
       })
       .eq('id', request.seedId);
 
-    // Call the new client-side flow
-    const result = await generatePhase1Story({
-      userId: user.id,
-      gameId: null,
-      seedId: request.seedId,
-      context: { seed },
-      type: request.type || 'initial',
-      section: request.section,
-      feedback: request.feedback,
-      remixBrief: request.remixBrief,
-      currentData: seed.story_overview_draft,
+    // Call the edge function
+    const { data: result, error: fnError } = await supabase.functions.invoke('generate-phase1', {
+      body: {
+        seedId: request.seedId,
+        type: request.type || 'initial',
+        section: request.section,
+        feedback: request.feedback,
+        remixBrief: request.remixBrief,
+        preserveNouns: request.remixBrief?.includes('Preserve all existing proper nouns'),
+        currentData: seed.story_overview_draft,
+      }
     });
 
-    if (!result.success) {
+    if (fnError || !result?.success) {
       // Update status to failed
       await supabase
         .from('campaign_seeds')
@@ -79,18 +78,9 @@ export async function generateStoryOverview(request: AIGenerationRequest): Promi
 
       return {
         success: false,
-        error: result.error || 'Failed to generate story'
+        error: fnError?.message || result?.error || 'Failed to generate story'
       };
     }
-
-    // Save the generated story and update status
-    await supabase
-      .from('campaign_seeds')
-      .update({
-        generation_status: 'story_generated',
-        story_overview_draft: result.data
-      })
-      .eq('id', request.seedId);
 
     return {
       success: true,

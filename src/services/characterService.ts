@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import { generatePhase2Characters } from '@/ai/flows';
 
 export interface CharacterSeed {
   index: number;
@@ -91,17 +90,19 @@ export async function generateCharacterLineup(
 
   const seedId = game?.seed_id || '';
 
-  // Call the new client-side flow
-  const result = await generatePhase2Characters({
-    userId: user.id,
-    gameId,
-    seedId,
-    context: { overview, seeds, gameId },
-    type: 'initial',
+  // Call the edge function
+  const { data: result, error: fnError } = await supabase.functions.invoke('generate-phase2', {
+    body: {
+      gameId,
+      seedId,
+      overview,
+      seeds,
+      type: 'initial',
+    }
   });
 
-  if (!result.success) {
-    throw new Error(result.error || 'Failed to generate character lineup');
+  if (fnError || !result?.success) {
+    throw new Error(fnError?.message || result?.error || 'Failed to generate character lineup');
   }
 
   return result.data as CharacterLineup;
@@ -130,19 +131,21 @@ export async function regenerateCharacter(
 
   const seedId = game?.seed_id || '';
 
-  const result = await generatePhase2Characters({
-    userId: user.id,
-    gameId,
-    seedId,
-    context: { overview, seeds: [seed], gameId },
-    type: 'regen',
-    targetId: `pc-${characterIndex}`,
-    feedback,
-    currentData: { characters: currentParty },
+  const { data: result, error: fnError } = await supabase.functions.invoke('generate-phase2', {
+    body: {
+      gameId,
+      seedId,
+      overview,
+      seeds: [seed],
+      type: 'regen',
+      targetId: `pc-${characterIndex}`,
+      feedback,
+      currentData: { characters: currentParty },
+    }
   });
 
-  if (!result.success) {
-    throw new Error(result.error || 'Failed to regenerate character');
+  if (fnError || !result?.success) {
+    throw new Error(fnError?.message || result?.error || 'Failed to regenerate character');
   }
 
   return result.data.character;
@@ -173,18 +176,20 @@ export async function regenerateBonds(
 
   const seedId = game?.seed_id || '';
 
-  const result = await generatePhase2Characters({
-    userId: user.id,
-    gameId,
-    seedId,
-    context: { overview, seeds: [], gameId },
-    type: 'regen',
-    targetId: 'bonds',
-    currentData: { characters },
+  const { data: result, error: fnError } = await supabase.functions.invoke('generate-phase2', {
+    body: {
+      gameId,
+      seedId,
+      overview,
+      seeds: [],
+      type: 'regen',
+      targetId: 'bonds',
+      currentData: { characters },
+    }
   });
 
-  if (!result.success) {
-    throw new Error(result.error || 'Failed to regenerate bonds');
+  if (fnError || !result?.success) {
+    throw new Error(fnError?.message || result?.error || 'Failed to regenerate bonds');
   }
 
   return result.data.bonds;
@@ -212,18 +217,20 @@ export async function remixLineup(
 
   const seedId = game?.seed_id || '';
 
-  const result = await generatePhase2Characters({
-    userId: user.id,
-    gameId,
-    seedId,
-    context: { overview, seeds, gameId },
-    type: 'remix',
-    remixBrief: brief,
-    currentData: currentLineup,
+  const { data: result, error: fnError } = await supabase.functions.invoke('generate-phase2', {
+    body: {
+      gameId,
+      seedId,
+      overview,
+      seeds,
+      type: 'remix',
+      remixBrief: brief,
+      currentData: currentLineup,
+    }
   });
 
-  if (!result.success) {
-    throw new Error(result.error || 'Failed to remix lineup');
+  if (fnError || !result?.success) {
+    throw new Error(fnError?.message || result?.error || 'Failed to remix lineup');
   }
 
   return result.data as CharacterLineup;

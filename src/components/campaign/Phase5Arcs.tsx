@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Sparkles, RefreshCw } from 'lucide-react';
-import { generatePhase5Arcs } from '@/ai/flows/phase5-arcs';
+import { supabase } from '@/integrations/supabase/client';
 import type { Phase5Output } from '@/ai/schemas';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
@@ -29,19 +29,26 @@ export function Phase5Arcs({ gameId, seedId, userId, overview, factions, nodes, 
     setError(null);
     
     try {
-      const result = await generatePhase5Arcs({
-        userId,
-        gameId,
-        seedId,
-        context: { overview, factions, nodes },
-        type: 'initial',
+      const { data: result, error: fnError } = await supabase.functions.invoke('generate-phase5', {
+        body: {
+          gameId,
+          seedId,
+          overview,
+          factions,
+          nodes,
+          type: 'initial',
+        }
       });
-      
-      if (result.success && result.data) {
-        setData(result.data as Phase5Output);
-        setMetadata(result.metadata);
+
+      if (fnError) throw fnError;
+
+      const actualResult = result || { success: false, error: 'No result returned' };
+
+      if (actualResult.success && actualResult.data) {
+        setData(actualResult.data as Phase5Output);
+        setMetadata(actualResult.metadata);
       } else {
-        setError(result.error || 'Failed to generate arcs');
+        throw new Error(actualResult.error || 'Failed to generate arcs');
       }
     } catch (err) {
       setError((err as Error).message);

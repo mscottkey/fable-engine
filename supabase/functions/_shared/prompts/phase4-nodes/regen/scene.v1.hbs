@@ -1,0 +1,30 @@
+REGENERATE MICRO SCENE FOR NODE
+
+STORY OVERVIEW
+{{json overview}}
+
+FACTIONS
+{{json factions}}
+
+NODE CONTEXT
+{{json node}}
+
+PLAYER FEEDBACK
+{{feedback}}
+
+INSTRUCTIONS
+Generate a micro scene for this node:
+- GM Notes: Guidance for the GM on running this scene (atmosphere, NPC motivations, secrets)
+- Boxed Text (optional): Short atmospheric read-aloud text (2-3 sentences max)
+- Keep it concise and actionable
+- Address player feedback if provided
+- Tie to factions and stakes appropriately
+
+RETURN
+Single microScene object matching the MicroSceneSchema:
+{
+  "microScene": {
+    "gmNotes": "string",
+    "boxedText": "optional string"
+  }
+}
