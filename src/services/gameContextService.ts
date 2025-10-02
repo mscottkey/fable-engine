@@ -156,7 +156,8 @@ export async function loadCurrentBeat(gameId: string) {
     if (overviewError) throw overviewError;
 
     // Extract current beat from campaign structure
-    const campaignStructure = storyOverview?.campaign_structure;
+    // TODO: campaign_structure doesn't exist on story_overviews table yet
+    const campaignStructure = (storyOverview as any)?.campaign_structure;
     if (!campaignStructure?.acts) {
       return null;
     }

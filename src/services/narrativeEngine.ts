@@ -73,7 +73,8 @@ export async function narrateTurn(
           recentEvents: context.recentEvents,
           lastEvent,
           currentBeat,
-          campaignStructure: storyOverview?.campaign_structure
+          // TODO: campaign_structure doesn't exist on story_overviews table yet
+          campaignStructure: (storyOverview as any)?.campaign_structure
         }
       }
     });
@@ -290,7 +291,8 @@ export async function checkActTransition(
     .eq('seed_id', game.seed_id)
     .single();
 
-  const acts = storyOverview?.campaign_structure?.acts || [];
+  // TODO: campaign_structure doesn't exist on story_overviews table yet
+  const acts = (storyOverview as any)?.campaign_structure?.acts || [];
   const currentAct = acts.find((a: any) => a.actNumber === currentState.current_act_number);
 
   if (!currentAct) return { actComplete: false };

@@ -643,87 +643,13 @@ export default function CharacterReviewScreen() {
                           <p className="text-sm text-muted-foreground">{character.background}</p>
                         </div>
 
-                        {!!character.personalityTraits?.length && (
-                          <div>
-                            <h4 className="text-sm font-semibold mb-2">Personality Traits</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {character.personalityTraits.map((trait, idx) => (
-                                <Badge key={idx} variant="secondary">
-                                  {trait}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {!!character.motivations?.length && (
-                          <div>
-                            <h4 className="text-sm font-semibold mb-2">Motivations</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {character.motivations.map((motivation, idx) => (
-                                <Badge key={idx} variant="outline">
-                                  {motivation}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {!!character.flaws?.length && (
-                          <div>
-                            <h4 className="text-sm font-semibold mb-2">Flaws</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {character.flaws.map((flaw, idx) => (
-                                <Badge key={idx} variant="destructive">
-                                  {flaw}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        {/* Removed: personalityTraits, motivations, flaws - not part of FATE Core Character schema */}
                       </TabsContent>
 
                       <TabsContent value="mechanics" className="space-y-4">
-                        <div>
-                          <h4 className="text-sm font-semibold mb-2">Roles</h4>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">Mechanical:</span>
-                              <Badge>{character.mechanicalRole}</Badge>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">Social:</span>
-                              <Badge>{character.socialRole}</Badge>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium">Exploration:</span>
-                              <Badge>{character.explorationRole}</Badge>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <h4 className="text-sm font-semibold mb-2">Archetypes</h4>
-                          <div className="flex gap-2">
-                            <Badge variant="secondary">{character.primaryArchetype}</Badge>
-                            {character.secondaryArchetype && (
-                              <Badge variant="outline">{character.secondaryArchetype}</Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        {!!character.abilities?.length && (
-                          <div>
-                            <h4 className="text-sm font-semibold mb-2">Abilities</h4>
-                            <ul className="space-y-1">
-                              {character.abilities.map((ability, idx) => (
-                                <li key={idx} className="text-sm text-muted-foreground">
-                                  • {ability}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                        {/* Removed: mechanicalRole, socialRole, explorationRole - not part of FATE Core Character schema */}
+                        {/* Removed: primaryArchetype, secondaryArchetype - not part of FATE Core Character schema */}
+                        {/* Removed: abilities - not part of FATE Core Character schema */}
 
                         {!!character.equipment?.length && (
                           <div>

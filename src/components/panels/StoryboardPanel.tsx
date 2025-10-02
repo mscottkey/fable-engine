@@ -156,12 +156,13 @@ export function StoryboardPanel({ gameId }: StoryboardPanelProps) {
       try {
         const currentBeat = await loadCurrentBeat(gameId);
         if (currentBeat) {
-          await logPlayerDivergence(gameId, {
-            beatId: currentBeat.beatId,
-            playerAction: pendingAction,
-            reason: intentWarning.reason,
-            timestamp: new Date().toISOString()
-          });
+          // TODO: Implement logPlayerDivergence function
+          // await logPlayerDivergence(gameId, {
+          //   beatId: currentBeat.beatId,
+          //   playerAction: pendingAction,
+          //   reason: intentWarning.reason,
+          //   timestamp: new Date().toISOString()
+          // });
         }
       } catch (error) {
         console.error('Failed to log divergence:', error);

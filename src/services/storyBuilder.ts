@@ -40,8 +40,8 @@ export async function generateStoryOverview(request: AIGenerationRequest): Promi
     if (seed.generation_status === 'story_generated' && seed.story_overview_draft && request.type !== 'regen' && request.type !== 'remix') {
       return {
         success: true,
-        story: seed.story_overview_draft,
-        data: seed.story_overview_draft,
+        story: seed.story_overview_draft as StoryOverview,
+        data: seed.story_overview_draft as Partial<StoryOverview>,
         cached: true
       };
     }
