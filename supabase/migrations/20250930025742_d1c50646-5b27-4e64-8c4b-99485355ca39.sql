@@ -15,7 +15,7 @@ ALTER TABLE public.campaign_seeds
 ADD COLUMN last_generation_at timestamp with time zone DEFAULT NULL;
 
 -- Create index for status queries
-CREATE INDEX idx_campaign_seeds_generation_status ON public.campaign_seeds (generation_status);
+CREATE INDEX IF NOT EXISTS idx_campaign_seeds_generation_status ON public.campaign_seeds (generation_status);
 
 -- Update existing records to have the default status
 UPDATE public.campaign_seeds 

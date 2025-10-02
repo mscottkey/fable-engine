@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.idempotency_keys (
   expires_at timestamptz NOT NULL
 );
 
-CREATE INDEX idx_idempotency_expires ON public.idempotency_keys (expires_at);
+CREATE INDEX IF NOT EXISTS idx_idempotency_expires ON public.idempotency_keys (expires_at);
 
 -- Auto-cleanup expired keys
 CREATE OR REPLACE FUNCTION cleanup_expired_idempotency_keys()
@@ -188,12 +188,13 @@ CREATE TABLE IF NOT EXISTS public.generation_jobs (
   CONSTRAINT generation_jobs_progress_check CHECK (progress >= 0 AND progress <= 100)
 );
 
-CREATE INDEX idx_generation_jobs_game_status ON public.generation_jobs (game_id, status);
-CREATE INDEX idx_generation_jobs_created ON public.generation_jobs (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_generation_jobs_game_status ON public.generation_jobs (game_id, status);
+CREATE INDEX IF NOT EXISTS idx_generation_jobs_created ON public.generation_jobs (created_at DESC);
 
 -- RLS for generation_jobs
 ALTER TABLE public.generation_jobs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "generation_jobs_read_members" ON public.generation_jobs;
 CREATE POLICY "generation_jobs_read_members" ON public.generation_jobs
   FOR SELECT USING (
     EXISTS (

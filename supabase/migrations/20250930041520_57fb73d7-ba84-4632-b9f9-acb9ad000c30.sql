@@ -28,10 +28,12 @@ $$;
 DROP POLICY IF EXISTS "slots_insert_host" ON public.party_slots;
 DROP POLICY IF EXISTS "slots_claim_write" ON public.party_slots;
 
+DROP POLICY IF EXISTS "slots_insert_host" ON public.party_slots;
 CREATE POLICY "slots_insert_host" ON public.party_slots
 FOR INSERT 
 WITH CHECK (public.can_manage_party_slots(game_id, auth.uid()));
 
+DROP POLICY IF EXISTS "slots_claim_write" ON public.party_slots;
 CREATE POLICY "slots_claim_write" ON public.party_slots
 FOR UPDATE 
 USING (public.can_manage_party_slots(game_id, auth.uid()) OR claimed_by = auth.uid())

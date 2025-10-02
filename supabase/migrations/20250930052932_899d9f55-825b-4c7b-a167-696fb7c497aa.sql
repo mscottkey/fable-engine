@@ -4,6 +4,7 @@
 DROP POLICY IF EXISTS "games_select_own" ON public.games;
 
 -- Create new policy that allows access by owner OR by membership
+DROP POLICY IF EXISTS "games_select_own_or_member" ON public.games;
 CREATE POLICY "games_select_own_or_member" ON public.games
 FOR SELECT USING (
   auth.uid() = user_id 

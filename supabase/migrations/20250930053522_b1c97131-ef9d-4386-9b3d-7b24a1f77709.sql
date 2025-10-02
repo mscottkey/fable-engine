@@ -10,11 +10,13 @@ DROP FUNCTION IF EXISTS public.can_access_game(uuid, uuid);
 
 -- Simple, straightforward policies that won't cause recursion
 -- Policy 1: Game owners can always access their games
+DROP POLICY IF EXISTS "games_select_by_owner" ON public.games;
 CREATE POLICY "games_select_by_owner" ON public.games
 FOR SELECT USING (auth.uid() = user_id);
 
 -- Policy 2: Game members can access games they're members of
 -- Use a simple EXISTS query that doesn't reference the games table
+DROP POLICY IF EXISTS "games_select_by_membership" ON public.games;
 CREATE POLICY "games_select_by_membership" ON public.games  
 FOR SELECT USING (
   EXISTS (

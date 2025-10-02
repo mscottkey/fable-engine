@@ -13,12 +13,13 @@ CREATE TABLE IF NOT EXISTS public.game_sessions (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_game_sessions_game_id ON public.game_sessions(game_id);
-CREATE INDEX idx_game_sessions_status ON public.game_sessions(game_id, status);
+CREATE INDEX IF NOT EXISTS idx_game_sessions_game_id ON public.game_sessions(game_id);
+CREATE INDEX IF NOT EXISTS idx_game_sessions_status ON public.game_sessions(game_id, status);
 
 -- RLS Policies
 ALTER TABLE public.game_sessions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "sessions_read_members" ON public.game_sessions;
 CREATE POLICY "sessions_read_members" ON public.game_sessions
   FOR SELECT USING (
     EXISTS (
@@ -28,6 +29,7 @@ CREATE POLICY "sessions_read_members" ON public.game_sessions
     )
   );
 
+DROP POLICY IF EXISTS "sessions_write_host" ON public.game_sessions;
 CREATE POLICY "sessions_write_host" ON public.game_sessions
   FOR ALL USING (
     EXISTS (
@@ -71,13 +73,14 @@ CREATE TABLE IF NOT EXISTS public.narrative_events (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_narrative_events_session ON public.narrative_events(session_id, event_number);
-CREATE INDEX idx_narrative_events_game ON public.narrative_events(game_id, timestamp DESC);
-CREATE INDEX idx_narrative_events_character ON public.narrative_events(character_id);
+CREATE INDEX IF NOT EXISTS idx_narrative_events_session ON public.narrative_events(session_id, event_number);
+CREATE INDEX IF NOT EXISTS idx_narrative_events_game ON public.narrative_events(game_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_narrative_events_character ON public.narrative_events(character_id);
 
 -- RLS Policies
 ALTER TABLE public.narrative_events ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "events_read_members" ON public.narrative_events;
 CREATE POLICY "events_read_members" ON public.narrative_events
   FOR SELECT USING (
     EXISTS (
@@ -87,6 +90,7 @@ CREATE POLICY "events_read_members" ON public.narrative_events
     )
   );
 
+DROP POLICY IF EXISTS "events_write_host" ON public.narrative_events;
 CREATE POLICY "events_write_host" ON public.narrative_events
   FOR INSERT WITH CHECK (
     EXISTS (
@@ -128,11 +132,12 @@ CREATE TABLE IF NOT EXISTS public.story_state (
   updated_by uuid REFERENCES auth.users(id)
 );
 
-CREATE UNIQUE INDEX idx_story_state_game ON public.story_state(game_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_story_state_game ON public.story_state(game_id);
 
 -- RLS Policies
 ALTER TABLE public.story_state ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "state_read_members" ON public.story_state;
 CREATE POLICY "state_read_members" ON public.story_state
   FOR SELECT USING (
     EXISTS (
@@ -142,6 +147,7 @@ CREATE POLICY "state_read_members" ON public.story_state
     )
   );
 
+DROP POLICY IF EXISTS "state_write_host" ON public.story_state;
 CREATE POLICY "state_write_host" ON public.story_state
   FOR ALL USING (
     EXISTS (
@@ -167,6 +173,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_game_created ON public.games;
 CREATE TRIGGER on_game_created
   AFTER INSERT ON public.games
   FOR EACH ROW

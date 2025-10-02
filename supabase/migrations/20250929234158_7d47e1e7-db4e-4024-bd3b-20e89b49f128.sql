@@ -10,7 +10,7 @@ CREATE TABLE public.model_pricing (
 );
 
 -- Create index for efficient pricing lookups
-CREATE INDEX idx_model_pricing_lookup ON public.model_pricing (provider, model, effective_from DESC);
+CREATE INDEX IF NOT EXISTS idx_model_pricing_lookup ON public.model_pricing (provider, model, effective_from DESC);
 
 -- Create ai_events table for usage logging
 CREATE TABLE public.ai_events (

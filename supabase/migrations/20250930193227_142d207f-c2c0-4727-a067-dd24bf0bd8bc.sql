@@ -3,7 +3,7 @@ ALTER TABLE public.story_overviews
 ADD COLUMN game_id UUID REFERENCES public.games(id) ON DELETE CASCADE;
 
 -- Create index for better query performance
-CREATE INDEX idx_story_overviews_game_id ON public.story_overviews(game_id);
+CREATE INDEX IF NOT EXISTS idx_story_overviews_game_id ON public.story_overviews(game_id);
 
 -- Update RLS policies to allow access via game membership
 DROP POLICY IF EXISTS "Users can view their own story overviews" ON public.story_overviews;

@@ -13,12 +13,13 @@ CREATE TABLE IF NOT EXISTS public.game_sessions (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_game_sessions_game_id ON public.game_sessions(game_id);
-CREATE INDEX idx_game_sessions_status ON public.game_sessions(game_id, status);
+CREATE INDEX IF NOT EXISTS idx_game_sessions_game_id ON public.game_sessions(game_id);
+CREATE INDEX IF NOT EXISTS idx_game_sessions_status ON public.game_sessions(game_id, status);
 
 -- RLS Policies
 ALTER TABLE public.game_sessions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "sessions_read_members" ON public.game_sessions;
 CREATE POLICY "sessions_read_members" ON public.game_sessions
   FOR SELECT USING (
     EXISTS (
@@ -28,6 +29,7 @@ CREATE POLICY "sessions_read_members" ON public.game_sessions
     )
   );
 
+DROP POLICY IF EXISTS "sessions_write_host" ON public.game_sessions;
 CREATE POLICY "sessions_write_host" ON public.game_sessions
   FOR ALL USING (
     EXISTS (

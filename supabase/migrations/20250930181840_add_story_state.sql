@@ -29,11 +29,12 @@ CREATE TABLE IF NOT EXISTS public.story_state (
   updated_by uuid REFERENCES auth.users(id)
 );
 
-CREATE UNIQUE INDEX idx_story_state_game ON public.story_state(game_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_story_state_game ON public.story_state(game_id);
 
 -- RLS Policies
 ALTER TABLE public.story_state ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "state_read_members" ON public.story_state;
 CREATE POLICY "state_read_members" ON public.story_state
   FOR SELECT USING (
     EXISTS (
@@ -43,6 +44,7 @@ CREATE POLICY "state_read_members" ON public.story_state
     )
   );
 
+DROP POLICY IF EXISTS "state_write_host" ON public.story_state;
 CREATE POLICY "state_write_host" ON public.story_state
   FOR ALL USING (
     EXISTS (
@@ -68,6 +70,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS on_game_created ON public.games;
 CREATE TRIGGER on_game_created
   AFTER INSERT ON public.games
   FOR EACH ROW

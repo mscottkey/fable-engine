@@ -37,6 +37,7 @@ ALTER TABLE public.characters ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.character_lineups ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for characters table
+DROP POLICY IF EXISTS "characters_read_members" ON public.characters;
 CREATE POLICY "characters_read_members" ON public.characters
   FOR SELECT USING (
     EXISTS (
@@ -46,6 +47,7 @@ CREATE POLICY "characters_read_members" ON public.characters
     )
   );
 
+DROP POLICY IF EXISTS "characters_write_host" ON public.characters;
 CREATE POLICY "characters_write_host" ON public.characters
   FOR ALL USING (
     EXISTS (
@@ -65,6 +67,7 @@ CREATE POLICY "characters_write_host" ON public.characters
   );
 
 -- RLS Policies for character_lineups table
+DROP POLICY IF EXISTS "lineups_read_members" ON public.character_lineups;
 CREATE POLICY "lineups_read_members" ON public.character_lineups
   FOR SELECT USING (
     EXISTS (
@@ -74,6 +77,7 @@ CREATE POLICY "lineups_read_members" ON public.character_lineups
     )
   );
 
+DROP POLICY IF EXISTS "lineups_write_host" ON public.character_lineups;
 CREATE POLICY "lineups_write_host" ON public.character_lineups
   FOR ALL USING (
     EXISTS (

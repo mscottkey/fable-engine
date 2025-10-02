@@ -22,6 +22,7 @@ $$;
 -- Update the policy to use the security definer function
 DROP POLICY IF EXISTS "members_insert_policy" ON public.game_members;
 
+DROP POLICY IF EXISTS "members_insert_policy" ON public.game_members;
 CREATE POLICY "members_insert_policy" ON public.game_members
 FOR INSERT 
 WITH CHECK (public.can_add_game_member(game_id, auth.uid()));

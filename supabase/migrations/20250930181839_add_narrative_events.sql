@@ -31,13 +31,14 @@ CREATE TABLE IF NOT EXISTS public.narrative_events (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_narrative_events_session ON public.narrative_events(session_id, event_number);
-CREATE INDEX idx_narrative_events_game ON public.narrative_events(game_id, timestamp DESC);
-CREATE INDEX idx_narrative_events_character ON public.narrative_events(character_id);
+CREATE INDEX IF NOT EXISTS idx_narrative_events_session ON public.narrative_events(session_id, event_number);
+CREATE INDEX IF NOT EXISTS idx_narrative_events_game ON public.narrative_events(game_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_narrative_events_character ON public.narrative_events(character_id);
 
 -- RLS Policies
 ALTER TABLE public.narrative_events ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "events_read_members" ON public.narrative_events;
 CREATE POLICY "events_read_members" ON public.narrative_events
   FOR SELECT USING (
     EXISTS (
@@ -47,6 +48,7 @@ CREATE POLICY "events_read_members" ON public.narrative_events
     )
   );
 
+DROP POLICY IF EXISTS "events_write_host" ON public.narrative_events;
 CREATE POLICY "events_write_host" ON public.narrative_events
   FOR INSERT WITH CHECK (
     EXISTS (

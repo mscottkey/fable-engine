@@ -90,6 +90,7 @@ ALTER TABLE public.campaign_arcs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.resolutions ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies (standard pattern for all phase tables)
+DROP POLICY IF EXISTS "factions_read_members" ON public.factions;
 CREATE POLICY "factions_read_members" ON public.factions
   FOR SELECT USING (
     EXISTS (
@@ -99,6 +100,7 @@ CREATE POLICY "factions_read_members" ON public.factions
     )
   );
 
+DROP POLICY IF EXISTS "factions_write_host" ON public.factions;
 CREATE POLICY "factions_write_host" ON public.factions
   FOR ALL USING (
     EXISTS (
@@ -109,6 +111,7 @@ CREATE POLICY "factions_write_host" ON public.factions
     )
   );
 
+DROP POLICY IF EXISTS "story_nodes_read_members" ON public.story_nodes;
 CREATE POLICY "story_nodes_read_members" ON public.story_nodes
   FOR SELECT USING (
     EXISTS (
@@ -118,6 +121,7 @@ CREATE POLICY "story_nodes_read_members" ON public.story_nodes
     )
   );
 
+DROP POLICY IF EXISTS "story_nodes_write_host" ON public.story_nodes;
 CREATE POLICY "story_nodes_write_host" ON public.story_nodes
   FOR ALL USING (
     EXISTS (
@@ -128,6 +132,7 @@ CREATE POLICY "story_nodes_write_host" ON public.story_nodes
     )
   );
 
+DROP POLICY IF EXISTS "campaign_arcs_read_members" ON public.campaign_arcs;
 CREATE POLICY "campaign_arcs_read_members" ON public.campaign_arcs
   FOR SELECT USING (
     EXISTS (
@@ -137,6 +142,7 @@ CREATE POLICY "campaign_arcs_read_members" ON public.campaign_arcs
     )
   );
 
+DROP POLICY IF EXISTS "campaign_arcs_write_host" ON public.campaign_arcs;
 CREATE POLICY "campaign_arcs_write_host" ON public.campaign_arcs
   FOR ALL USING (
     EXISTS (
@@ -147,6 +153,7 @@ CREATE POLICY "campaign_arcs_write_host" ON public.campaign_arcs
     )
   );
 
+DROP POLICY IF EXISTS "resolutions_read_members" ON public.resolutions;
 CREATE POLICY "resolutions_read_members" ON public.resolutions
   FOR SELECT USING (
     EXISTS (
@@ -156,6 +163,7 @@ CREATE POLICY "resolutions_read_members" ON public.resolutions
     )
   );
 
+DROP POLICY IF EXISTS "resolutions_write_host" ON public.resolutions;
 CREATE POLICY "resolutions_write_host" ON public.resolutions
   FOR ALL USING (
     EXISTS (

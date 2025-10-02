@@ -15,6 +15,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS set_user_id_story_overview_trigger ON public.story_overviews;
 CREATE TRIGGER set_user_id_story_overview_trigger
   BEFORE INSERT ON public.story_overviews
   FOR EACH ROW

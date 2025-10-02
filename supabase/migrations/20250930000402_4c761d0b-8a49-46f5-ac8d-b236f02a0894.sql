@@ -39,6 +39,7 @@ FOR DELETE
 USING (auth.uid() = user_id);
 
 -- Create trigger for automatic timestamp updates
+DROP TRIGGER IF EXISTS update_story_overviews_updated_at ON public.story_overviews;
 CREATE TRIGGER update_story_overviews_updated_at
 BEFORE UPDATE ON public.story_overviews
 FOR EACH ROW

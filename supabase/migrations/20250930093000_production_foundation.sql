@@ -11,29 +11,29 @@ CREATE TABLE IF NOT EXISTS public.idempotency_keys (
   expires_at timestamptz NOT NULL
 );
 
-CREATE INDEX idx_idempotency_expires ON public.idempotency_keys (expires_at);
+CREATE INDEX IF NOT EXISTS idx_idempotency_expires ON public.idempotency_keys (expires_at);
 
 -- Auto-cleanup expired keys
 CREATE OR REPLACE FUNCTION cleanup_expired_idempotency_keys()
 RETURNS void
 LANGUAGE plpgsql
-AS $
+AS $$
 BEGIN
   DELETE FROM public.idempotency_keys
   WHERE expires_at < now();
 END;
-$;
+$$;
 
 -- ============================================================================
 -- 2. Update game status enum to match state machine
 -- ============================================================================
-DO $ 
+DO $$
 BEGIN
   -- Drop old constraint if exists
   ALTER TABLE public.games DROP CONSTRAINT IF EXISTS games_status_check;
-  
+
   -- Add new constraint with all valid states
-  ALTER TABLE public.games ADD CONSTRAINT games_status_check 
+  ALTER TABLE public.games ADD CONSTRAINT games_status_check
   CHECK (status IN (
     'draft',
     'story_review',
@@ -47,42 +47,42 @@ BEGIN
   ));
 EXCEPTION
   WHEN duplicate_object THEN NULL;
-END $;
+END $$;
 
 -- ============================================================================
 -- 3. Update party_slots status enum
 -- ============================================================================
-DO $ 
+DO $$
 BEGIN
   ALTER TABLE public.party_slots DROP CONSTRAINT IF EXISTS party_slots_status_check;
-  
-  ALTER TABLE public.party_slots ADD CONSTRAINT party_slots_status_check 
+
+  ALTER TABLE public.party_slots ADD CONSTRAINT party_slots_status_check
   CHECK (status IN ('empty', 'reserved', 'ready', 'locked'));
 EXCEPTION
   WHEN duplicate_object THEN NULL;
-END $;
+END $$;
 
 -- ============================================================================
 -- 4. Update characters status enum
 -- ============================================================================
-DO $ 
+DO $$
 BEGIN
   ALTER TABLE public.characters DROP CONSTRAINT IF EXISTS characters_status_check;
-  
-  ALTER TABLE public.characters ADD CONSTRAINT characters_status_check 
+
+  ALTER TABLE public.characters ADD CONSTRAINT characters_status_check
   CHECK (status IN ('pending', 'generated', 'approved', 'rejected'));
 EXCEPTION
   WHEN duplicate_object THEN NULL;
-END $;
+END $$;
 
 -- ============================================================================
 -- 5. Update campaign_seeds generation_status enum
 -- ============================================================================
-DO $ 
+DO $$
 BEGIN
   ALTER TABLE public.campaign_seeds DROP CONSTRAINT IF EXISTS campaign_seeds_generation_status_check;
-  
-  ALTER TABLE public.campaign_seeds ADD CONSTRAINT campaign_seeds_generation_status_check 
+
+  ALTER TABLE public.campaign_seeds ADD CONSTRAINT campaign_seeds_generation_status_check
   CHECK (generation_status IN (
     'draft',
     'story_generating',
@@ -92,7 +92,7 @@ BEGIN
   ));
 EXCEPTION
   WHEN duplicate_object THEN NULL;
-END $;
+END $$;
 
 -- ============================================================================
 -- 6. Add audit columns for better tracking
@@ -114,23 +114,23 @@ ALTER TABLE public.characters
 -- 7. Create trigger to update timestamps automatically
 -- ============================================================================
 CREATE OR REPLACE FUNCTION update_timestamp_and_status_change()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = now();
-  
+
   -- Track status changes
   IF TG_TABLE_NAME = 'games' AND (OLD.status IS DISTINCT FROM NEW.status) THEN
     NEW.status_changed_at = now();
     NEW.status_changed_by = auth.uid();
   END IF;
-  
+
   IF TG_TABLE_NAME IN ('party_slots', 'characters') AND (OLD.status IS DISTINCT FROM NEW.status) THEN
     NEW.status_changed_at = now();
   END IF;
-  
+
   RETURN NEW;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Apply triggers
 DROP TRIGGER IF EXISTS games_update_timestamp ON public.games;
@@ -188,12 +188,13 @@ CREATE TABLE IF NOT EXISTS public.generation_jobs (
   CONSTRAINT generation_jobs_progress_check CHECK (progress >= 0 AND progress <= 100)
 );
 
-CREATE INDEX idx_generation_jobs_game_status ON public.generation_jobs (game_id, status);
-CREATE INDEX idx_generation_jobs_created ON public.generation_jobs (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_generation_jobs_game_status ON public.generation_jobs (game_id, status);
+CREATE INDEX IF NOT EXISTS idx_generation_jobs_created ON public.generation_jobs (created_at DESC);
 
 -- RLS for generation_jobs
 ALTER TABLE public.generation_jobs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "generation_jobs_read_members" ON public.generation_jobs;
 CREATE POLICY "generation_jobs_read_members" ON public.generation_jobs
   FOR SELECT USING (
     EXISTS (
@@ -233,7 +234,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS $
+AS $$
 DECLARE
   v_current_status text;
   v_ready_slots int;
@@ -244,25 +245,25 @@ BEGIN
   SELECT status INTO v_current_status
   FROM public.games
   WHERE id = p_game_id;
-  
+
   IF v_current_status IS NULL THEN
     RETURN QUERY SELECT false, 'Game not found';
     RETURN;
   END IF;
-  
+
   -- Count ready slots
   SELECT COUNT(*) INTO v_ready_slots
   FROM public.party_slots
   WHERE game_id = p_game_id
   AND status IN ('ready', 'locked');
-  
+
   -- Check for story
   SELECT EXISTS (
     SELECT 1 FROM public.story_overviews
     WHERE game_id = p_game_id
     LIMIT 1
   ) INTO v_has_story;
-  
+
   -- Check for approved characters
   SELECT EXISTS (
     SELECT 1 FROM public.characters
@@ -270,7 +271,7 @@ BEGIN
     AND status = 'approved'
     LIMIT 1
   ) INTO v_has_characters;
-  
+
   -- Validate state requirements based on target status
   CASE p_new_status
     WHEN 'characters' THEN
@@ -282,7 +283,7 @@ BEGIN
         RETURN QUERY SELECT false, 'Story overview must be approved';
         RETURN;
       END IF;
-      
+
     WHEN 'char_review' THEN
       IF v_ready_slots < 1 THEN
         RETURN QUERY SELECT false, 'Requires at least 1 ready player';
@@ -299,7 +300,7 @@ BEGIN
         RETURN QUERY SELECT false, 'Characters must be generated';
         RETURN;
       END IF;
-      
+
     WHEN 'playing' THEN
       IF v_ready_slots < 1 THEN
         RETURN QUERY SELECT false, 'Requires at least 1 ready player';
@@ -314,11 +315,11 @@ BEGIN
         RETURN;
       END IF;
   END CASE;
-  
+
   -- All checks passed
   RETURN QUERY SELECT true, NULL::text;
 END;
-$;
+$$;
 
 -- ============================================================================
 -- 12. Create function to safely transition game state
@@ -334,7 +335,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
-AS $
+AS $$
 DECLARE
   v_can_transition boolean;
   v_error_msg text;
@@ -344,30 +345,30 @@ BEGIN
     SELECT ct.can_transition, ct.error_message
     INTO v_can_transition, v_error_msg
     FROM can_transition_game_state(p_game_id, p_new_status) ct;
-    
+
     IF NOT v_can_transition THEN
       RETURN QUERY SELECT false, v_error_msg;
       RETURN;
     END IF;
   END IF;
-  
+
   -- Perform the update
   UPDATE public.games
-  SET 
+  SET
     status = p_new_status,
     updated_at = now(),
     status_changed_at = now(),
     status_changed_by = auth.uid()
   WHERE id = p_game_id;
-  
+
   IF NOT FOUND THEN
     RETURN QUERY SELECT false, 'Game not found';
     RETURN;
   END IF;
-  
+
   RETURN QUERY SELECT true, NULL::text;
 END;
-$;
+$$;
 
 -- ============================================================================
 -- 13. Add comments for documentation

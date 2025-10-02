@@ -24,6 +24,7 @@ AS $$
 $$;
 
 -- Create new policy that uses the security definer function
+DROP POLICY IF EXISTS "games_select_access" ON public.games;
 CREATE POLICY "games_select_access" ON public.games
 FOR SELECT USING (
   public.can_access_game(id, auth.uid())

@@ -7,6 +7,7 @@ ALTER TABLE public.idempotency_keys ENABLE ROW LEVEL SECURITY;
 
 -- Only system/backend should access idempotency keys
 -- Users should not directly access this table
+DROP POLICY IF EXISTS "idempotency_keys_no_direct_access" ON public.idempotency_keys;
 CREATE POLICY "idempotency_keys_no_direct_access" ON public.idempotency_keys
   FOR ALL USING (false);
 
