@@ -56,7 +56,40 @@ export function AppSidebar({ user, onBackToAdventures, onOpenSettings, onSelectG
 
   useEffect(() => {
     loadGames();
-  }, []);
+
+    // Set up real-time subscription for games
+    const channel = supabase
+      .channel('games-list-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'games',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          loadGames();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'campaign_seeds',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          loadGames();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user.id]);
 
   const loadGames = async () => {
     try {
