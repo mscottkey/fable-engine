@@ -2,7 +2,7 @@ project_id = "drqbvxrouedaohmwfvdj"
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
+#site_url = "http://localhost:3000"
 
 [functions.generate-story]
 verify_jwt = false
