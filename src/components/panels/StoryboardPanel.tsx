@@ -74,8 +74,9 @@ export function StoryboardPanel({ gameId }: StoryboardPanelProps) {
       const currentBeat = await loadCurrentBeat(gameId);
 
       if (currentBeat) {
-        // Use client-side intent detection for instant response
+        // Use edge function for secure intent detection
         const intent = await detectPlayerIntent(
+          gameId,
           playerAction,
           currentBeat,
           context?.recentEvents || []

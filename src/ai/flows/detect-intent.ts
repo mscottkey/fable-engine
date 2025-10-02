@@ -1,9 +1,7 @@
-// Client-side intent detection flow
-// Replaces edge function for real-time player action classification
+// Intent detection flow
+// Calls runtime-intent edge function
 
-import { callGoogleAI, type AIMessage } from '@/ai/client';
-import { getPrompt } from '@/ai/prompts';
-import { renderTemplate } from '@/ai/templateRenderer';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface IntentDetectionResult {
   classification: 'on-track' | 'tangent' | 'divergent';
@@ -21,52 +19,42 @@ export interface IntentClassification {
 }
 
 /**
- * Client-side intent detection
+ * Intent detection via edge function
  * Classifies player actions for off-rails warnings
  */
 export async function detectPlayerIntent(
+  gameId: string,
   playerAction: string,
   currentBeat: any,
   recentEvents: any[]
 ): Promise<IntentClassification> {
-  // Load prompts
-  const systemPrompt = getPrompt('gm/detect-intent/system@v1');
-  const userTemplate = getPrompt('gm/detect-intent@v1');
-
-  // Render user prompt with context
-  const userPrompt = renderTemplate(userTemplate, {
-    currentBeat,
-    recentEvents: recentEvents.slice(-3),
-    playerAction
-  });
-
-  // Build messages
-  const messages: AIMessage[] = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userPrompt }
-  ];
+  // Get auth token
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error('Not authenticated');
+  }
 
   try {
-    // Call AI with JSON response format
-    const response = await callGoogleAI(messages, {
-      temperature: 0.7,
-      maxTokens: 500,
-      responseFormat: 'json'
+    // Call edge function
+    const { data, error } = await supabase.functions.invoke('runtime-intent', {
+      body: {
+        gameId,
+        playerAction,
+        currentBeat,
+        recentEvents
+      }
     });
 
-    // Parse response
-    const result: IntentDetectionResult = JSON.parse(response.content);
+    if (error) {
+      console.error('Edge function error:', error);
+      throw error;
+    }
 
-    // Convert to IntentClassification format
-    const isOnTrack = result.classification === 'on-track';
+    if (!data.success) {
+      throw new Error(data.error || 'Unknown error detecting intent');
+    }
 
-    return {
-      isOnTrack,
-      confidence: result.confidence,
-      intendedBeat: currentBeat?.beatId || null,
-      divergenceReason: result.classification === 'divergent' ? result.reasoning : undefined,
-      alternativeAction: result.alternativeAction
-    };
+    return data.data;
 
   } catch (error) {
     console.error('Intent detection failed:', error);

@@ -25,3 +25,17 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.env
+.env.*.local
+.env.local
+.env.*.development.local
+.env.*.test.local
+.env.*.production.local
+.env.test
+.env.production
+.env.development
+.env.*.staging.local
+.env.staging
+.env.*.staging
+.env.*.production

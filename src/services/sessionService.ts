@@ -120,8 +120,8 @@ export async function generateSessionRecap(sessionId: string): Promise<string> {
 
   if (!session) throw new Error('Session not found');
 
-  // Use client-side recap generation for instant response
-  const recap = await generateRecapFlow(events.slice(-10));
+  // Use edge function for secure recap generation
+  const recap = await generateRecapFlow(session.game_id, events.slice(-10));
   return recap;
 }
 
@@ -131,8 +131,9 @@ export async function generateSessionRecap(sessionId: string): Promise<string> {
 async function generateOpeningScene(gameId: string, sessionId: string): Promise<void> {
   const context = await loadGameContext(gameId, 0);
 
-  // Use client-side opening scene generation for instant response
+  // Use edge function for secure opening scene generation
   const opening = await generateOpeningFlow(
+    gameId,
     context.storyOverview,
     context.characters
   );
@@ -145,7 +146,7 @@ async function generateOpeningScene(gameId: string, sessionId: string): Promise<
       game_id: gameId,
       event_number: 0,
       event_type: 'narration',
-      narration: data.narration,
-      available_options: data.options
+      narration: opening.narration,
+      available_options: opening.options
     });
 }

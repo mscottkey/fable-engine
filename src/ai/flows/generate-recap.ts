@@ -1,36 +1,35 @@
-// Client-side recap generation flow
-// Replaces edge function for session recaps
+// Session recap generation flow
+// Calls runtime-recap edge function
 
-import { callGoogleAI, type AIMessage } from '@/ai/client';
-import { getPrompt } from '@/ai/prompts';
-import { renderTemplate } from '@/ai/templateRenderer';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Client-side session recap generation
+ * Session recap generation via edge function
  * Creates a narrative summary of the session for players
  */
-export async function generateSessionRecap(events: any[]): Promise<string> {
-  // Load prompts
-  const systemPrompt = getPrompt('gm/generate-recap/system@v1');
-  const userTemplate = getPrompt('gm/generate-recap@v1');
+export async function generateSessionRecap(gameId: string, events: any[]): Promise<string> {
+  // Get auth token
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error('Not authenticated');
+  }
 
-  // Render user prompt with events
-  const userPrompt = renderTemplate(userTemplate, {
-    events
+  // Call edge function
+  const { data, error } = await supabase.functions.invoke('runtime-recap', {
+    body: {
+      gameId,
+      events
+    }
   });
 
-  // Build messages
-  const messages: AIMessage[] = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userPrompt }
-  ];
+  if (error) {
+    console.error('Edge function error:', error);
+    throw new Error(`Failed to generate recap: ${error.message}`);
+  }
 
-  // Call AI with text response format
-  const response = await callGoogleAI(messages, {
-    temperature: 0.7,
-    maxTokens: 1024,
-    responseFormat: 'text'
-  });
+  if (!data.success) {
+    throw new Error(data.error || 'Unknown error generating recap');
+  }
 
-  return response.content;
+  return data.data;
 }

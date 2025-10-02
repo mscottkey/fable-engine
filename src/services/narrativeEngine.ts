@@ -60,7 +60,7 @@ export async function narrateTurn(
       .eq('seed_id', game.seed_id)
       .single();
 
-    // Call client-side flow for instant response (no edge cold start)
+    // Call edge function for secure server-side processing
     const narrativeContext: NarrativeTurnContext = {
       storyOverview: context.storyOverview,
       storyState: context.storyState,
@@ -72,7 +72,7 @@ export async function narrateTurn(
       campaignStructure: (storyOverview as any)?.campaign_structure
     };
 
-    const narrative = await generateNarrativeTurn(narrativeContext, playerAction, characterId);
+    const narrative = await generateNarrativeTurn(gameId, narrativeContext, playerAction, characterId);
 
     // Check for beat completion
     if (currentBeat && narrative.beatProgress) {

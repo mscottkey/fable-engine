@@ -1,9 +1,7 @@
-// Client-side opening scene generation flow
-// Replaces edge function for session 1 opening
+// Opening scene generation flow
+// Calls runtime-opening edge function
 
-import { callGoogleAI, type AIMessage } from '@/ai/client';
-import { getPrompt } from '@/ai/prompts';
-import { renderTemplate } from '@/ai/templateRenderer';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface OpeningScene {
   narration: string;
@@ -14,50 +12,37 @@ export interface OpeningScene {
 }
 
 /**
- * Client-side opening scene generation
+ * Opening scene generation via edge function
  * Creates the first narrative scene for a new campaign
  */
 export async function generateOpeningScene(
+  gameId: string,
   storyOverview: any,
   characters: any[]
 ): Promise<OpeningScene> {
-  // Load prompts
-  const systemPrompt = getPrompt('gm/generate-opening/system@v1');
-  const userTemplate = getPrompt('gm/generate-opening@v1');
-
-  // Render user prompt with context
-  const userPrompt = renderTemplate(userTemplate, {
-    storyOverview,
-    characters
-  });
-
-  // Build messages
-  const messages: AIMessage[] = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userPrompt }
-  ];
-
-  // Call AI with JSON response format
-  const response = await callGoogleAI(messages, {
-    temperature: 0.8,
-    maxTokens: 1024,
-    responseFormat: 'json'
-  });
-
-  // Parse and validate response
-  let result: OpeningScene;
-  try {
-    result = JSON.parse(response.content);
-  } catch (error) {
-    console.error('Failed to parse opening scene JSON:', error);
-    console.error('Raw response:', response.content);
-    throw new Error('AI returned invalid JSON for opening scene');
+  // Get auth token
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error('Not authenticated');
   }
 
-  // Validate required fields
-  if (!result.narration || !result.options) {
-    throw new Error('AI response missing required fields');
+  // Call edge function
+  const { data, error } = await supabase.functions.invoke('runtime-opening', {
+    body: {
+      gameId,
+      storyOverview,
+      characters
+    }
+  });
+
+  if (error) {
+    console.error('Edge function error:', error);
+    throw new Error(`Failed to generate opening scene: ${error.message}`);
   }
 
-  return result;
+  if (!data.success) {
+    throw new Error(data.error || 'Unknown error generating opening scene');
+  }
+
+  return data.data;
 }
