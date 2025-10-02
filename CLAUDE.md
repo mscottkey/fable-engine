@@ -11,9 +11,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run lint` - Run ESLint
 - `npm run preview` - Preview production build
 
-**Deployment**: Project uses Lovable Cloud. Deploy via Lovable dashboard (see README.md).
+**Deployment**: Frontend deploys to Vercel. Supabase edge functions deploy via `supabase functions deploy`.
 
-**Supabase**: Edge functions in `supabase/functions/` are Deno-style. Config in `supabase/config.toml`. Requires `LOVABLE_API_KEY` environment variable.
+**Supabase**: Edge functions in `supabase/functions/` are Deno-style. Config in `supabase/config.toml`. Requires `GOOGLE_AI_API_KEY` environment variable.
 
 ## Architecture
 

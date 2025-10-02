@@ -34,9 +34,9 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY is not configured');
+    const GOOGLE_AI_API_KEY = Deno.env.get('GOOGLE_AI_API_KEY');
+    if (!GOOGLE_AI_API_KEY) {
+      console.error('GOOGLE_AI_API_KEY is not configured');
       return new Response(JSON.stringify({ error: 'AI service not configured' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -68,56 +68,26 @@ CONTEXT:
 
 Return STRICT JSON per schema. No extra text.`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // Call Google AI API directly with JSON mode
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_AI_API_KEY}`;
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite', // Fast and cheap model for this task
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0,
-        max_tokens: 250,
-        tools: [
+        contents: [
           {
-            type: "function",
-            function: {
-              name: "sanitize_ip",
-              description: "Sanitize IP references and return structured result",
-              parameters: {
-                type: "object",
-                properties: {
-                  sanitized_text: { type: "string" },
-                  detections: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        span: { type: "string" },
-                        class: { 
-                          type: "string", 
-                          enum: ["ProtectedCharacter","FranchiseOrWorld","DistinctiveTerm","CreatorStyle"] 
-                        },
-                        suggested_generic: { type: "string" },
-                        confidence: { type: "number", minimum: 0, maximum: 1 }
-                      },
-                      required: ["span","class","suggested_generic","confidence"],
-                      additionalProperties: false
-                    }
-                  },
-                  had_ip: { type: "boolean" }
-                },
-                required: ["sanitized_text","detections","had_ip"],
-                additionalProperties: false
-              }
-            }
+            role: 'user',
+            parts: [{ text: `${systemPrompt}\n\n${userPrompt}\n\nReturn a JSON object with this exact schema:\n{\n  "sanitized_text": "string",\n  "detections": [{\n    "span": "string",\n    "class": "ProtectedCharacter|FranchiseOrWorld|DistinctiveTerm|CreatorStyle",\n    "suggested_generic": "string",\n    "confidence": 0.0-1.0\n  }],\n  "had_ip": boolean\n}` }]
           }
         ],
-        tool_choice: { type: "function", function: { name: "sanitize_ip" } }
+        generationConfig: {
+          temperature: 0,
+          maxOutputTokens: 250,
+          responseMimeType: 'application/json'
+        }
       }),
     });
 
@@ -128,8 +98,8 @@ Return STRICT JSON per schema. No extra text.`;
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required, please add funds to your Lovable AI workspace." }), {
+      if (response.status === 402 || response.status === 403) {
+        return new Response(JSON.stringify({ error: "Google AI API quota exceeded or payment required." }), {
           status: 402,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -146,10 +116,10 @@ Return STRICT JSON per schema. No extra text.`;
     const data = await response.json();
     console.log('AI response:', JSON.stringify(data, null, 2));
 
-    // Extract result from tool call
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall || toolCall.function?.name !== 'sanitize_ip') {
-      console.error('No valid tool call found in response');
+    // Extract result from Google AI response (JSON mode)
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!content) {
+      console.error('No valid content found in response');
       // Fallback: assume no IP detected
       return new Response(JSON.stringify({
         sanitized_text: userText.trim(),
@@ -160,7 +130,7 @@ Return STRICT JSON per schema. No extra text.`;
       });
     }
 
-    const result: SanitizationResult = JSON.parse(toolCall.function.arguments);
+    const result: SanitizationResult = JSON.parse(content);
     
     // Validate result structure
     if (!result.sanitized_text || typeof result.had_ip !== 'boolean' || !Array.isArray(result.detections)) {
