@@ -28,6 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { loadCurrentBeat } from '@/services/gameContextService';
 import { IntentWarningDialog } from '@/components/IntentWarningDialog';
 import { useToast } from '@/hooks/use-toast';
+import { detectPlayerIntent } from '@/ai/flows/detect-intent';
 
 interface StoryboardPanelProps {
   gameId: string;
@@ -73,21 +74,12 @@ export function StoryboardPanel({ gameId }: StoryboardPanelProps) {
       const currentBeat = await loadCurrentBeat(gameId);
 
       if (currentBeat) {
-        const { data: result, error: fnError } = await supabase.functions.invoke('detect-intent', {
-          body: {
-            gameId,
-            playerAction,
-            currentBeat,
-            recentEvents: context?.recentEvents || []
-          }
-        });
-
-        if (fnError) {
-          console.warn('Intent detection failed:', fnError);
-          // Continue without intent check if it fails
-        }
-
-        const intent = result?.classification || { isOnTrack: true, confidence: 50, intendedBeat: null };
+        // Use client-side intent detection for instant response
+        const intent = await detectPlayerIntent(
+          playerAction,
+          currentBeat,
+          context?.recentEvents || []
+        );
 
         // If divergent and low confidence, show warning
         if (!intent.isOnTrack && intent.confidence > 60) {

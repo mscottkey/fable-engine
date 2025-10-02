@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { loadGameContext, loadCurrentBeat } from './gameContextService';
+import { generateNarrativeTurn, type NarrativeTurnContext } from '@/ai/flows/narrate-turn';
 
 export interface NarrativeTurn {
   narration: string;
@@ -59,27 +60,19 @@ export async function narrateTurn(
       .eq('seed_id', game.seed_id)
       .single();
 
-    // Call edge function with beat context
-    const { data: narrative, error } = await supabase.functions.invoke('narrate-turn', {
-      body: {
-        gameId,
-        sessionId,
-        characterId,
-        playerAction,
-        context: {
-          storyOverview: context.storyOverview,
-          storyState: context.storyState,
-          characters: context.characters,
-          recentEvents: context.recentEvents,
-          lastEvent,
-          currentBeat,
-          // TODO: campaign_structure doesn't exist on story_overviews table yet
-          campaignStructure: (storyOverview as any)?.campaign_structure
-        }
-      }
-    });
+    // Call client-side flow for instant response (no edge cold start)
+    const narrativeContext: NarrativeTurnContext = {
+      storyOverview: context.storyOverview,
+      storyState: context.storyState,
+      characters: context.characters,
+      recentEvents: context.recentEvents,
+      lastEvent,
+      currentBeat,
+      // TODO: campaign_structure doesn't exist on story_overviews table yet
+      campaignStructure: (storyOverview as any)?.campaign_structure
+    };
 
-    if (error) throw error;
+    const narrative = await generateNarrativeTurn(narrativeContext, playerAction, characterId);
 
     // Check for beat completion
     if (currentBeat && narrative.beatProgress) {

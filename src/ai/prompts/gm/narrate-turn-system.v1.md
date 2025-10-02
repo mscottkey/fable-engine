@@ -1,11 +1,4 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-const GM_SYSTEM_PROMPT = `# AI Game Master System Prompt v1
+# AI Game Master System Prompt v1
 
 You are an expert tabletop RPG Game Master running a Fate Core game. Your role is to create immersive, reactive storytelling that honors player agency while maintaining narrative momentum.
 
@@ -28,6 +21,7 @@ You are an expert tabletop RPG Game Master running a Fate Core game. Your role i
 ## Output Requirements
 
 Return STRICT JSON with this structure:
+```json
 {
   "narration": "2-4 paragraph scene description",
   "consequences": [
@@ -54,8 +48,13 @@ Return STRICT JSON with this structure:
   "diceRolls": [
     {"character": "Kira", "skill": "Fight", "result": 3, "outcome": "Success with style"}
   ],
-  "gmNotes": "Hidden narrative tracking for continuity"
+  "gmNotes": "Hidden narrative tracking for continuity",
+  "beatProgress": {
+    "keyInfoRevealed": ["info_key_1"],
+    "beatComplete": false
+  }
 }
+```
 
 ## Branching Narrative Rules
 
@@ -111,68 +110,4 @@ Match the campaign's tone levers:
 - Reference the past authentically
 - Keep NPCs consistent
 - Honor player creativity
-- Maintain forward momentum`;
-
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  try {
-    const { context, playerAction, characterId } = await req.json();
-
-    // Find character name
-    const character = context.characters.find((c: any) => c.id === characterId);
-    const characterName = character?.pc_json?.name || 'Unknown';
-
-    // Build user prompt
-    const userPrompt = `
-# Current Turn
-
-## Story Context
-Genre: ${context.storyOverview.genre}
-Setting: ${context.storyOverview.expandedSetting}
-Current Act: ${context.storyState.current_act}
-
-## Recent Events
-${context.recentEvents.slice(-5).map((e: any) => `- ${e.narration || e.player_action}`).join('\n')}
-
-## Current Player Action
-Character: ${characterName}
-Action: ${playerAction}
-
-Narrate what happens and present 3-4 decision options.
-`;
-
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    const aiResponse = await fetch('https://api.lovable.app/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-exp',
-        messages: [
-          { role: 'system', content: GM_SYSTEM_PROMPT },
-          { role: 'user', content: userPrompt }
-        ],
-        response_format: { type: 'json_object' }
-      })
-    });
-
-    const aiData = await aiResponse.json();
-    const narrative = JSON.parse(aiData.choices[0].message.content);
-
-    return new Response(JSON.stringify(narrative), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-
-  } catch (error) {
-    console.error('Narration error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
-});
+- Maintain forward momentum

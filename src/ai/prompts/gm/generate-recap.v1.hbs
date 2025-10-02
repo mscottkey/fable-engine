@@ -1,0 +1,17 @@
+# Session Events
+
+{{#each events}}
+**Event {{@index}}**:
+{{#if this.player_action}}
+- Player Action: {{this.player_action}}
+{{/if}}
+{{#if this.narration}}
+- Narration: {{this.narration}}
+{{/if}}
+{{#if this.consequences}}
+- Consequences: {{#each this.consequences}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+{{/if}}
+
+{{/each}}
+
+Create an engaging recap that reminds players what happened last session.

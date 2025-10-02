@@ -4,13 +4,7 @@ project_id = "drqbvxrouedaohmwfvdj"
 enabled = true
 #site_url = "http://localhost:3000"
 
-[functions.generate-story]
-verify_jwt = false
-
 [functions.ip-sanitizer]
-verify_jwt = false
-
-[functions.generate-characters]
 verify_jwt = false
 
 [functions.generate-phase1]
@@ -29,7 +23,4 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generate-phase6]
-verify_jwt = false
-
-[functions.detect-intent]
 verify_jwt = false

@@ -1,0 +1,17 @@
+# Campaign Setup
+
+**Genre**: {{storyOverview.genre}}
+**Setting**: {{storyOverview.expandedSetting}}
+**Tone**: {{storyOverview.toneManifesto.expanded}}
+
+## Story Hooks
+{{#each storyOverview.storyHooks}}
+- **{{this.title}}**: {{this.description}}
+{{/each}}
+
+## Party
+{{#each characters}}
+- **{{this.pc_json.name}}**: {{this.pc_json.concept}}
+{{/each}}
+
+Create the opening scene that draws the party into the adventure!

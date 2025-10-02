@@ -1,5 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { loadGameContext, getSessionEvents } from './gameContextService';
+import { generateSessionRecap as generateRecapFlow } from '@/ai/flows/generate-recap';
+import { generateOpeningScene as generateOpeningFlow } from '@/ai/flows/generate-opening';
 
 /**
  * Start a new game session
@@ -118,17 +120,9 @@ export async function generateSessionRecap(sessionId: string): Promise<string> {
 
   if (!session) throw new Error('Session not found');
 
-  // Call edge function
-  const { data, error } = await supabase.functions.invoke('generate-recap', {
-    body: {
-      sessionId,
-      gameId: session.game_id,
-      events: events.slice(-10)
-    }
-  });
-
-  if (error) throw error;
-  return data.recap;
+  // Use client-side recap generation for instant response
+  const recap = await generateRecapFlow(events.slice(-10));
+  return recap;
 }
 
 /**
@@ -137,16 +131,11 @@ export async function generateSessionRecap(sessionId: string): Promise<string> {
 async function generateOpeningScene(gameId: string, sessionId: string): Promise<void> {
   const context = await loadGameContext(gameId, 0);
 
-  const { data, error } = await supabase.functions.invoke('generate-opening', {
-    body: {
-      gameId,
-      sessionId,
-      storyOverview: context.storyOverview,
-      characters: context.characters
-    }
-  });
-
-  if (error) throw error;
+  // Use client-side opening scene generation for instant response
+  const opening = await generateOpeningFlow(
+    context.storyOverview,
+    context.characters
+  );
 
   // Save as first narrative event
   await (supabase as any)

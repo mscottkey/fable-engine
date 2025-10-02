@@ -91,7 +91,14 @@ export const PROMPT_TEMPLATES: Record<string, string> = {
 
   // GM Prompts for Game Sessions
   'gm/system@v1': loadPrompt('gm/system.v1.md'),
+  'gm/narrate-turn/system@v1': loadPrompt('gm/narrate-turn-system.v1.md'),
   'gm/narrate-turn@v1': loadPrompt('gm/narrate-turn.v1.hbs'),
+  'gm/detect-intent/system@v1': loadPrompt('gm/detect-intent-system.v1.md'),
+  'gm/detect-intent@v1': loadPrompt('gm/detect-intent.v1.hbs'),
+  'gm/generate-recap/system@v1': loadPrompt('gm/generate-recap-system.v1.md'),
+  'gm/generate-recap@v1': loadPrompt('gm/generate-recap.v1.hbs'),
+  'gm/generate-opening/system@v1': loadPrompt('gm/generate-opening-system.v1.md'),
+  'gm/generate-opening@v1': loadPrompt('gm/generate-opening.v1.hbs'),
 };
 
 // Template loading would be implemented here in a production system

@@ -1,0 +1,15 @@
+# Current Beat
+**Title**: {{currentBeat.title}}
+**Description**: {{currentBeat.description}}
+**Objectives**: {{#each currentBeat.objectives}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+**Key Info to Reveal**: {{#each currentBeat.completionConditions.requiredInfo}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+
+# Recent Context
+{{#each recentEvents}}
+- {{this.narration}}
+{{/each}}
+
+# Player Action
+{{playerAction}}
+
+Classify this action's intent.
