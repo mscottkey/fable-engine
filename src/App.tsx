@@ -1,6 +1,6 @@
 // src/App.tsx
 // Production-grade root application component with proper routing and state management
-// Trigger rebuild: deploy migrations and edge functions
+// Trigger rebuild: deploy migrations and edge functions #2
 
 import { useEffect, useState, useCallback } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation, useParams } from "react-router-dom";
