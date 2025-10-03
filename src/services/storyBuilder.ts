@@ -182,7 +182,7 @@ export async function saveStoryOverview(
         seed_id: seedId,
         name: name,
         status: 'lobby',
-        party_size: 4
+        party_size: 1  // Start with 1 player (the host), they can add more via "Add Player" button
       })
       .select()
       .single();
@@ -217,21 +217,22 @@ export async function saveStoryOverview(
 
     console.log('Successfully added user as host to game');
 
-    // Create initial party slots for the default party size
-    const slotsToCreate = Array.from({ length: 4 }, (_, index) => ({
-      game_id: gameData.id,
-      index_in_party: index,
-      status: 'empty'
-    }));
-
-    console.log('Creating party slots:', slotsToCreate);
-    const { error: slotsError } = await supabase
+    // Create initial party slot for the host (claimed by host, they can add more slots)
+    console.log('Creating party slot claimed by host');
+    const { data: slotData, error: slotsError } = await supabase
       .from('party_slots')
-      .insert(slotsToCreate);
+      .insert({
+        game_id: gameData.id,
+        index_in_party: 0,
+        status: 'reserved',
+        claimed_by: userData.user.id
+      })
+      .select()
+      .single();
 
     if (slotsError) {
       console.error('Error creating party slots:', slotsError);
-      
+
       // Clean up everything if slots creation fails
       await supabase.from('game_members').delete().eq('game_id', gameData.id);
       await supabase.from('games').delete().eq('id', gameData.id);
@@ -239,7 +240,7 @@ export async function saveStoryOverview(
       return { success: false, error: 'Failed to create party slots' };
     }
 
-    console.log('Successfully created party slots');
+    console.log('Successfully created party slot claimed by host:', slotData);
 
     // Only update campaign seed status after everything succeeds
     const { error: seedError } = await supabase
