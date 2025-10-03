@@ -79,12 +79,20 @@ async function repairCycle(systemPrompt: string, userPrompt: string, llmContent:
 async function generateInitial(userId: string, gameId: string | null, seedId: string, seed: any, supabase: any) {
   const startTime = Date.now();
 
+  console.log('Starting phase1 generation for seedId:', seedId);
+
   const systemPromptTemplate = await getPrompt('phase1/system@v1');
+  console.log('System prompt loaded, length:', systemPromptTemplate.length);
+
   const userPromptTemplate = await getPrompt('phase1/user@v1');
+  console.log('User prompt loaded, length:', userPromptTemplate.length);
+
   const templateData = formatSeedData(seed);
+  console.log('Template data prepared');
 
   const systemPrompt = renderTemplate(systemPromptTemplate, templateData);
   const userPrompt = renderTemplate(userPromptTemplate, templateData);
+  console.log('Prompts rendered. Calling LLM...');
 
   try {
     const llmResponse = await doCall(systemPrompt, userPrompt, MAX_TOKENS.initial);
@@ -137,6 +145,10 @@ async function generateInitial(userId: string, gameId: string | null, seedId: st
       },
     };
   } catch (error) {
+    console.error('Generation error:', error);
+    console.error('Error message:', error instanceof Error ? error.message : String(error));
+    console.error('Error stack:', error instanceof Error ? error.stack : 'N/A');
+
     const latency = Date.now() - startTime;
     await logAIEvent({
       supabaseClient: supabase,
@@ -149,7 +161,7 @@ async function generateInitial(userId: string, gameId: string | null, seedId: st
       model: 'gemini-2.5-flash',
       input_tokens: 0,
       output_tokens: 0,
-      prompt_text: systemPrompt + '\n\n' + userPrompt,
+      prompt_text: systemPrompt || '',
       completion_text: '',
       response_mode: 'json',
       cache_hit: false,
