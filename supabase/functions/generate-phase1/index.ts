@@ -90,10 +90,16 @@ async function generateInitial(userId: string, gameId: string | null, seedId: st
     const llmResponse = await doCall(systemPrompt, userPrompt, MAX_TOKENS.initial);
     let parsedData: any;
 
+    console.log('LLM Response length:', llmResponse.content?.length || 0);
+    console.log('LLM Response preview:', llmResponse.content?.substring(0, 200));
+
     try {
       parsedData = JSON.parse(llmResponse.content);
     } catch (parseError) {
+      console.error('Initial JSON parse failed:', parseError);
+      console.log('Attempting repair cycle...');
       const repairResponse = await repairCycle(systemPrompt, userPrompt, llmResponse.content, MAX_TOKENS.initial);
+      console.log('Repair response length:', repairResponse.content?.length || 0);
       parsedData = JSON.parse(repairResponse.content);
     }
 
