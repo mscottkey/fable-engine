@@ -4,15 +4,29 @@
 const PROMPTS_DIR = new URL('.', import.meta.url).pathname + 'prompts';
 
 /**
- * Load a prompt file from the prompts directory
+ * Load a prompt file from Supabase Storage
  * @param relativePath Path relative to prompts/ (e.g., 'phase1-story/system.v1.md')
  * @returns Prompt content as string
  */
 export async function loadPrompt(relativePath: string): Promise<string> {
   try {
-    const fullPath = `${PROMPTS_DIR}/${relativePath}`;
-    const content = await Deno.readTextFile(fullPath);
-    return content;
+    // First try local file system (for local development)
+    try {
+      const fullPath = `${PROMPTS_DIR}/${relativePath}`;
+      const content = await Deno.readTextFile(fullPath);
+      return content;
+    } catch {
+      // Fall back to Supabase Storage (for deployed functions)
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+      const storageUrl = `${supabaseUrl}/storage/v1/object/public/prompts/${relativePath}`;
+
+      const response = await fetch(storageUrl);
+      if (!response.ok) {
+        throw new Error(`Storage fetch failed: ${response.statusText}`);
+      }
+
+      return await response.text();
+    }
   } catch (error) {
     console.error(`Failed to load prompt: ${relativePath}`, error);
     throw new Error(`Prompt file not found: ${relativePath}`);
