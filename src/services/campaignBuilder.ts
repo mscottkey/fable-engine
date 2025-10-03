@@ -32,17 +32,27 @@ export function buildCampaignSeed(
     'Urban Fantasy': ['Magic Shop', 'Secret Sanctuary', 'Rooftop Garden', 'Underground Tunnel', 'Neutral Ground']
   };
 
-  const vibeTemplates = ['mysterious and foreboding', 'hopeful but dangerous', 'dark and gritty', 'light-hearted adventure'];
+  const vibeTemplates = {
+    'Fantasy': ['epic and heroic', 'mysterious and magical', 'dark and perilous', 'whimsical and enchanting'],
+    'Sci-Fi': ['cerebral and thought-provoking', 'action-packed and thrilling', 'dystopian and bleak', 'optimistic and exploratory'],
+    'Modern': ['grounded and realistic', 'suspenseful and tense', 'dramatic and emotional', 'slice-of-life and relatable'],
+    'Horror': ['terrifying and visceral', 'psychological and unsettling', 'gothic and atmospheric', 'survival and desperate'],
+    'Historical': ['authentic and immersive', 'romanticized and adventurous', 'gritty and realistic', 'political and intrigue-filled'],
+    'Post-Apocalyptic': ['bleak and desperate', 'hopeful rebuilding', 'brutal and unforgiving', 'mysterious and exploratory'],
+    'Space Opera': ['epic and galaxy-spanning', 'political and tactical', 'adventurous and swashbuckling', 'dark and militaristic'],
+    'Urban Fantasy': ['hidden world and secretive', 'action-packed and noir', 'whimsical and modern', 'dark and gritty']
+  };
   const difficultyOptions: DifficultyLabel[] = ['Easy', 'Standard', 'Hard'];
-  
+
   // Generate content
   const settings = settingTemplates[genre] || settingTemplates['Fantasy'];
   const locations = locationTemplates[genre] || locationTemplates['Fantasy'];
-  
-  const selectedSetting = settings[random() % settings.length];
-  const selectedLocations = shuffleArray([...locations], random).slice(0, 3 + (random() % 3));
-  const selectedVibe = vibeTemplates[random() % vibeTemplates.length];
-  const selectedDifficulty = difficultyOptions[random() % difficultyOptions.length];
+  const vibes = vibeTemplates[genre] || vibeTemplates['Fantasy'];
+
+  const selectedSetting = settings[Math.abs(random()) % settings.length];
+  const selectedLocations = shuffleArray([...locations], random).slice(0, 3 + (Math.abs(random()) % 3));
+  const selectedVibe = vibes[Math.abs(random()) % vibes.length];
+  const selectedDifficulty = difficultyOptions[Math.abs(random()) % difficultyOptions.length];
   
   const hooks = [
     `A mysterious ${genre.toLowerCase()} threat emerges`,
