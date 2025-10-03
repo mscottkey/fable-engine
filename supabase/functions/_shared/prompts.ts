@@ -16,13 +16,22 @@ export async function loadPrompt(relativePath: string): Promise<string> {
       const content = await Deno.readTextFile(fullPath);
       return content;
     } catch {
-      // Fall back to Supabase Storage (for deployed functions)
+      // Fall back to Supabase Storage with service role auth (private bucket)
       const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-      const storageUrl = `${supabaseUrl}/storage/v1/object/public/prompts/${relativePath}`;
+      // Use SUPABASE_SERVICE_ROLE_KEY which is automatically available in edge functions
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SERVICE_ROLE_KEY') ?? '';
 
-      const response = await fetch(storageUrl);
+      const storageUrl = `${supabaseUrl}/storage/v1/object/prompts/${relativePath}`;
+
+      const response = await fetch(storageUrl, {
+        headers: {
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'apikey': serviceRoleKey,
+        },
+      });
+
       if (!response.ok) {
-        throw new Error(`Storage fetch failed: ${response.statusText}`);
+        throw new Error(`Storage fetch failed: ${response.status} ${response.statusText}`);
       }
 
       return await response.text();
