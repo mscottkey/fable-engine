@@ -271,13 +271,20 @@ export const StoryGenerationScreen: React.FC<StoryGenerationScreenProps> = ({
                     ✓ Story overview {metrics?.cached ? 'loaded from cache' : 'generated successfully'}!
                   </div>
                   {metrics && (
-                    <div className="grid grid-cols-2 gap-4 text-xs">
-                      <div>
-                        <span className="text-muted-foreground">Tokens:</span> {metrics.tokensUsed}
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">Total Tokens:</span> {metrics.tokensUsed}
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Latency:</span> {metrics.latency}ms
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Latency:</span> {metrics.latency}ms
-                      </div>
+                      {(metrics as any).thoughtsTokenCount > 0 && (
+                        <div className="text-xs text-muted-foreground border-l-2 border-primary/50 pl-2">
+                          <span className="font-medium">AI Reasoning:</span> Used {(metrics as any).thoughtsTokenCount} thinking tokens to deeply analyze your prompt and craft a cohesive narrative
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="text-sm text-muted-foreground">

@@ -19,9 +19,9 @@ interface RequestBody {
 }
 
 const MAX_TOKENS = {
-  initial: 2000,
-  regen: 1500,
-  remix: 2000,
+  initial: 8000,  // Increased to allow for thoughts + response
+  regen: 4000,
+  remix: 8000,
 };
 
 // Helper to format seed data for templates
@@ -141,6 +141,9 @@ async function generateInitial(userId: string, gameId: string | null, seedId: st
       data: validated,
       metadata: {
         tokensUsed: (llmResponse.usage?.promptTokens || 0) + (llmResponse.usage?.completionTokens || 0),
+        promptTokens: llmResponse.usage?.promptTokens || 0,
+        completionTokens: llmResponse.usage?.completionTokens || 0,
+        thoughtsTokenCount: (llmResponse as any).usage?.thoughtsTokenCount || 0,
         latency,
       },
     };

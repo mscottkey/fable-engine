@@ -21,6 +21,7 @@ export interface LlmResponse {
     promptTokens: number;
     completionTokens: number;
     totalTokens: number;
+    thoughtsTokenCount?: number;
   };
 }
 
@@ -102,6 +103,10 @@ export async function callLlm(options: LlmOptions): Promise<LlmResponse> {
   // Extract content from Gemini response
   let content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
+  console.log('Gemini API response data:', JSON.stringify(data).substring(0, 500));
+  console.log('Extracted content length:', content.length);
+  console.log('Content preview:', content.substring(0, 200));
+
   // Clean up markdown code blocks from JSON responses
   if (responseFormat === 'json' && content.includes('```')) {
     content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
@@ -112,7 +117,10 @@ export async function callLlm(options: LlmOptions): Promise<LlmResponse> {
     promptTokens: data.usageMetadata?.promptTokenCount || 0,
     completionTokens: data.usageMetadata?.candidatesTokenCount || 0,
     totalTokens: data.usageMetadata?.totalTokenCount || 0,
+    thoughtsTokenCount: data.usageMetadata?.thoughtsTokenCount || 0,
   };
+
+  console.log('Usage stats:', usage);
 
   return { content, usage };
 }
