@@ -57,7 +57,7 @@ export const CoverageSchema = z.object({
 
 export const Phase2OutputSchema = z.object({
   characters: z.array(CharacterSchema),
-  bonds: z.array(BondSchema).min(2),
+  bonds: z.array(BondSchema).min(0), // 0 bonds allowed for solo character
   coverage: CoverageSchema,
 });
 
