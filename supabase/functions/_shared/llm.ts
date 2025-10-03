@@ -17,6 +17,7 @@ export interface LlmOptions {
 
 export interface LlmResponse {
   content: string;
+  thoughts?: string;  // AI's reasoning/thinking process
   usage: {
     promptTokens: number;
     completionTokens: number;
@@ -100,12 +101,38 @@ export async function callLlm(options: LlmOptions): Promise<LlmResponse> {
 
   const data = await response.json();
 
-  // Extract content from Gemini response
-  let content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  // Extract content and thoughts from Gemini response
+  const parts = data.candidates?.[0]?.content?.parts || [];
+
+  // If there are multiple parts, the first might be thoughts, second is content
+  // Otherwise, all content is in the first part
+  let content = '';
+  let thoughts = undefined;
+
+  if (parts.length > 1) {
+    // Check if first part is thinking (usually has thought/reasoning markers)
+    const firstPart = parts[0]?.text || '';
+    const secondPart = parts[1]?.text || '';
+
+    // If first part looks like thinking and second part looks like JSON/structured content
+    if (firstPart.length > 0 && (responseFormat === 'json' || secondPart.startsWith('{'))) {
+      thoughts = firstPart;
+      content = secondPart;
+    } else {
+      // Otherwise concatenate all parts
+      content = parts.map((p: any) => p.text).join('');
+    }
+  } else {
+    content = parts[0]?.text || '';
+  }
 
   console.log('Gemini API response data:', JSON.stringify(data).substring(0, 500));
   console.log('Extracted content length:', content.length);
   console.log('Content preview:', content.substring(0, 200));
+  console.log('Thoughts extracted:', !!thoughts);
+  if (thoughts) {
+    console.log('Thoughts preview:', thoughts.substring(0, 200));
+  }
 
   // Clean up markdown code blocks from JSON responses
   if (responseFormat === 'json' && content.includes('```')) {
@@ -122,5 +149,5 @@ export async function callLlm(options: LlmOptions): Promise<LlmResponse> {
 
   console.log('Usage stats:', usage);
 
-  return { content, usage };
+  return { content, thoughts, usage };
 }

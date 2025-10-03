@@ -3,10 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, RotateCcw, Brain } from 'lucide-react';
 import { CampaignSeed } from '@/types/database';
 import { generateStoryOverview } from '@/services/storyBuilder';
 import { StoryOverview } from '@/types/storyOverview';
+import { AIGMThinking } from '@/components/AIGMThinking';
 
 interface StoryGenerationScreenProps {
   campaignSeed: CampaignSeed;
@@ -25,23 +26,35 @@ export const StoryGenerationScreen: React.FC<StoryGenerationScreenProps> = ({
   const [status, setStatus] = useState<'generating' | 'complete' | 'error'>('generating');
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<any>(null);
+  const [currentStage, setCurrentStage] = useState('expanding');
 
   const generateStory = async () => {
     setStatus('generating');
     setError(null);
     setProgress(0);
+    setCurrentStage('expanding');
 
     try {
-      // Simulate progress animation
+      // Simulate progress animation with stage updates
+      const stageUpdates = [
+        { stage: 'expanding', progress: 20 },
+        { stage: 'locations', progress: 40 },
+        { stage: 'hooks', progress: 60 },
+        { stage: 'conflict', progress: 80 },
+        { stage: 'finalizing', progress: 90 }
+      ];
+
+      let stageIndex = 0;
       const progressInterval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + Math.random() * 15;
-        });
-      }, 500);
+        if (stageIndex < stageUpdates.length) {
+          const stage = stageUpdates[stageIndex];
+          setCurrentStage(stage.stage);
+          setProgress(stage.progress);
+          stageIndex++;
+        } else {
+          clearInterval(progressInterval);
+        }
+      }, 800);
 
       const response = await generateStoryOverview({
         seedId: campaignSeed.id,
@@ -243,23 +256,47 @@ export const StoryGenerationScreen: React.FC<StoryGenerationScreenProps> = ({
                     </div>
                     <Progress value={progress} className="h-2" />
                   </div>
-                  
+
+                  {/* AI GM Thinking Display */}
+                  <AIGMThinking
+                    stage={currentStage === 'expanding' ? 'Expanding Setting' :
+                           currentStage === 'locations' ? 'Creating Locations' :
+                           currentStage === 'hooks' ? 'Developing Hooks' :
+                           currentStage === 'conflict' ? 'Defining Conflict' :
+                           currentStage === 'finalizing' ? 'Finalizing Story' : 'Thinking'}
+                    className="my-4"
+                  />
+
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                      Expanding setting details...
+                      <div className={`w-2 h-2 rounded-full ${currentStage === 'expanding' ? 'bg-primary animate-pulse' : 'bg-muted'}`} />
+                      <span className={currentStage === 'expanding' ? 'text-primary' : 'text-muted-foreground'}>
+                        Expanding setting details...
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="w-2 h-2 bg-muted rounded-full" />
-                      Creating notable locations...
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className={`w-2 h-2 rounded-full ${currentStage === 'locations' ? 'bg-primary animate-pulse' : 'bg-muted'}`} />
+                      <span className={currentStage === 'locations' ? 'text-primary' : 'text-muted-foreground'}>
+                        Creating notable locations...
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="w-2 h-2 bg-muted rounded-full" />
-                      Developing story hooks...
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className={`w-2 h-2 rounded-full ${currentStage === 'hooks' ? 'bg-primary animate-pulse' : 'bg-muted'}`} />
+                      <span className={currentStage === 'hooks' ? 'text-primary' : 'text-muted-foreground'}>
+                        Developing story hooks...
+                      </span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="w-2 h-2 bg-muted rounded-full" />
-                      Defining core conflict...
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className={`w-2 h-2 rounded-full ${currentStage === 'conflict' ? 'bg-primary animate-pulse' : 'bg-muted'}`} />
+                      <span className={currentStage === 'conflict' ? 'text-primary' : 'text-muted-foreground'}>
+                        Defining core conflict...
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className={`w-2 h-2 rounded-full ${currentStage === 'finalizing' ? 'bg-primary animate-pulse' : 'bg-muted'}`} />
+                      <span className={currentStage === 'finalizing' ? 'text-primary' : 'text-muted-foreground'}>
+                        Finalizing story structure...
+                      </span>
                     </div>
                   </div>
                 </>
@@ -281,7 +318,8 @@ export const StoryGenerationScreen: React.FC<StoryGenerationScreenProps> = ({
                         </div>
                       </div>
                       {(metrics as any).thoughtsTokenCount > 0 && (
-                        <div className="text-xs text-muted-foreground border-l-2 border-primary/50 pl-2">
+                        <div className="text-xs text-purple-400 border-l-2 border-purple-500/50 pl-2">
+                          <Brain className="w-3 h-3 inline mr-1" />
                           <span className="font-medium">AI Reasoning:</span> Used {(metrics as any).thoughtsTokenCount} thinking tokens to deeply analyze your prompt and craft a cohesive narrative
                         </div>
                       )}

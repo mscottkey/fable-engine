@@ -105,7 +105,10 @@ export async function generateCharacterLineup(
     throw new Error(fnError?.message || result?.error || 'Failed to generate character lineup');
   }
 
-  return result.data as CharacterLineup;
+  return {
+    lineup: result.data as CharacterLineup,
+    metadata: result.metadata || {}
+  };
 }
 
 // Regenerate a single character

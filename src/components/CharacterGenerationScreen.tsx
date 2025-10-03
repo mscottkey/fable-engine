@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Loader2, CheckCircle, XCircle, RotateCcw, Users, Brain } from 'lucide-react';
 import { generateCharacterLineup, type CharacterLineup } from '@/services/characterService';
+import { AIGMThinking } from '@/components/AIGMThinking';
 
 interface CharacterGenerationScreenProps {
   game: any;
@@ -73,20 +74,23 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
 
       clearInterval(progressInterval);
       setProgress(100);
-      
-      // The response is directly the CharacterLineup
+
+      // Extract lineup and metadata from response
       setStatus('complete');
       const newMetrics = {
-        model: 'google/gemini-2.5-flash', // Default model
-        tokensUsed: 0, // These will come from the backend response in future updates
-        cost: 0,
-        latency: 0
+        model: 'google/gemini-2.5-flash',
+        tokensUsed: response.metadata?.tokensUsed || 0,
+        thoughtsTokenCount: response.metadata?.thoughtsTokenCount || 0,
+        thoughts: response.metadata?.thoughts,  // Include actual AI thoughts
+        promptTokens: response.metadata?.promptTokens || 0,
+        completionTokens: response.metadata?.completionTokens || 0,
+        latency: response.metadata?.latency || 0,
       };
       setMetrics(newMetrics);
-      
+
       setTimeout(() => {
-        console.log('About to call onComplete with:', response);
-        onComplete(response, newMetrics);
+        console.log('About to call onComplete with lineup:', response.lineup);
+        onComplete(response.lineup, newMetrics);
       }, 1000);
     } catch (err) {
       setStatus('error');
@@ -255,7 +259,17 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
                     </div>
                     <Progress value={progress} className="h-2" />
                   </div>
-                  
+
+                  {/* AI GM Thinking Display */}
+                  <AIGMThinking
+                    stage={currentStage === 'analyzing' ? 'Analyzing Story' :
+                           currentStage === 'processing' ? 'Processing Seeds' :
+                           currentStage === 'generating' ? 'Generating Characters' :
+                           currentStage === 'bonds' ? 'Creating Bonds' :
+                           currentStage === 'finalizing' ? 'Finalizing' : 'Thinking'}
+                    className="my-4"
+                  />
+
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm">
                       {getStageIcon('analyzing')}
@@ -297,19 +311,36 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
                     ✓ Character lineup generated successfully!
                   </div>
                   {metrics && (
-                    <div className="grid grid-cols-2 gap-4 text-xs">
-                      <div>
-                        <span className="text-muted-foreground">Model:</span> {metrics.model}
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                          <span className="text-muted-foreground">Model:</span> {metrics.model}
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Tokens:</span> {metrics.tokensUsed}
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Latency:</span> {metrics.latency}ms
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Completion:</span> {metrics.completionTokens}
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Tokens:</span> {metrics.tokensUsed}
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Cost:</span> ${metrics.cost?.toFixed(4) || '0.0000'}
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Latency:</span> {metrics.latency}ms
-                      </div>
+                      {metrics.thoughtsTokenCount > 0 && (
+                        <div className="space-y-2">
+                          <div className="text-xs text-purple-400 border-l-2 border-purple-500/50 pl-2">
+                            <Brain className="w-3 h-3 inline mr-1" />
+                            <span className="font-medium">AI Reasoning:</span> Used {metrics.thoughtsTokenCount} thinking tokens
+                          </div>
+                          {(metrics as any).thoughts && (
+                            <div className="max-h-32 overflow-y-auto bg-purple-500/5 border border-purple-500/20 rounded p-2">
+                              <p className="text-xs text-purple-300/90 whitespace-pre-wrap">
+                                {(metrics as any).thoughts}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="text-sm text-muted-foreground">

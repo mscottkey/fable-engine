@@ -38,9 +38,9 @@ interface RequestBody {
 }
 
 const MAX_TOKENS = {
-  initial: 8000,
-  regen: 4000,
-  remix: 8000,
+  initial: 50000,  // High limit for testing - plenty of headroom for thoughts + response
+  regen: 50000,
+  remix: 50000,
 };
 
 async function doCall(systemPrompt: string, userPrompt: string, maxTokens: number) {
@@ -155,6 +155,10 @@ async function generateInitial(
       data: validated,
       metadata: {
         tokensUsed: (llmResponse.usage?.promptTokens || 0) + (llmResponse.usage?.completionTokens || 0),
+        promptTokens: llmResponse.usage?.promptTokens || 0,
+        completionTokens: llmResponse.usage?.completionTokens || 0,
+        thoughtsTokenCount: (llmResponse as any).usage?.thoughtsTokenCount || 0,
+        thoughts: llmResponse.thoughts,  // Include the actual AI thoughts/reasoning
         latency,
         pyramidWarnings: pyramidErrors,
       },
