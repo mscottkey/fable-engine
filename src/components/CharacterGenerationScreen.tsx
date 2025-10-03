@@ -328,13 +328,13 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
                       </div>
                       {metrics.thoughtsTokenCount > 0 && (
                         <div className="space-y-2">
-                          <div className="text-xs text-purple-400 border-l-2 border-purple-500/50 pl-2">
+                          <div className="text-xs text-primary border-l-2 border-primary/50 pl-2">
                             <Brain className="w-3 h-3 inline mr-1" />
                             <span className="font-medium">AI Reasoning:</span> Used {metrics.thoughtsTokenCount} thinking tokens
                           </div>
                           {(metrics as any).thoughts && (
-                            <div className="max-h-32 overflow-y-auto bg-purple-500/5 border border-purple-500/20 rounded p-2">
-                              <p className="text-xs text-purple-300/90 whitespace-pre-wrap">
+                            <div className="max-h-32 overflow-y-auto bg-card/50 border border-primary/20 rounded p-2">
+                              <p className="text-xs text-foreground/80 italic whitespace-pre-wrap">
                                 {(metrics as any).thoughts}
                               </p>
                             </div>

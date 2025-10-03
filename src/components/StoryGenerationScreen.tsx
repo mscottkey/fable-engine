@@ -318,7 +318,7 @@ export const StoryGenerationScreen: React.FC<StoryGenerationScreenProps> = ({
                         </div>
                       </div>
                       {(metrics as any).thoughtsTokenCount > 0 && (
-                        <div className="text-xs text-purple-400 border-l-2 border-purple-500/50 pl-2">
+                        <div className="text-xs text-primary border-l-2 border-primary/50 pl-2">
                           <Brain className="w-3 h-3 inline mr-1" />
                           <span className="font-medium">AI Reasoning:</span> Used {(metrics as any).thoughtsTokenCount} thinking tokens to deeply analyze your prompt and craft a cohesive narrative
                         </div>
