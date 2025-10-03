@@ -78,10 +78,16 @@ export default function CharacterBuildScreen() {
         throw new Error('No story overview found. Please complete story creation first.');
       }
 
-      // Add the campaign name to the story overview for display
+      // Map camelCase Phase 1 output to snake_case for UI display
       const enrichedOverview = {
-        ...storyOverviewData,
-        name: gameData.campaign_seeds?.name || gameData.name || 'Untitled Campaign'
+        name: gameData.campaign_seeds?.name || gameData.name || 'Untitled Campaign',
+        expanded_setting: storyOverviewData.expandedSetting,
+        notable_locations: storyOverviewData.notableLocations,
+        tone_manifesto: storyOverviewData.toneManifesto,
+        story_hooks: storyOverviewData.storyHooks,
+        core_conflict: storyOverviewData.coreConflict,
+        session_zero: storyOverviewData.sessionZero,
+        campaign_structure: storyOverviewData.campaignStructure
       };
 
       setGame(gameData);
