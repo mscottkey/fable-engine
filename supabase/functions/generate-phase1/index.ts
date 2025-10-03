@@ -19,9 +19,9 @@ interface RequestBody {
 }
 
 const MAX_TOKENS = {
-  initial: 8000,  // Increased to allow for thoughts + response
-  regen: 4000,
-  remix: 8000,
+  initial: 50000,  // High limit for testing - plenty of headroom for thoughts + response
+  regen: 50000,
+  remix: 50000,
 };
 
 // Helper to format seed data for templates
@@ -100,9 +100,11 @@ async function generateInitial(userId: string, gameId: string | null, seedId: st
 
     console.log('LLM Response length:', llmResponse.content?.length || 0);
     console.log('LLM Response preview:', llmResponse.content?.substring(0, 200));
+    console.log('LLM Response full (first 1000 chars):', llmResponse.content?.substring(0, 1000));
 
     try {
       parsedData = JSON.parse(llmResponse.content);
+      console.log('Parsed data keys:', Object.keys(parsedData));
     } catch (parseError) {
       console.error('Initial JSON parse failed:', parseError);
       console.log('Attempting repair cycle...');
