@@ -107,8 +107,19 @@ async function generateInitial(
     try {
       parsedData = JSON.parse(llmResponse.content);
     } catch (parseError) {
-      const repairResponse = await repairCycle(systemPrompt, userPrompt, llmResponse.content, MAX_TOKENS.initial);
-      parsedData = JSON.parse(repairResponse.content);
+      console.error('Initial JSON parse failed:', parseError);
+      console.log('Invalid JSON content (first 500 chars):', llmResponse.content.substring(0, 500));
+
+      let repairResponse;
+      try {
+        repairResponse = await repairCycle(systemPrompt, userPrompt, llmResponse.content, MAX_TOKENS.initial);
+        parsedData = JSON.parse(repairResponse.content);
+        console.log('Repair cycle succeeded');
+      } catch (repairError) {
+        console.error('Repair cycle also failed:', repairError);
+        console.log('Repaired content (first 500 chars):', repairResponse?.content?.substring(0, 500) || 'No content');
+        throw new Error(`JSON parsing failed twice: Initial error: ${parseError.message}. Repair error: ${repairError.message}`);
+      }
     }
 
     const validated = Phase2OutputSchema.parse(parsedData);
