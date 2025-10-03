@@ -78,8 +78,14 @@ export default function CharacterBuildScreen() {
         throw new Error('No story overview found. Please complete story creation first.');
       }
 
+      // Add the campaign name to the story overview for display
+      const enrichedOverview = {
+        ...storyOverviewData,
+        name: gameData.campaign_seeds?.name || gameData.name || 'Untitled Campaign'
+      };
+
       setGame(gameData);
-      setStoryOverview(storyOverviewData);
+      setStoryOverview(enrichedOverview);
 
       // Check if lineup already exists (CRITICAL: prevents regeneration waste)
       const lineup = await getExistingCharacterLineup(gameId);

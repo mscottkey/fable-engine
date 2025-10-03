@@ -324,8 +324,11 @@ serve(async (req) => {
     const body: RequestBody = await req.json();
     const { gameId, seedId, overview, seeds, type = 'initial', targetId, feedback, remixBrief, currentData } = body;
 
+    console.log('Phase2 request:', { gameId, seedId, type, seedsCount: seeds?.length, hasOverview: !!overview });
+
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('No authorization header');
       return new Response(JSON.stringify({ error: 'No authorization header' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
