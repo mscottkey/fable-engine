@@ -306,6 +306,16 @@ export default function CharacterReviewScreen() {
   const handleRemixLineup = async () => {
     if (!lineup || !storyOverview || !gameId) return;
 
+    // Validate remixBrief is not empty
+    if (!remixBrief || remixBrief.trim().length === 0) {
+      toast({
+        title: 'Remix Instructions Required',
+        description: 'Please provide instructions for how you want to remix the lineup.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsRegenerating(true);
     setRegeneratingType('remix');
 
