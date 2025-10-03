@@ -95,6 +95,7 @@ async function generateInitial(
     seeds: JSON.stringify(seeds, null, 2),
     gameId,
     players: seeds.length,
+    multipleCharacters: seeds.length > 1,
   };
 
   const systemPrompt = renderTemplate(systemPromptTemplate, templateData);

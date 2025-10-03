@@ -203,12 +203,13 @@ export default function CharacterBuildScreen() {
         }
       );
 
-      // Save individual characters as draft status
+      // Save individual characters as draft status (pre-approval)
       await saveCharacters(
-        gameId!, 
-        game.seed_id, 
-        transformedLineup, 
-        game.party_slots || []
+        gameId!,
+        game.seed_id,
+        transformedLineup,
+        game.party_slots || [],
+        'draft' // Characters start as draft, approved after review
       );
 
       console.log('Draft lineup saved to database');

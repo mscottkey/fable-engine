@@ -27,6 +27,7 @@ import {
   remixLineup,
   saveCharacterLineup,
   saveCharacters,
+  approveCharacters,
   type CharacterLineup,
   type Character
 } from '@/services/characterService';
@@ -389,12 +390,12 @@ export default function CharacterReviewScreen() {
       );
 
       console.log('Lineup saved with ID:', lineupId);
-      console.log('Saving individual characters...');
+      console.log('Approving draft characters...');
 
-      // Save individual characters with proper slot IDs
-      await saveCharacters(gameId!, game.seed_id, sanitizedLineup, slots);
+      // Approve all draft characters (transition draft → approved)
+      await approveCharacters(gameId!);
 
-      console.log('Characters saved, updating game status...');
+      console.log('Characters approved, updating game status...');
 
       // Update game status to playing
       const { error: updateError } = await supabase.from('games').update({ status: 'playing' }).eq('id', gameId);
@@ -657,9 +658,78 @@ export default function CharacterReviewScreen() {
                       </TabsContent>
 
                       <TabsContent value="mechanics" className="space-y-4">
-                        {/* Removed: mechanicalRole, socialRole, explorationRole - not part of FATE Core Character schema */}
-                        {/* Removed: primaryArchetype, secondaryArchetype - not part of FATE Core Character schema */}
-                        {/* Removed: abilities - not part of FATE Core Character schema */}
+                        {/* FATE Core Aspects */}
+                        {character.aspects && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-2">Aspects</h4>
+                            <div className="space-y-2 text-sm">
+                              <div><strong>High Concept:</strong> {character.aspects.highConcept}</div>
+                              <div><strong>Trouble:</strong> {character.aspects.trouble}</div>
+                              <div><strong>Aspect 3:</strong> {character.aspects.aspect3}</div>
+                              <div><strong>Aspect 4:</strong> {character.aspects.aspect4}</div>
+                              <div><strong>Aspect 5:</strong> {character.aspects.aspect5}</div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* FATE Skills */}
+                        {!!character.skills?.length && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-2">Skills</h4>
+                            <div className="grid grid-cols-2 gap-2">
+                              {character.skills
+                                .sort((a: any, b: any) => b.rating - a.rating)
+                                .map((skill: any, idx: number) => (
+                                  <div key={idx} className="flex justify-between text-sm">
+                                    <span>{skill.name}</span>
+                                    <Badge variant="secondary">+{skill.rating}</Badge>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* FATE Stunts */}
+                        {!!character.stunts?.length && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-2">Stunts</h4>
+                            <ul className="text-sm space-y-1 list-disc list-inside">
+                              {character.stunts.map((stunt: string, idx: number) => (
+                                <li key={idx}>{stunt}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* FATE Stress & Consequences */}
+                        {character.stress && (
+                          <div>
+                            <h4 className="text-sm font-semibold mb-2">Stress & Consequences</h4>
+                            <div className="space-y-2 text-sm">
+                              <div>
+                                <strong>Physical Stress:</strong> {character.stress.physical} boxes
+                              </div>
+                              <div>
+                                <strong>Mental Stress:</strong> {character.stress.mental} boxes
+                              </div>
+                              {!!character.consequences?.length && (
+                                <div>
+                                  <strong>Consequences:</strong>
+                                  <ul className="ml-4 mt-1 list-disc list-inside">
+                                    {character.consequences.map((cons: string, idx: number) => (
+                                      <li key={idx}>{cons}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {character.refresh && (
+                                <div>
+                                  <strong>Refresh:</strong> {character.refresh}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
                         {!!character.equipment?.length && (
                           <div>

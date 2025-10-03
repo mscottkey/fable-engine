@@ -43,9 +43,14 @@ CONSTRAINTS
 - All content must be IP-safe (no copyrighted names/concepts)
 
 PARTY BONDS
+{{#if multipleCharacters}}
 - Generate at least 2-3 bonds between DIFFERENT PCs (not NPCs)
 - Each bond should specify character1Index, character2Index, relationship type, and description
 - Bonds create interesting party dynamics and roleplay opportunities
+{{else}}
+- Solo character campaign: bonds array MUST be empty []
+- Single PCs may have NPC relationships mentioned in their background instead
+{{/if}}
 
 RETURN
 The full lineup JSON with characters, bonds, and optional coverage.

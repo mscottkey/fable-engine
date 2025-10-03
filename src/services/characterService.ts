@@ -306,7 +306,8 @@ export async function saveCharacters(
   gameId: string,
   seedId: string,
   lineup: CharacterLineup,
-  slots: any[]
+  slots: any[],
+  status: 'draft' | 'approved' = 'draft'
 ): Promise<void> {
   // Check for existing characters for this game
   const { data: existingChars } = await supabase
@@ -322,7 +323,7 @@ export async function saveCharacters(
     slot_id: slots[index]?.id,
     user_id: slots[index]?.claimed_by,
     pc_json: character as any,
-    status: 'approved' as const
+    status: status
   }));
 
   // Update existing characters and insert new ones
@@ -348,6 +349,17 @@ export async function saveCharacters(
       if (error) throw error;
     }
   }
+}
+
+// Approve all draft characters for a game
+export async function approveCharacters(gameId: string): Promise<void> {
+  const { error } = await supabase
+    .from('characters')
+    .update({ status: 'approved' })
+    .eq('game_id', gameId)
+    .eq('status', 'draft');
+
+  if (error) throw error;
 }
 
 // Get character lineup for a game
