@@ -389,7 +389,20 @@ export default function CharacterReviewScreen() {
       // Approve all draft characters (transition draft → approved)
       await approveCharacters(gameId!);
 
-      console.log('Characters approved, navigating to campaign generation...');
+      console.log('Characters approved, updating game status to char_review...');
+
+      // Update game status to char_review (required for campaign generation)
+      const { error: updateError } = await supabase
+        .from('games')
+        .update({ status: 'char_review' })
+        .eq('id', gameId);
+
+      if (updateError) {
+        console.error('Error updating game status:', updateError);
+        throw updateError;
+      }
+
+      console.log('Game status updated, navigating to campaign generation...');
 
       toast({
         title: 'Characters Approved',
