@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, RefreshCw, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, RefreshCw, Sparkles, ChevronDown, ChevronUp, Brain } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Phase3Output, Faction, ProjectClock } from '@/ai/schemas';
+import { AIGMThinking } from '@/components/AIGMThinking';
 import {
   Accordion,
   AccordionContent,
@@ -211,9 +212,26 @@ export function Phase3Factions({
         </div>
         
         {metadata && (
-          <div className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded">
-            {metadata.provider}/{metadata.model} • {metadata.tokensUsed} tokens • 
-            ${metadata.cost.toFixed(4)} • {metadata.latency}ms
+          <div className="space-y-2">
+            <div className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded">
+              {metadata.provider}/{metadata.model} • {metadata.tokensUsed} tokens •
+              ${metadata.cost?.toFixed(4) || '0.0000'} • {metadata.latency}ms
+            </div>
+            {metadata.thoughtsTokenCount > 0 && (
+              <div className="space-y-2">
+                <div className="text-xs text-primary border-l-2 border-primary/50 pl-2">
+                  <Brain className="w-3 h-3 inline mr-1" />
+                  <span className="font-medium">AI Reasoning:</span> Used {metadata.thoughtsTokenCount} thinking tokens
+                </div>
+                {metadata.thoughts && (
+                  <div className="max-h-32 overflow-y-auto bg-card/50 border border-primary/20 rounded p-2">
+                    <p className="text-xs text-foreground/80 italic whitespace-pre-wrap">
+                      {metadata.thoughts}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -244,9 +262,17 @@ export function Phase3Factions({
       {/* Loading State */}
       {loading && (
         <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-3 text-muted-foreground">Generating factions...</span>
+          <CardContent className="py-12">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="text-muted-foreground">Generating factions and project clocks...</span>
+
+              {/* AI GM Thinking Display */}
+              <AIGMThinking
+                stage="Analyzing Story & Characters"
+                className="w-full max-w-md"
+              />
+            </div>
           </CardContent>
         </Card>
       )}

@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Sparkles, RefreshCw } from 'lucide-react';
+import { Loader2, Sparkles, RefreshCw, Brain } from 'lucide-react';
+import { AIGMThinking } from '@/components/AIGMThinking';
 import { supabase } from '@/integrations/supabase/client';
 import type { Phase4Output } from '@/ai/schemas';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -63,8 +64,25 @@ export function Phase4Nodes({ gameId, seedId, userId, overview, factions, onComp
           <p className="text-muted-foreground">Connected web of scenes and encounters</p>
         </div>
         {metadata && (
-          <div className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded">
-            {metadata.tokensUsed} tokens • ${metadata.cost.toFixed(4)}
+          <div className="space-y-2">
+            <div className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded">
+              {metadata.tokensUsed} tokens • ${metadata.cost?.toFixed(4) || '0.0000'}
+            </div>
+            {metadata.thoughtsTokenCount > 0 && (
+              <div className="space-y-2">
+                <div className="text-xs text-primary border-l-2 border-primary/50 pl-2">
+                  <Brain className="w-3 h-3 inline mr-1" />
+                  <span className="font-medium">AI Reasoning:</span> Used {metadata.thoughtsTokenCount} thinking tokens
+                </div>
+                {metadata.thoughts && (
+                  <div className="max-h-32 overflow-y-auto bg-card/50 border border-primary/20 rounded p-2">
+                    <p className="text-xs text-foreground/80 italic whitespace-pre-wrap">
+                      {metadata.thoughts}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -78,8 +96,12 @@ export function Phase4Nodes({ gameId, seedId, userId, overview, factions, onComp
 
       {loading && (
         <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <CardContent className="py-12">
+            <div className="flex flex-col items-center justify-center gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <span className="text-muted-foreground">Generating story nodes and scenes...</span>
+              <AIGMThinking stage="Building Story Structure" className="w-full max-w-md" />
+            </div>
           </CardContent>
         </Card>
       )}
