@@ -108,6 +108,14 @@ export async function callLlm(options: LlmOptions): Promise<LlmResponse> {
   // Extract content and thoughts from Gemini response
   const parts = data.candidates?.[0]?.content?.parts || [];
 
+  console.log('Total parts received:', parts.length);
+  console.log('Parts structure:', JSON.stringify(parts.map((p: any) => ({
+    hasText: !!p.text,
+    textLength: p.text?.length || 0,
+    thought: p.thought,
+    hasThoughtFlag: 'thought' in p
+  }))));
+
   // Gemini thinking mode marks thought parts with thought: true flag
   let content = '';
   let thoughts = undefined;
@@ -115,6 +123,9 @@ export async function callLlm(options: LlmOptions): Promise<LlmResponse> {
   // Separate thought parts from content parts
   const thoughtParts = parts.filter((p: any) => p.thought === true);
   const contentParts = parts.filter((p: any) => !p.thought);
+
+  console.log('Thought parts count:', thoughtParts.length);
+  console.log('Content parts count:', contentParts.length);
 
   // Combine thought parts
   if (thoughtParts.length > 0) {
