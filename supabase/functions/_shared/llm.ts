@@ -76,6 +76,11 @@ export async function callLlm(options: LlmOptions): Promise<LlmResponse> {
     generationConfig: {
       temperature,
       maxOutputTokens: maxTokens,
+    },
+    // Enable thinking mode for Gemini 2.5 models
+    thinkingConfig: {
+      thinkingBudget: -1,  // Dynamic thinking budget
+      includeThoughts: true
     }
   };
 
@@ -104,27 +109,21 @@ export async function callLlm(options: LlmOptions): Promise<LlmResponse> {
   // Extract content and thoughts from Gemini response
   const parts = data.candidates?.[0]?.content?.parts || [];
 
-  // If there are multiple parts, the first might be thoughts, second is content
-  // Otherwise, all content is in the first part
+  // Gemini thinking mode marks thought parts with thought: true flag
   let content = '';
   let thoughts = undefined;
 
-  if (parts.length > 1) {
-    // Check if first part is thinking (usually has thought/reasoning markers)
-    const firstPart = parts[0]?.text || '';
-    const secondPart = parts[1]?.text || '';
+  // Separate thought parts from content parts
+  const thoughtParts = parts.filter((p: any) => p.thought === true);
+  const contentParts = parts.filter((p: any) => !p.thought);
 
-    // If first part looks like thinking and second part looks like JSON/structured content
-    if (firstPart.length > 0 && (responseFormat === 'json' || secondPart.startsWith('{'))) {
-      thoughts = firstPart;
-      content = secondPart;
-    } else {
-      // Otherwise concatenate all parts
-      content = parts.map((p: any) => p.text).join('');
-    }
-  } else {
-    content = parts[0]?.text || '';
+  // Combine thought parts
+  if (thoughtParts.length > 0) {
+    thoughts = thoughtParts.map((p: any) => p.text).join('\n\n');
   }
+
+  // Combine content parts
+  content = contentParts.map((p: any) => p.text || '').join('');
 
   console.log('Gemini API response data:', JSON.stringify(data).substring(0, 500));
   console.log('Extracted content length:', content.length);

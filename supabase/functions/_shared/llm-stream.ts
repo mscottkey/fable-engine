@@ -67,6 +67,11 @@ export async function callLlmStream(
     generationConfig: {
       temperature,
       maxOutputTokens: maxTokens,
+    },
+    // Enable thinking mode for Gemini 2.5 models
+    thinkingConfig: {
+      thinkingBudget: -1,  // Dynamic thinking budget
+      includeThoughts: true
     }
   };
 
@@ -175,10 +180,15 @@ export async function callLlmStream(
 
 /**
  * Determine if a part contains thinking/reasoning content
- * This is heuristic-based - may need adjustment based on actual Gemini responses
+ * Gemini thinking mode marks thought parts with thought: true flag
  */
 function isThinkingPart(part: any): boolean {
-  // Check if part has metadata indicating it's thinking
+  // Check Gemini's official thought flag
+  if (part.thought === true) {
+    return true;
+  }
+
+  // Fallback: Check if part has other metadata indicating it's thinking
   if (part.thoughtMetadata || part.isThinking) {
     return true;
   }

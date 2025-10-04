@@ -87,6 +87,10 @@ export async function generateStoryOverview(request: AIGenerationRequest): Promi
       story: result.data as StoryOverview,
       data: result.data as StoryOverview,
       tokensUsed: result.metadata?.tokensUsed,
+      promptTokens: result.metadata?.promptTokens,
+      completionTokens: result.metadata?.completionTokens,
+      thoughtsTokenCount: result.metadata?.thoughtsTokenCount,
+      thoughts: result.metadata?.thoughts,
       cost: result.metadata?.cost,
       latency: result.metadata?.latency
     };

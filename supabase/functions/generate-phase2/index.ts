@@ -265,6 +265,10 @@ async function generateRegen(
     data: parsedData,
     metadata: {
       tokensUsed: (llmResponse.usage?.promptTokens || 0) + (llmResponse.usage?.completionTokens || 0),
+      promptTokens: llmResponse.usage?.promptTokens || 0,
+      completionTokens: llmResponse.usage?.completionTokens || 0,
+      thoughtsTokenCount: llmResponse.usage?.thoughtsTokenCount || 0,
+      thoughts: llmResponse.thoughts,  // Include the actual AI thoughts/reasoning
       latency,
     },
   };
@@ -326,6 +330,10 @@ async function generateRemix(
     data: validated,
     metadata: {
       tokensUsed: (llmResponse.usage?.promptTokens || 0) + (llmResponse.usage?.completionTokens || 0),
+      promptTokens: llmResponse.usage?.promptTokens || 0,
+      completionTokens: llmResponse.usage?.completionTokens || 0,
+      thoughtsTokenCount: llmResponse.usage?.thoughtsTokenCount || 0,
+      thoughts: llmResponse.thoughts,  // Include the actual AI thoughts/reasoning
       latency,
     },
   };

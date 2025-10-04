@@ -134,6 +134,10 @@ export const StoryGenerationScreen: React.FC<StoryGenerationScreenProps> = ({
         const newMetrics = {
           model: 'google/gemini-2.5-flash',
           tokensUsed: response.tokensUsed || 0,
+          promptTokens: response.promptTokens || 0,
+          completionTokens: response.completionTokens || 0,
+          thoughtsTokenCount: response.thoughtsTokenCount || 0,
+          thoughts: response.thoughts,
           cost: response.cost || 0,
           latency: response.latency || 0,
           cached: response.cached || false
@@ -318,9 +322,18 @@ export const StoryGenerationScreen: React.FC<StoryGenerationScreenProps> = ({
                         </div>
                       </div>
                       {(metrics as any).thoughtsTokenCount > 0 && (
-                        <div className="text-xs text-primary border-l-2 border-primary/50 pl-2">
-                          <Brain className="w-3 h-3 inline mr-1" />
-                          <span className="font-medium">AI Reasoning:</span> Used {(metrics as any).thoughtsTokenCount} thinking tokens to deeply analyze your prompt and craft a cohesive narrative
+                        <div className="space-y-2">
+                          <div className="text-xs text-primary border-l-2 border-primary/50 pl-2">
+                            <Brain className="w-3 h-3 inline mr-1" />
+                            <span className="font-medium">AI Reasoning:</span> Used {(metrics as any).thoughtsTokenCount} thinking tokens to deeply analyze your prompt and craft a cohesive narrative
+                          </div>
+                          {(metrics as any).thoughts && (
+                            <div className="max-h-32 overflow-y-auto bg-card/50 border border-primary/20 rounded p-2">
+                              <p className="text-xs text-foreground/80 italic whitespace-pre-wrap">
+                                {(metrics as any).thoughts}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
