@@ -14,6 +14,7 @@ import { LobbyPage } from "@/components/LobbyPage";
 import { GameInterface } from "@/components/GameInterface";
 import CharacterBuildScreen from "@/components/CharacterBuildScreen";
 import CharacterReviewScreen from "@/components/CharacterReviewScreen";
+import CampaignBuildScreen from "@/components/CampaignBuildScreen";
 import SettingsPage from "@/components/SettingsPage";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
@@ -318,13 +319,17 @@ function AppLayoutWrapper({ user }: { user: User | null }) {
           path="/game/:gameId/build-characters" 
           element={user ? <CharacterBuildScreen /> : <Navigate to="/auth" replace />} 
         />
-        <Route 
-          path="/game/:gameId/characters-review" 
-          element={user ? <CharacterReviewScreen /> : <Navigate to="/auth" replace />} 
+        <Route
+          path="/game/:gameId/characters-review"
+          element={user ? <CharacterReviewScreen /> : <Navigate to="/auth" replace />}
         />
-        <Route 
-          path="/game/:gameId" 
-          element={user ? <GameInterfaceWrapper /> : <Navigate to="/auth" replace />} 
+        <Route
+          path="/game/:gameId/campaign-build"
+          element={user ? <CampaignBuildScreen /> : <Navigate to="/auth" replace />}
+        />
+        <Route
+          path="/game/:gameId"
+          element={user ? <GameInterfaceWrapper /> : <Navigate to="/auth" replace />}
         />
         
         {/* Catch-all redirect */}

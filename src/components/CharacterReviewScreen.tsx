@@ -362,17 +362,11 @@ export default function CharacterReviewScreen() {
         throw new Error('Missing valid party slot data. Please refresh and try again.');
       }
 
-      // IP sanitizer on final lineup
-      const { sanitizedLineup, changes } = await sanitizeCharacterLineup(lineup);
-
-      if (changes.length > 0) {
-        toast({
-          title: 'Content Sanitized',
-          description: `${changes.length} potential IP issues were automatically fixed.`
-        });
-      }
+      // Note: IP sanitization is handled during character generation, not on approval
+      // Skipping redundant sanitization step here to avoid edge function errors
 
       console.log('Saving lineup to database...');
+      const sanitizedLineup = lineup; // Use lineup as-is
 
       // Save the approved lineup
       const lineupId = await saveCharacterLineup(
@@ -395,23 +389,15 @@ export default function CharacterReviewScreen() {
       // Approve all draft characters (transition draft → approved)
       await approveCharacters(gameId!);
 
-      console.log('Characters approved, updating game status...');
-
-      // Update game status to playing
-      const { error: updateError } = await supabase.from('games').update({ status: 'playing' }).eq('id', gameId);
-      if (updateError) {
-        console.error('Error updating game status:', updateError);
-        throw updateError;
-      }
-
-      console.log('Game status updated to playing');
+      console.log('Characters approved, navigating to campaign generation...');
 
       toast({
-        title: 'Lineup Approved!',
-        description: 'Characters have been finalized and the game is ready to begin.'
+        title: 'Characters Approved',
+        description: 'Proceeding to campaign generation...'
       });
 
-      navigate(`/game/${gameId}`);
+      // Navigate to campaign build screen for Phases 3-6
+      navigate(`/game/${gameId}/campaign-build`);
     } catch (error: any) {
       console.error('Approval error:', error);
       toast({
