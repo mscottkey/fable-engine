@@ -378,13 +378,13 @@ serve(async (req) => {
     if (type === 'initial') {
       result = await generateInitial(user.id, gameId, seedId, overview, seeds, supabase);
     } else if (type === 'regen') {
-      if (!targetId || !feedback) {
-        return new Response(JSON.stringify({ error: 'Missing targetId or feedback for regen' }), {
+      if (!targetId) {
+        return new Response(JSON.stringify({ error: 'Missing targetId for regen' }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
-      result = await generateRegen(user.id, gameId, seedId, overview, seeds, targetId, feedback, currentData, supabase);
+      result = await generateRegen(user.id, gameId, seedId, overview, seeds, targetId, feedback || '', currentData, supabase);
     } else if (type === 'remix') {
       if (!remixBrief) {
         return new Response(JSON.stringify({ error: 'Missing remixBrief for remix' }), {
