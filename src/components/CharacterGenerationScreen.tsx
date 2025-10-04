@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Loader2, CheckCircle, XCircle, RotateCcw, Users, Brain } from 'lucide-react';
 import { generateCharacterLineup, type CharacterLineup } from '@/services/characterService';
 import { AIGMThinking } from '@/components/AIGMThinking';
+import { CampaignProgressBar } from '@/components/CampaignProgressBar';
 
 interface CharacterGenerationScreenProps {
   game: any;
@@ -139,6 +140,8 @@ export const CharacterGenerationScreen: React.FC<CharacterGenerationScreenProps>
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/80 flex items-center justify-center">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Unified Campaign Progress */}
+        <CampaignProgressBar currentStep={2} className="mb-8" />
         <div className="grid md:grid-cols-2 gap-8 items-start">
           {/* Story Overview & Character Seeds */}
           <div className="space-y-6">

@@ -8,6 +8,7 @@ import { CampaignSeed } from '@/types/database';
 import { generateStoryOverview } from '@/services/storyBuilder';
 import { StoryOverview } from '@/types/storyOverview';
 import { AIGMThinking } from '@/components/AIGMThinking';
+import { CampaignProgressBar } from '@/components/CampaignProgressBar';
 
 interface StoryGenerationScreenProps {
   campaignSeed: CampaignSeed;
@@ -188,6 +189,8 @@ export const StoryGenerationScreen: React.FC<StoryGenerationScreenProps> = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/80 flex items-center justify-center">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Unified Campaign Progress */}
+        <CampaignProgressBar currentStep={1} className="mb-8" />
         <div className="grid md:grid-cols-2 gap-8 items-start">
           {/* Campaign Seed Display */}
           <Card className="animate-fade-in">

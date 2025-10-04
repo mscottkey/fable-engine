@@ -5,6 +5,7 @@ import { Phase3Factions } from './Phase3Factions';
 import { Phase4Nodes } from './Phase4Nodes';
 import { Phase5Arcs } from './Phase5Arcs';
 import { Phase6Resolutions } from './Phase6Resolutions';
+import { CampaignProgressBar } from '@/components/CampaignProgressBar';
 import type { Phase3Output, Phase4Output, Phase5Output, Phase6Output } from '@/ai/schemas';
 
 interface CampaignPipelineProps {
@@ -65,23 +66,8 @@ export function CampaignPipeline({
 
   return (
     <div className="max-w-5xl mx-auto p-6">
-      {/* Phase Progress Indicator */}
-      <div className="mb-8 flex items-center justify-center gap-4">
-        {[3, 4, 5, 6].map((phase) => (
-          <div
-            key={phase}
-            className={`flex items-center justify-center w-10 h-10 rounded-full font-bold ${
-              phase < currentPhase
-                ? 'bg-primary text-primary-foreground'
-                : phase === currentPhase
-                ? 'bg-accent text-accent-foreground ring-2 ring-primary'
-                : 'bg-muted text-muted-foreground'
-            }`}
-          >
-            {phase}
-          </div>
-        ))}
-      </div>
+      {/* Unified Campaign Progress Bar */}
+      <CampaignProgressBar currentStep={currentPhase as 3 | 4 | 5 | 6} className="mb-8" />
 
       {/* Current Phase Component */}
       {currentPhase === 3 && (

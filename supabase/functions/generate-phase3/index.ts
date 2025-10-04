@@ -84,11 +84,21 @@ async function generateInitial(
 
   try {
     const llmResponse = await doCall(systemPrompt, userPrompt, MAX_TOKENS.initial);
+
+    console.log('LLM response content length:', llmResponse.content?.length || 0);
+    console.log('LLM response has thoughts:', !!llmResponse.thoughts);
+    console.log('Content preview:', llmResponse.content?.substring(0, 200));
+
+    if (!llmResponse.content || llmResponse.content.trim().length === 0) {
+      throw new Error('LLM returned empty content. Thoughts: ' + (llmResponse.thoughts ? 'present' : 'absent'));
+    }
+
     let parsedData: any;
 
     try {
       parsedData = JSON.parse(llmResponse.content);
     } catch (parseError) {
+      console.log('Initial JSON parse failed:', parseError);
       const repairResponse = await repairCycle(systemPrompt, userPrompt, llmResponse.content, MAX_TOKENS.initial);
       parsedData = JSON.parse(repairResponse.content);
     }
@@ -122,7 +132,14 @@ async function generateInitial(
       success: true,
       data: validated,
       metadata: {
+        provider: 'google',
+        model: 'gemini-2.5-flash',
         tokensUsed: (llmResponse.usage?.promptTokens || 0) + (llmResponse.usage?.completionTokens || 0),
+        promptTokens: llmResponse.usage?.promptTokens || 0,
+        completionTokens: llmResponse.usage?.completionTokens || 0,
+        thoughtsTokenCount: llmResponse.usage?.thoughtsTokenCount || 0,
+        thoughts: llmResponse.thoughts,
+        cost: 0,
         latency,
       },
     };

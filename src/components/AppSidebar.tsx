@@ -1,5 +1,5 @@
 import { User } from "@supabase/supabase-js";
-import { Home, Settings, LogOut, Dice6, Plus, Clock, RefreshCw, AlertCircle, CheckCircle, Loader2, Play, Pause, MoreVertical, Trash2, Users } from "lucide-react";
+import { Home, Settings, LogOut, Dice6, Plus, Clock, RefreshCw, AlertCircle, CheckCircle, XCircle, Loader2, Play, Pause, MoreVertical, Trash2, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import logoSvg from "@/assets/logo.svg";
@@ -142,13 +142,14 @@ export function AppSidebar({ user, onBackToAdventures, onOpenSettings, onSelectG
     if (game.type === 'game') {
       // Handle different game statuses
       switch (game.status) {
-        case 'setup':
+        case 'draft':
+        case 'story_review':
           return {
             icon: Settings,
             label: 'Setup',
             color: 'text-muted-foreground',
             bgColor: 'bg-muted/40',
-            description: 'Setting up game'
+            description: 'Setting up story'
           };
         case 'lobby':
           return {
@@ -158,14 +159,62 @@ export function AppSidebar({ user, onBackToAdventures, onOpenSettings, onSelectG
             bgColor: 'bg-blue-500/20',
             description: 'Waiting for players'
           };
+        case 'characters':
+          return {
+            icon: Loader2,
+            label: 'Characters',
+            color: 'text-primary',
+            bgColor: 'bg-primary/20',
+            description: 'Generating characters...',
+            animate: 'animate-spin'
+          };
+        case 'char_review':
+          return {
+            icon: Users,
+            label: 'Campaign Setup',
+            color: 'text-yellow-500',
+            bgColor: 'bg-yellow-500/20',
+            description: 'Building campaign...'
+          };
         case 'playing':
-        default:
           return {
             icon: Play,
             label: 'Playing',
             color: 'text-accent',
             bgColor: 'bg-accent/20',
             description: 'Game in progress'
+          };
+        case 'paused':
+          return {
+            icon: Pause,
+            label: 'Paused',
+            color: 'text-orange-500',
+            bgColor: 'bg-orange-500/20',
+            description: 'Game paused'
+          };
+        case 'completed':
+          return {
+            icon: CheckCircle,
+            label: 'Completed',
+            color: 'text-green-500',
+            bgColor: 'bg-green-500/20',
+            description: 'Game finished'
+          };
+        case 'abandoned':
+          return {
+            icon: XCircle,
+            label: 'Abandoned',
+            color: 'text-red-500',
+            bgColor: 'bg-red-500/20',
+            description: 'Game abandoned'
+          };
+        default:
+          return {
+            icon: Settings,
+            label: 'Unknown',
+            color: 'text-muted-foreground',
+            bgColor: 'bg-muted/40',
+            description: game.status
           };
       }
     }
