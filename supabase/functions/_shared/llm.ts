@@ -76,11 +76,10 @@ export async function callLlm(options: LlmOptions): Promise<LlmResponse> {
     generationConfig: {
       temperature,
       maxOutputTokens: maxTokens,
-    },
-    // Enable thinking mode for Gemini 2.5 models
-    thinkingConfig: {
-      thinkingBudget: -1,  // Dynamic thinking budget
-      includeThoughts: true
+      // Enable thinking mode for Gemini 2.5 models
+      thinkingConfig: {
+        thinkingBudget: -1  // Dynamic thinking budget
+      }
     }
   };
 
