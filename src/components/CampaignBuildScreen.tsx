@@ -39,9 +39,10 @@ export default function CampaignBuildScreen() {
             id,
             story_overview_draft
           ),
-          character_lineups!inner(
+          character_lineups(
             id,
-            lineup_json
+            lineup_json,
+            created_at
           )
         `)
         .eq('id', gameId)
@@ -52,6 +53,19 @@ export default function CampaignBuildScreen() {
       if (!game) {
         throw new Error('Game not found');
       }
+
+      // Get the most recent character lineup
+      if (!game.character_lineups || game.character_lineups.length === 0) {
+        throw new Error('No character lineup found. Please generate characters first.');
+      }
+
+      // Sort by created_at descending and get the latest
+      const latestLineup = game.character_lineups.sort((a: any, b: any) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )[0];
+
+      // Attach the latest lineup to game object for easier access
+      (game as any).latest_lineup = latestLineup;
 
       // Verify game is in correct state
       if (game.status !== 'char_review') {
@@ -193,7 +207,7 @@ function CampaignPipelineWrapper({
       seedId={gameData.campaign_seeds.id}
       userId={user.id}
       overview={gameData.campaign_seeds.story_overview_draft}
-      lineup={gameData.character_lineups.lineup_json}
+      lineup={gameData.latest_lineup.lineup_json}
       onComplete={onComplete}
     />
   );
