@@ -151,7 +151,8 @@ export async function regenerateCharacter(
     throw new Error(fnError?.message || result?.error || 'Failed to regenerate character');
   }
 
-  return result.data.character;
+  // Regen prompt returns a single character object, not a full lineup
+  return result.data;
 }
 
 // Regenerate character bonds
