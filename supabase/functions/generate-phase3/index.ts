@@ -22,9 +22,9 @@ interface RequestBody {
 }
 
 const MAX_TOKENS = {
-  initial: 1600,
-  regen: 1200,
-  remix: 1600,
+  initial: 50000,  // Testing headroom - will tune after observing normal runs
+  regen: 50000,
+  remix: 50000,
 };
 
 async function doCall(systemPrompt: string, userPrompt: string, maxTokens: number) {

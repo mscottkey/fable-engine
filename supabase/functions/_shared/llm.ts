@@ -105,6 +105,11 @@ export async function callLlm(options: LlmOptions): Promise<LlmResponse> {
 
   const data = await response.json();
 
+  // Log full response for debugging empty content issues
+  console.log('=== FULL GEMINI RESPONSE ===');
+  console.log(JSON.stringify(data, null, 2));
+  console.log('=== END FULL RESPONSE ===');
+
   // Extract content and thoughts from Gemini response
   const parts = data.candidates?.[0]?.content?.parts || [];
 
@@ -135,7 +140,6 @@ export async function callLlm(options: LlmOptions): Promise<LlmResponse> {
   // Combine content parts
   content = contentParts.map((p: any) => p.text || '').join('');
 
-  console.log('Gemini API response data:', JSON.stringify(data).substring(0, 500));
   console.log('Extracted content length:', content.length);
   console.log('Content preview:', content.substring(0, 200));
   console.log('Thoughts extracted:', !!thoughts);
