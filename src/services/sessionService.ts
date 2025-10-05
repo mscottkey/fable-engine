@@ -132,13 +132,13 @@ async function generateOpeningScene(gameId: string, sessionId: string): Promise<
   const context = await loadGameContext(gameId, 0);
 
   // Create intro message with story overview
-  const storyIntro = `**${context.storyOverview?.setting || 'The Adventure Begins'}**
+  const storyIntro = `**${context.storyOverview?.name || 'The Adventure Begins'}**
 
-${context.storyOverview?.expandedSetting || 'Your story begins...'}
+${context.storyOverview?.expanded_setting || 'Your story begins...'}
 
-**The Stakes:** ${context.storyOverview?.openingConflict || 'Unknown dangers await'}
+**The Stakes:** ${context.storyOverview?.core_conflict || 'Unknown dangers await'}
 
-**Your Mission:** ${context.storyOverview?.hooks?.[0] || 'Discover what lies ahead'}`;
+**Your Mission:** ${context.storyOverview?.story_hooks?.[0]?.hook || context.storyOverview?.story_hooks?.[0] || 'Discover what lies ahead'}`;
 
   // Save story intro
   await (supabase as any)
@@ -155,9 +155,7 @@ ${context.storyOverview?.expandedSetting || 'Your story begins...'}
   const opening = await generateOpeningFlow(
     gameId,
     context.storyOverview,
-    context.characters,
-    context.factions,
-    context.storyNodes
+    context.characters
   );
 
   // Save opening scene
