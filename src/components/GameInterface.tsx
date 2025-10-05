@@ -158,6 +158,7 @@ export function GameInterface({ gameId }: GameInterfaceProps) {
           <SessionControls
             session={session}
             isHost={isHost}
+            gameId={gameId}
             onSessionEnd={refreshContext}
           />
         )}

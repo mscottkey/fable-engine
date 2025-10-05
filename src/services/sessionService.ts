@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { loadGameContext, getSessionEvents } from './gameContextService';
 import { generateSessionRecap as generateRecapFlow } from '@/ai/flows/generate-recap';
 import { generateOpeningScene as generateOpeningFlow } from '@/ai/flows/generate-opening';
+import { updateSessionTracking } from './narrativeEngine';
 
 /**
  * Start a new game session
@@ -41,7 +42,18 @@ export async function startSession(gameId: string): Promise<string> {
   // If session 1, create opening narration
   if (sessionNumber === 1) {
     await generateOpeningScene(gameId, data.id);
+  } else {
+    // For session 2+, generate "Previously on..." recap
+    try {
+      await generatePreviouslyOn(gameId, data.id);
+    } catch (error) {
+      console.error('Failed to generate recap, continuing anyway:', error);
+      // Don't block session creation if recap fails
+    }
   }
+
+  // Update story_state.sessions_played counter
+  await updateSessionTracking(gameId);
 
   return data.id;
 }
@@ -168,5 +180,113 @@ ${context.storyOverview?.expanded_setting || 'Your story begins...'}
       event_type: 'narration',
       narration: opening.narration,
       available_options: opening.options
+    });
+}
+
+/**
+ * Regenerate the initial story overview message for current session
+ * Useful if host wants to reset the opening
+ */
+export async function regenerateStoryIntro(gameId: string, sessionId: string): Promise<void> {
+  const context = await loadGameContext(gameId, 0);
+
+  // Create intro message with story overview
+  const storyIntro = `**${context.storyOverview?.name || 'The Adventure Begins'}**
+
+${context.storyOverview?.expanded_setting || 'Your story begins...'}
+
+**The Stakes:** ${context.storyOverview?.core_conflict || 'Unknown dangers await'}
+
+**Your Mission:** ${context.storyOverview?.story_hooks?.[0]?.hook || context.storyOverview?.story_hooks?.[0] || 'Discover what lies ahead'}`;
+
+  // Get next event number
+  const { data: events } = await (supabase as any)
+    .from('narrative_events')
+    .select('event_number')
+    .eq('session_id', sessionId)
+    .order('event_number', { ascending: false })
+    .limit(1);
+
+  const nextEventNumber = events && events.length > 0 ? events[0].event_number + 1 : 0;
+
+  // Save story intro as new event
+  await (supabase as any)
+    .from('narrative_events')
+    .insert({
+      session_id: sessionId,
+      game_id: gameId,
+      event_number: nextEventNumber,
+      event_type: 'narration',
+      narration: storyIntro
+    });
+}
+
+/**
+ * Generate "Previously on..." recap for current session
+ * Summarizes events from previous session(s)
+ */
+export async function generatePreviouslyOn(gameId: string, sessionId: string): Promise<void> {
+  // Get current session number
+  const { data: currentSession } = await (supabase as any)
+    .from('game_sessions')
+    .select('session_number')
+    .eq('id', sessionId)
+    .single();
+
+  if (!currentSession) throw new Error('Session not found');
+
+  // If this is session 1, no recap needed
+  if (currentSession.session_number === 1) {
+    throw new Error('Cannot generate recap for first session');
+  }
+
+  // Get events from previous session
+  const { data: previousSession } = await (supabase as any)
+    .from('game_sessions')
+    .select('id')
+    .eq('game_id', gameId)
+    .eq('session_number', currentSession.session_number - 1)
+    .single();
+
+  if (!previousSession) {
+    throw new Error('Previous session not found');
+  }
+
+  const previousEvents = await getSessionEvents(previousSession.id);
+
+  if (previousEvents.length === 0) {
+    throw new Error('No events found in previous session');
+  }
+
+  // Generate recap using AI
+  const recap = await generateRecapFlow(gameId, previousEvents);
+
+  // Get next event number for current session
+  const { data: events } = await (supabase as any)
+    .from('narrative_events')
+    .select('event_number')
+    .eq('session_id', sessionId)
+    .order('event_number', { ascending: false })
+    .limit(1);
+
+  const nextEventNumber = events && events.length > 0 ? events[0].event_number + 1 : 0;
+
+  // Save recap as narrative event
+  const recapMessage = `**Previously on...**
+
+${recap}
+
+---
+
+**Session ${currentSession.session_number} begins...**`;
+
+  await (supabase as any)
+    .from('narrative_events')
+    .insert({
+      session_id: sessionId,
+      game_id: gameId,
+      event_number: nextEventNumber,
+      event_type: 'narration',
+      narration: recapMessage
     });
 }

@@ -19,17 +19,18 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { MoreVertical, Pause, Play, StopCircle } from 'lucide-react';
-import { pauseSession, endSession } from '@/services/sessionService';
+import { MoreVertical, Pause, Play, StopCircle, RotateCcw, History } from 'lucide-react';
+import { pauseSession, endSession, regenerateStoryIntro, generatePreviouslyOn } from '@/services/sessionService';
 import { useToast } from '@/hooks/use-toast';
 
 interface SessionControlsProps {
   session: any;
   isHost: boolean;
+  gameId: string;
   onSessionEnd: () => void;
 }
 
-export function SessionControls({ session, isHost, onSessionEnd }: SessionControlsProps) {
+export function SessionControls({ session, isHost, gameId, onSessionEnd }: SessionControlsProps) {
   const { toast } = useToast();
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [showPauseDialog, setShowPauseDialog] = useState(false);
@@ -103,6 +104,56 @@ export function SessionControls({ session, isHost, onSessionEnd }: SessionContro
     }
   };
 
+  const handleRegenerateIntro = async () => {
+    if (!session?.id) return;
+
+    setIsProcessing(true);
+    try {
+      await regenerateStoryIntro(gameId, session.id);
+
+      toast({
+        title: 'Story Intro Regenerated',
+        description: 'The opening story message has been added to the storyboard.',
+      });
+
+      onSessionEnd(); // Refresh to show new event
+    } catch (error) {
+      console.error('Failed to regenerate intro:', error);
+      toast({
+        title: 'Error',
+        description: (error as Error).message,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleGenerateRecap = async () => {
+    if (!session?.id) return;
+
+    setIsProcessing(true);
+    try {
+      await generatePreviouslyOn(gameId, session.id);
+
+      toast({
+        title: 'Recap Generated',
+        description: '"Previously on..." message has been added to the storyboard.',
+      });
+
+      onSessionEnd(); // Refresh to show new event
+    } catch (error) {
+      console.error('Failed to generate recap:', error);
+      toast({
+        title: 'Error',
+        description: (error as Error).message,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <>
       <div className="flex items-center gap-2">
@@ -125,13 +176,30 @@ export function SessionControls({ session, isHost, onSessionEnd }: SessionContro
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Session Controls</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setShowPauseDialog(true)}>
+
+            <DropdownMenuItem onClick={handleRegenerateIntro} disabled={isProcessing}>
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Regenerate Story Intro
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={handleGenerateRecap}
+              disabled={isProcessing || session?.session_number === 1}
+            >
+              <History className="w-4 h-4 mr-2" />
+              Generate "Previously On..."
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem onClick={() => setShowPauseDialog(true)} disabled={isProcessing}>
               <Pause className="w-4 h-4 mr-2" />
               Pause Session
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => setShowEndDialog(true)}
               className="text-destructive focus:text-destructive"
+              disabled={isProcessing}
             >
               <StopCircle className="w-4 h-4 mr-2" />
               End Session
