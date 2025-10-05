@@ -244,7 +244,7 @@ export function ChatPanel({ gameId }: ChatPanelProps) {
   }
 
   const selectedChar = context?.characters?.find((c: any) => c.id === selectedCharacter);
-  const characterName = selectedChar?.character_name || 'Character';
+  const characterName = selectedChar?.pc_json?.name || selectedChar?.character_name || 'Character';
 
   return (
     <>
@@ -269,22 +269,47 @@ export function ChatPanel({ gameId }: ChatPanelProps) {
           </div>
         </header>
 
-        {/* Character Selection */}
+        {/* Character Selection Cards */}
         {context?.characters && context.characters.length > 0 && (
           <div className="p-3 border-b border-border bg-muted/30">
-            <div className="flex gap-2 flex-wrap">
-              {context.characters.map((character: any) => (
-                <Button
-                  key={character.id}
-                  variant={selectedCharacter === character.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCharacter(character.id)}
-                  className="text-xs gap-1"
-                >
-                  <User className="w-3 h-3" />
-                  {character.character_name || 'Character'}
-                </Button>
-              ))}
+            <div className="flex gap-3 flex-wrap">
+              {context.characters.map((character: any) => {
+                const charData = character.pc_json || {};
+                const isSelected = selectedCharacter === character.id;
+
+                return (
+                  <Card
+                    key={character.id}
+                    className={`cursor-pointer transition-all ${
+                      isSelected
+                        ? 'border-primary bg-primary/10 shadow-md'
+                        : 'border-border hover:border-primary/50 bg-card/50'
+                    }`}
+                    onClick={() => setSelectedCharacter(character.id)}
+                  >
+                    <CardContent className="p-3 min-w-[180px]">
+                      <div className="flex items-start gap-2">
+                        <div className={`p-1.5 rounded-full ${isSelected ? 'bg-primary' : 'bg-muted'}`}>
+                          <User className={`w-4 h-4 ${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm truncate">
+                            {charData.name || character.character_name || 'Character'}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {character.player_name || 'Player'}
+                          </div>
+                          {charData.highConcept && (
+                            <div className="text-xs text-muted-foreground italic truncate mt-0.5">
+                              {charData.highConcept}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         )}
