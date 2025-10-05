@@ -66,7 +66,7 @@ export function Phase5Arcs({ gameId, seedId, userId, overview, factions, nodes, 
         </div>
         {metadata && (
           <div className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded">
-            {metadata.tokensUsed} tokens • ${metadata.cost.toFixed(4)}
+            {metadata.tokensUsed} tokens • ${metadata.cost?.toFixed(4) || '0.0000'}
           </div>
         )}
       </div>

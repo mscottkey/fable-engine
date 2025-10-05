@@ -6,6 +6,7 @@ import { Phase4Nodes } from './Phase4Nodes';
 import { Phase5Arcs } from './Phase5Arcs';
 import { Phase6Resolutions } from './Phase6Resolutions';
 import { CampaignProgressBar } from '@/components/CampaignProgressBar';
+import { supabase } from '@/integrations/supabase/client';
 import type { Phase3Output, Phase4Output, Phase5Output, Phase6Output } from '@/ai/schemas';
 
 interface CampaignPipelineProps {
@@ -36,24 +37,143 @@ export function CampaignPipeline({
   const [phase5Data, setPhase5Data] = useState<Phase5Output | null>(null);
   const [phase6Data, setPhase6Data] = useState<Phase6Output | null>(null);
 
-  const handlePhase3Complete = (data: Phase3Output) => {
+  // Track saved DB record IDs for foreign key chaining
+  const [factionsId, setFactionsId] = useState<string | null>(null);
+  const [nodesId, setNodesId] = useState<string | null>(null);
+  const [arcsId, setArcsId] = useState<string | null>(null);
+
+  const handlePhase3Complete = async (data: Phase3Output) => {
     setPhase3Data(data);
+
+    // Save Phase 3 immediately
+    try {
+      const { data: factionsRecord, error } = await supabase
+        .from('factions')
+        .insert({
+          game_id: gameId,
+          seed_id: seedId,
+          factions_json: data.factions,
+          relationships: data.relationships,
+          fronts: data.fronts || [],
+          provider: 'google',
+          model: 'gemini-2.5-flash',
+          input_tokens: 0,
+          output_tokens: 0,
+          status: 'approved',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      setFactionsId(factionsRecord.id);
+      console.log('Phase 3 saved:', factionsRecord.id);
+    } catch (err) {
+      console.error('Error saving Phase 3:', err);
+      alert('Failed to save Phase 3. Continue anyway?');
+    }
+
     setCurrentPhase(4);
   };
 
-  const handlePhase4Complete = (data: Phase4Output) => {
+  const handlePhase4Complete = async (data: Phase4Output) => {
     setPhase4Data(data);
+
+    // Save Phase 4 immediately
+    if (factionsId) {
+      try {
+        const { data: nodesRecord, error } = await supabase
+          .from('story_nodes')
+          .insert({
+            game_id: gameId,
+            seed_id: seedId,
+            factions_id: factionsId,
+            nodes_json: data.nodes,
+            provider: 'google',
+            model: 'gemini-2.5-flash',
+            input_tokens: 0,
+            output_tokens: 0,
+            status: 'approved',
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        setNodesId(nodesRecord.id);
+        console.log('Phase 4 saved:', nodesRecord.id);
+      } catch (err) {
+        console.error('Error saving Phase 4:', err);
+        alert('Failed to save Phase 4. Continue anyway?');
+      }
+    }
+
     setCurrentPhase(5);
   };
 
-  const handlePhase5Complete = (data: Phase5Output) => {
+  const handlePhase5Complete = async (data: Phase5Output) => {
     setPhase5Data(data);
+
+    // Save Phase 5 immediately
+    if (nodesId) {
+      try {
+        const { data: arcsRecord, error } = await supabase
+          .from('campaign_arcs')
+          .insert({
+            game_id: gameId,
+            seed_id: seedId,
+            story_nodes_id: nodesId,
+            arcs_json: data.arcs,
+            provider: 'google',
+            model: 'gemini-2.5-flash',
+            input_tokens: 0,
+            output_tokens: 0,
+            status: 'approved',
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        setArcsId(arcsRecord.id);
+        console.log('Phase 5 saved:', arcsRecord.id);
+      } catch (err) {
+        console.error('Error saving Phase 5:', err);
+        alert('Failed to save Phase 5. Continue anyway?');
+      }
+    }
+
     setCurrentPhase(6);
   };
 
-  const handlePhase6Complete = (data: Phase6Output) => {
+  const handlePhase6Complete = async (data: Phase6Output) => {
     setPhase6Data(data);
-    
+
+    // Save Phase 6 immediately
+    if (arcsId) {
+      try {
+        const { error } = await supabase
+          .from('resolutions')
+          .insert({
+            game_id: gameId,
+            seed_id: seedId,
+            campaign_arcs_id: arcsId,
+            resolution_paths_json: data.resolutionPaths,
+            twist: data.twist,
+            provider: 'google',
+            model: 'gemini-2.5-flash',
+            input_tokens: 0,
+            output_tokens: 0,
+            status: 'approved',
+          });
+
+        if (error) throw error;
+        console.log('Phase 6 saved successfully');
+      } catch (err) {
+        console.error('Error saving Phase 6:', err);
+        alert('Failed to save Phase 6');
+        return;
+      }
+    }
+
+    // All phases saved, notify parent
     if (phase3Data && phase4Data && phase5Data) {
       onComplete({
         factions: phase3Data,

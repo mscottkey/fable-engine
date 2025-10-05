@@ -97,91 +97,9 @@ export default function CampaignBuildScreen() {
     if (!gameId) return;
 
     try {
-      console.log('Campaign generation complete, saving to database...');
+      console.log('Campaign generation complete, updating game status...');
 
-      // Get seed_id from gameData
-      const seedId = gameData?.campaign_seeds?.id;
-      if (!seedId) {
-        throw new Error('No seed ID found');
-      }
-
-      // Step 1: Save factions (Phase 3)
-      const { data: factionsRecord, error: factionsError } = await supabase
-        .from('factions')
-        .insert({
-          game_id: gameId,
-          seed_id: seedId,
-          factions_json: allData.factions.factions,
-          relationships: allData.factions.relationships,
-          fronts: allData.factions.fronts || [],
-          provider: 'google',
-          model: 'gemini-2.5-flash',
-          input_tokens: 0,
-          output_tokens: 0,
-          status: 'approved',
-        })
-        .select()
-        .single();
-
-      if (factionsError) throw factionsError;
-
-      // Step 2: Save story nodes (Phase 4)
-      const { data: nodesRecord, error: nodesError } = await supabase
-        .from('story_nodes')
-        .insert({
-          game_id: gameId,
-          seed_id: seedId,
-          factions_id: factionsRecord.id,
-          nodes_json: allData.nodes.nodes,
-          provider: 'google',
-          model: 'gemini-2.5-flash',
-          input_tokens: 0,
-          output_tokens: 0,
-          status: 'approved',
-        })
-        .select()
-        .single();
-
-      if (nodesError) throw nodesError;
-
-      // Step 3: Save campaign arcs (Phase 5)
-      const { data: arcsRecord, error: arcsError } = await supabase
-        .from('campaign_arcs')
-        .insert({
-          game_id: gameId,
-          seed_id: seedId,
-          story_nodes_id: nodesRecord.id,
-          arcs_json: allData.arcs.arcs,
-          provider: 'google',
-          model: 'gemini-2.5-flash',
-          input_tokens: 0,
-          output_tokens: 0,
-          status: 'approved',
-        })
-        .select()
-        .single();
-
-      if (arcsError) throw arcsError;
-
-      // Step 4: Save resolutions (Phase 6)
-      const { error: resolutionsError } = await supabase
-        .from('resolutions')
-        .insert({
-          game_id: gameId,
-          seed_id: seedId,
-          campaign_arcs_id: arcsRecord.id,
-          resolution_paths_json: allData.resolutions.resolutionPaths,
-          twist: allData.resolutions.twist,
-          provider: 'google',
-          model: 'gemini-2.5-flash',
-          input_tokens: 0,
-          output_tokens: 0,
-          status: 'approved',
-        });
-
-      if (resolutionsError) throw resolutionsError;
-
-      // Step 5: Update game status to playing
+      // All phases already saved by CampaignPipeline, just update game status
       const { error: updateError } = await supabase
         .from('games')
         .update({ status: 'playing' })
@@ -189,7 +107,7 @@ export default function CampaignBuildScreen() {
 
       if (updateError) throw updateError;
 
-      console.log('Campaign saved successfully!');
+      console.log('Campaign complete, game ready to play!');
 
       toast({
         title: 'Campaign Ready!',
