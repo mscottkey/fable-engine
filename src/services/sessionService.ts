@@ -131,20 +131,42 @@ export async function generateSessionRecap(sessionId: string): Promise<string> {
 async function generateOpeningScene(gameId: string, sessionId: string): Promise<void> {
   const context = await loadGameContext(gameId, 0);
 
-  // Use edge function for secure opening scene generation
-  const opening = await generateOpeningFlow(
-    gameId,
-    context.storyOverview,
-    context.characters
-  );
+  // Create intro message with story overview
+  const storyIntro = `**${context.storyOverview?.setting || 'The Adventure Begins'}**
 
-  // Save as first narrative event
+${context.storyOverview?.expandedSetting || 'Your story begins...'}
+
+**The Stakes:** ${context.storyOverview?.openingConflict || 'Unknown dangers await'}
+
+**Your Mission:** ${context.storyOverview?.hooks?.[0] || 'Discover what lies ahead'}`;
+
+  // Save story intro
   await (supabase as any)
     .from('narrative_events')
     .insert({
       session_id: sessionId,
       game_id: gameId,
       event_number: 0,
+      event_type: 'narration',
+      narration: storyIntro
+    });
+
+  // Use edge function for secure opening scene generation
+  const opening = await generateOpeningFlow(
+    gameId,
+    context.storyOverview,
+    context.characters,
+    context.factions,
+    context.storyNodes
+  );
+
+  // Save opening scene
+  await (supabase as any)
+    .from('narrative_events')
+    .insert({
+      session_id: sessionId,
+      game_id: gameId,
+      event_number: 1,
       event_type: 'narration',
       narration: opening.narration,
       available_options: opening.options

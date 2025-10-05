@@ -133,17 +133,8 @@ export function WebShell({ left, right, header }: WebShellProps) {
       )}
       
       <div className="flex-1 relative">
-        <div className="absolute top-4 right-4 z-10">
+        <div className="absolute bottom-4 right-4 z-10">
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setFocusPanel('chat')}
-              className="gap-2"
-            >
-              <Focus className="w-4 h-4" />
-              Focus Chat
-            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -152,6 +143,15 @@ export function WebShell({ left, right, header }: WebShellProps) {
             >
               <Focus className="w-4 h-4" />
               Focus Board
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFocusPanel('chat')}
+              className="gap-2"
+            >
+              <Focus className="w-4 h-4" />
+              Focus Chat
             </Button>
           </div>
         </div>

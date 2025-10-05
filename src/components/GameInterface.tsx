@@ -135,8 +135,8 @@ export function GameInterface({ gameId }: GameInterfaceProps) {
     return (
       <GameSessionContext.Provider value={sessionContextValue}>
         <WebShell
-          left={<ChatPanel gameId={gameId} />}
-          right={<StoryboardPanel gameId={gameId} />}
+          left={<StoryboardPanel gameId={gameId} />}
+          right={<ChatPanel gameId={gameId} />}
         />
       </GameSessionContext.Provider>
     );
