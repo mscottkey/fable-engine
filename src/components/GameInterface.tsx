@@ -5,6 +5,8 @@ import { ChatPanel, StoryboardPanel, LobbyPanel } from '@/components/panels';
 import { loadGameContext, type GameContext } from '@/services/gameContextService';
 import { startSession, resumeSession, pauseSession } from '@/services/sessionService';
 import { useToast } from '@/hooks/use-toast';
+import { SessionControls } from '@/components/SessionControls';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GameInterfaceProps {
   gameId: string;
@@ -36,6 +38,7 @@ export function GameInterface({ gameId }: GameInterfaceProps) {
   const [context, setContext] = useState<GameContext | null>(null);
   const [session, setSession] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isHost, setIsHost] = useState(false);
 
   useEffect(() => {
     initializeGame();
@@ -52,6 +55,19 @@ export function GameInterface({ gameId }: GameInterfaceProps) {
       // Check for existing session
       if (ctx.currentSession) {
         setSession(ctx.currentSession);
+      }
+
+      // Check if current user is host
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: memberData } = await supabase
+          .from('game_members')
+          .select('role')
+          .eq('game_id', gameId)
+          .eq('user_id', user.id)
+          .single();
+
+        setIsHost(memberData?.role === 'host');
       }
     } catch (error) {
       console.error('Failed to initialize game:', error);
@@ -131,10 +147,39 @@ export function GameInterface({ gameId }: GameInterfaceProps) {
     refreshContext
   };
 
+  const GameHeader = () => (
+    <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center gap-4">
+        <h1 className="text-lg font-semibold">{context?.game?.name || 'Game'}</h1>
+      </div>
+
+      <div className="flex items-center gap-3">
+        {session && (
+          <SessionControls
+            session={session}
+            isHost={isHost}
+            onSessionEnd={refreshContext}
+          />
+        )}
+
+        {!session && isHost && (
+          <button
+            onClick={startNewSession}
+            className="text-sm px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors flex items-center gap-2"
+          >
+            <span>▶</span>
+            Start Session
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   if (shell === 'desktop') {
     return (
       <GameSessionContext.Provider value={sessionContextValue}>
         <WebShell
+          header={<GameHeader />}
           left={<StoryboardPanel gameId={gameId} />}
           right={<ChatPanel gameId={gameId} />}
         />

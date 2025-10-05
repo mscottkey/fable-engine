@@ -228,15 +228,11 @@ export function ChatPanel({ gameId }: ChatPanelProps) {
       <div className="flex h-full items-center justify-center p-6">
         <Card className="max-w-md">
           <CardContent className="p-6 text-center">
-            <MessageCircle className="w-12 h-12 mx-auto mb-4 text-primary" />
-            <h3 className="text-lg font-bold mb-2">Start Your Session</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Begin playing to chat with the GM and take actions
+            <MessageCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-bold mb-2">No Active Session</h3>
+            <p className="text-sm text-muted-foreground">
+              Waiting for the host to start the session...
             </p>
-            <Button onClick={startNewSession} className="w-full gap-2">
-              <Play className="w-4 h-4" />
-              Start Session
-            </Button>
           </CardContent>
         </Card>
       </div>
