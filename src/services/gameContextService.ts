@@ -4,6 +4,10 @@ export interface GameContext {
   game: any;
   storyOverview: any;
   characters: any[];
+  factions: any;
+  storyNodes: any;
+  campaignArcs: any;
+  resolutions: any;
   storyState: any;
   recentEvents: any[];
   currentSession: any;
@@ -45,6 +49,46 @@ export async function loadGameContext(
 
     if (charactersError) throw charactersError;
 
+    // Fetch factions (Phase 3)
+    const { data: factions, error: factionsError } = await supabase
+      .from('factions')
+      .select('*')
+      .eq('game_id', gameId)
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Fetch story nodes (Phase 4)
+    const { data: storyNodes, error: nodesError } = await supabase
+      .from('story_nodes')
+      .select('*')
+      .eq('game_id', gameId)
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Fetch campaign arcs (Phase 5)
+    const { data: campaignArcs, error: arcsError } = await supabase
+      .from('campaign_arcs')
+      .select('*')
+      .eq('game_id', gameId)
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Fetch resolutions (Phase 6)
+    const { data: resolutions, error: resolutionsError } = await supabase
+      .from('resolutions')
+      .select('*')
+      .eq('game_id', gameId)
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     // Fetch story state
     const { data: storyState, error: stateError } = await (supabase as any)
       .from('story_state')
@@ -78,6 +122,10 @@ export async function loadGameContext(
       game,
       storyOverview,
       characters: characters || [],
+      factions,
+      storyNodes,
+      campaignArcs,
+      resolutions,
       storyState,
       recentEvents: (recentEvents || []).reverse(), // Chronological order
       currentSession

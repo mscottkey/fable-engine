@@ -68,15 +68,28 @@ export function ChatPanel({ gameId }: ChatPanelProps) {
       if (error) throw error;
 
       setGameData(data);
-      
-      // Create default characters for now - later we'll load from database
-      const defaultCharacters: Character[] = [
-        { id: "1", playerName: "Player 1", characterName: "Character 1", concept: "Determined hero" },
-        { id: "2", playerName: "Player 2", characterName: "Character 2", concept: "Clever ally" },
-      ];
-      
-      setCharacters(defaultCharacters);
-      setActiveCharacter(defaultCharacters[0]?.id || '');
+
+      // Load real characters from database
+      const { data: charactersData, error: charsError } = await supabase
+        .from('characters')
+        .select('*')
+        .eq('game_id', gameId)
+        .eq('status', 'approved');
+
+      if (charsError) {
+        console.error('Error loading characters:', charsError);
+      }
+
+      // Map database characters to ChatPanel format
+      const loadedCharacters: Character[] = (charactersData || []).map(char => ({
+        id: char.id,
+        playerName: char.player_name || 'Unknown Player',
+        characterName: char.character_name,
+        concept: char.high_concept || char.trouble || 'Adventurer',
+      }));
+
+      setCharacters(loadedCharacters);
+      setActiveCharacter(loadedCharacters[0]?.id || '');
       
       // Set initial GM message
       setMessages([
