@@ -90,11 +90,37 @@ async function generateInitial(
     try {
       parsedData = JSON.parse(llmResponse.content);
     } catch (parseError) {
+      console.log('JSON parse failed, attempting repair...');
       const repairResponse = await repairCycle(systemPrompt, userPrompt, llmResponse.content, MAX_TOKENS.initial);
       parsedData = JSON.parse(repairResponse.content);
     }
 
-    const validated = Phase4OutputSchema.parse(parsedData);
+    // Validate with Zod
+    let validated: any;
+    try {
+      validated = Phase4OutputSchema.parse(parsedData);
+    } catch (zodError) {
+      console.log('Zod validation failed, attempting repair with error details:', zodError);
+      const repairPrompt = await getPrompt('phase4/repair@v1');
+      const errorDetails = zodError instanceof Error ? zodError.message : JSON.stringify(zodError);
+
+      const repairResponse = await callLlm({
+        provider: 'google',
+        model: 'gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+          { role: 'assistant', content: JSON.stringify(parsedData) },
+          { role: 'user', content: `${repairPrompt}\n\nValidation errors:\n${errorDetails}` },
+        ],
+        temperature: 0.5,
+        maxTokens: MAX_TOKENS.initial,
+        responseFormat: 'json',
+      });
+
+      parsedData = JSON.parse(repairResponse.content);
+      validated = Phase4OutputSchema.parse(parsedData);
+    }
     const latency = Date.now() - startTime;
 
     await logAIEvent({
