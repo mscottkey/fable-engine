@@ -148,11 +148,25 @@ async function generateOpeningScene(gameId: string, sessionId: string): Promise<
   let missionText = 'Discover what lies ahead';
 
   if (hooks.length > 0) {
-    // Handle both object format {hook: "text"} and string format
-    if (typeof hooks[0] === 'object' && hooks[0].hook) {
-      missionText = hooks[0].hook;
-    } else if (typeof hooks[0] === 'string') {
-      missionText = hooks[0];
+    const firstHook = hooks[0];
+
+    // Handle object format {title, description} from StoryHookSchema
+    if (typeof firstHook === 'object' && firstHook !== null) {
+      // Standard format from Phase 1 schema
+      if (firstHook.description) {
+        missionText = firstHook.description;
+      } else if (firstHook.title) {
+        // Fallback to title if description missing
+        missionText = firstHook.title;
+      } else if (firstHook.hook) {
+        // Legacy format
+        missionText = firstHook.hook;
+      } else if (firstHook.text) {
+        // Alternative legacy format
+        missionText = firstHook.text;
+      }
+    } else if (typeof firstHook === 'string') {
+      missionText = firstHook;
     }
   }
 
@@ -202,18 +216,45 @@ ${context.storyOverview?.expanded_setting || 'Your story begins...'}
 export async function regenerateStoryIntro(gameId: string, sessionId: string): Promise<void> {
   const context = await loadGameContext(gameId, 0);
 
+  console.log('[DEBUG regenerateStoryIntro] Full storyOverview:', JSON.stringify(context.storyOverview, null, 2));
+
   // Create intro message with story overview
   const hooks = context.storyOverview?.story_hooks || [];
   let missionText = 'Discover what lies ahead';
 
+  console.log('[DEBUG regenerateStoryIntro] story_hooks raw data:', JSON.stringify(hooks, null, 2));
+  console.log('[DEBUG regenerateStoryIntro] hooks.length:', hooks.length);
+
   if (hooks.length > 0) {
-    // Handle both object format {hook: "text"} and string format
-    if (typeof hooks[0] === 'object' && hooks[0].hook) {
-      missionText = hooks[0].hook;
-    } else if (typeof hooks[0] === 'string') {
-      missionText = hooks[0];
+    const firstHook = hooks[0];
+    console.log('[DEBUG regenerateStoryIntro] First hook type:', typeof firstHook);
+    console.log('[DEBUG regenerateStoryIntro] First hook value:', firstHook);
+
+    // Handle object format {title, description} from StoryHookSchema
+    if (typeof firstHook === 'object' && firstHook !== null) {
+      // Standard format from Phase 1 schema
+      if (firstHook.description) {
+        missionText = firstHook.description;
+      } else if (firstHook.title) {
+        // Fallback to title if description missing
+        missionText = firstHook.title;
+      } else if (firstHook.hook) {
+        // Legacy format
+        missionText = firstHook.hook;
+      } else if (firstHook.text) {
+        // Alternative legacy format
+        missionText = firstHook.text;
+      } else {
+        // Last resort - stringify the object to see what's in it
+        console.warn('[WARN regenerateStoryIntro] Unknown hook object structure:', firstHook);
+        missionText = JSON.stringify(firstHook);
+      }
+    } else if (typeof firstHook === 'string') {
+      missionText = firstHook;
     }
   }
+
+  console.log('[DEBUG regenerateStoryIntro] Final mission text:', missionText);
 
   const storyIntro = `**${context.storyOverview?.name || 'The Adventure Begins'}**
 
