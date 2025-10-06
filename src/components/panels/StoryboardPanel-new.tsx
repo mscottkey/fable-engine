@@ -139,7 +139,7 @@ export function StoryboardPanel({ gameId }: StoryboardPanelProps) {
       </header>
 
       {/* Story Display - Read Only */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-4 space-y-4 max-w-4xl mx-auto">
           {context?.recentEvents && context.recentEvents.length > 0 ? (
             context.recentEvents.map((event: any) => (

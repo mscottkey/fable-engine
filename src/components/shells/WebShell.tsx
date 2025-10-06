@@ -48,13 +48,13 @@ export function WebShell({ left, right, header }: WebShellProps) {
 
   if (focusPanel === 'chat') {
     return (
-      <div className="h-screen flex flex-col">
+      <div className="h-screen flex flex-col overflow-hidden">
         {header && (
-          <header className="border-b border-border bg-card/50 backdrop-blur-sm">
+          <header className="border-b border-border bg-card/50 backdrop-blur-sm shrink-0">
             {header}
           </header>
         )}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative overflow-hidden">
           <div className="absolute inset-0">
             {left}
           </div>
@@ -87,13 +87,13 @@ export function WebShell({ left, right, header }: WebShellProps) {
 
   if (focusPanel === 'board') {
     return (
-      <div className="h-screen flex flex-col">
+      <div className="h-screen flex flex-col overflow-hidden">
         {header && (
-          <header className="border-b border-border bg-card/50 backdrop-blur-sm">
+          <header className="border-b border-border bg-card/50 backdrop-blur-sm shrink-0">
             {header}
           </header>
         )}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative overflow-hidden">
           <div className="absolute inset-0">
             {right}
           </div>
@@ -125,14 +125,14 @@ export function WebShell({ left, right, header }: WebShellProps) {
   }
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       {header && (
-        <header className="border-b border-border bg-card/50 backdrop-blur-sm">
+        <header className="border-b border-border bg-card/50 backdrop-blur-sm shrink-0">
           {header}
         </header>
       )}
-      
-      <div className="flex-1 relative">
+
+      <div className="flex-1 relative overflow-hidden">
         <div className="absolute bottom-4 right-4 z-10">
           <div className="flex gap-2">
             <Button

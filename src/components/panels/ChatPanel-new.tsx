@@ -267,7 +267,7 @@ export function ChatPanel({ gameId }: ChatPanelProps) {
 
         {/* Character Selection Cards */}
         {context?.characters && context.characters.length > 0 && (
-          <div className="p-3 border-b border-border bg-muted/30">
+          <div className="p-3 border-b border-border bg-muted/30 shrink-0">
             <div className="flex gap-3 flex-wrap">
               {context.characters.map((character: any) => {
                 const charData = character.pc_json || {};
@@ -311,8 +311,8 @@ export function ChatPanel({ gameId }: ChatPanelProps) {
         )}
 
         {/* Tab Switch: Action vs Chat */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'action' | 'chat')} className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-2 mx-4 mt-3">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'action' | 'chat')} className="flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-2 mx-4 mt-3 shrink-0">
             <TabsTrigger value="action" className="gap-2">
               <Sparkles className="w-4 h-4" />
               Take Action
@@ -323,8 +323,8 @@ export function ChatPanel({ gameId }: ChatPanelProps) {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="action" className="flex-1 flex flex-col mt-0">
-            <div className="flex-1 p-4">
+          <TabsContent value="action" className="flex-1 flex flex-col mt-0 min-h-0 overflow-hidden">
+            <div className="flex-1 p-4 overflow-auto">
               <Card className="bg-card/70">
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground mb-3">
@@ -341,8 +341,8 @@ export function ChatPanel({ gameId }: ChatPanelProps) {
             </div>
           </TabsContent>
 
-          <TabsContent value="chat" className="flex-1 flex flex-col mt-0">
-            <ScrollArea className="flex-1 p-4">
+          <TabsContent value="chat" className="flex-1 flex flex-col mt-0 min-h-0">
+            <ScrollArea className="flex-1 p-4 min-h-0">
               <div className="space-y-3">
                 {chatMessages.map(msg => (
                   <Card key={msg.id} className={msg.type === 'question' ? 'bg-accent/10 ml-8' : 'bg-card/70'}>
