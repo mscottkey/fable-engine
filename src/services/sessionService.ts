@@ -144,13 +144,25 @@ async function generateOpeningScene(gameId: string, sessionId: string): Promise<
   const context = await loadGameContext(gameId, 0);
 
   // Create intro message with story overview
+  const hooks = context.storyOverview?.story_hooks || [];
+  let missionText = 'Discover what lies ahead';
+
+  if (hooks.length > 0) {
+    // Handle both object format {hook: "text"} and string format
+    if (typeof hooks[0] === 'object' && hooks[0].hook) {
+      missionText = hooks[0].hook;
+    } else if (typeof hooks[0] === 'string') {
+      missionText = hooks[0];
+    }
+  }
+
   const storyIntro = `**${context.storyOverview?.name || 'The Adventure Begins'}**
 
 ${context.storyOverview?.expanded_setting || 'Your story begins...'}
 
 **The Stakes:** ${context.storyOverview?.core_conflict || 'Unknown dangers await'}
 
-**Your Mission:** ${context.storyOverview?.story_hooks?.[0]?.hook || context.storyOverview?.story_hooks?.[0] || 'Discover what lies ahead'}`;
+**Your Mission:** ${missionText}`;
 
   // Save story intro
   await (supabase as any)
@@ -191,13 +203,25 @@ export async function regenerateStoryIntro(gameId: string, sessionId: string): P
   const context = await loadGameContext(gameId, 0);
 
   // Create intro message with story overview
+  const hooks = context.storyOverview?.story_hooks || [];
+  let missionText = 'Discover what lies ahead';
+
+  if (hooks.length > 0) {
+    // Handle both object format {hook: "text"} and string format
+    if (typeof hooks[0] === 'object' && hooks[0].hook) {
+      missionText = hooks[0].hook;
+    } else if (typeof hooks[0] === 'string') {
+      missionText = hooks[0];
+    }
+  }
+
   const storyIntro = `**${context.storyOverview?.name || 'The Adventure Begins'}**
 
 ${context.storyOverview?.expanded_setting || 'Your story begins...'}
 
 **The Stakes:** ${context.storyOverview?.core_conflict || 'Unknown dangers await'}
 
-**Your Mission:** ${context.storyOverview?.story_hooks?.[0]?.hook || context.storyOverview?.story_hooks?.[0] || 'Discover what lies ahead'}`;
+**Your Mission:** ${missionText}`;
 
   // Get next event number
   const { data: events } = await (supabase as any)

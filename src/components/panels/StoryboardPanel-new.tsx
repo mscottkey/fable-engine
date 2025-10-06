@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { useGameSession } from '@/components/GameInterface';
 import { useTTS } from '@/hooks/useTTS';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface StoryboardPanelProps {
   gameId: string;
@@ -187,7 +189,11 @@ export function StoryboardPanel({ gameId }: StoryboardPanelProps) {
                               </Button>
                             )}
                           </div>
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{event.narration}</p>
+                          <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-3 prose-strong:text-primary prose-strong:font-semibold">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {event.narration}
+                            </ReactMarkdown>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
