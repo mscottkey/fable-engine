@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, Users, Zap } from "lucide-react";
-import heroImage from "@/assets/hero-bg-new.jpg";
+import heroImage from "@/assets/hero-bg-red.png";
 
 interface LandingPageProps {
   onShowAuth: () => void;
@@ -15,7 +15,7 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex items-center">
-                <img src="/logo.png" alt="RoleplAI GM" className="w-8 h-8 mr-2" />
+                <img src="/logo.png" alt="The Narrator AI" className="w-8 h-8 mr-2" />
                 <h1 className="text-xl font-bold text-primary">RoleplAI GM</h1>
               </div>
             </div>

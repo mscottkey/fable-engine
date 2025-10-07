@@ -98,7 +98,7 @@ interface JoinGameOptions {
   autoClaimSlot?: boolean;
 }
 
-// Validate and join game via invite code
+// Validate and join game via invite code through edge function (bypasses RLS)
 export async function joinGameWithCode(code: string, options: JoinGameOptions = {}): Promise<string> {
   const { gameId: expectedGameId, autoClaimSlot = true } = options;
   const normalizedCode = code.trim().toUpperCase();
@@ -109,112 +109,23 @@ export async function joinGameWithCode(code: string, options: JoinGameOptions = 
     throw new Error('User must be authenticated to join game');
   }
 
-  // Look up invite by code
-  const { data: invite, error: inviteError } = await supabase
-    .from('game_invites')
-    .select('*')
-    .eq('code', normalizedCode)
-    .maybeSingle();
-
-  if (inviteError) {
-    throw new Error(`Failed to validate invite: ${inviteError.message}`);
-  }
-
-  if (!invite) {
-    throw new Error('Invalid invite code');
-  }
-
-  const currentUses = invite.uses ?? 0;
-
-  if (expectedGameId && invite.game_id !== expectedGameId) {
-    throw new Error('Invite code does not match this game');
-  }
-
-  if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
-    throw new Error('Invite code has expired');
-  }
-
-  if (typeof invite.max_uses === 'number' && currentUses >= invite.max_uses) {
-    throw new Error('Invite code has reached maximum uses');
-  }
-
-  const gameId = invite.game_id;
-
-  // Check if user is already a member
-  const { data: existingMember, error: memberCheckError } = await supabase
-    .from('game_members')
-    .select('id')
-    .eq('game_id', gameId)
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (memberCheckError) {
-    throw new Error(`Failed to check membership: ${memberCheckError.message}`);
-  }
-
-  if (!existingMember) {
-    // Add user as game member
-    const { error: memberError } = await supabase
-      .from('game_members')
-      .insert({
-        game_id: gameId,
-        user_id: user.id,
-        role: 'player'
-      });
-
-    if (memberError) {
-      throw new Error(`Failed to join game: ${memberError.message}`);
+  const { data, error } = await supabase.functions.invoke('join-game', {
+    body: {
+      code: normalizedCode,
+      gameId: expectedGameId,
+      autoClaimSlot
     }
+  });
 
-
-    // Increment invite uses
-    const { error: updateError } = await supabase
-      .from('game_invites')
-      .update({ uses: currentUses + 1 })
-      .eq('id', invite.id);
-
-    if (updateError) {
-      console.warn('Failed to update invite uses:', updateError);
-    }
+  if (error) {
+    throw new Error(error.message || 'Failed to join game');
   }
 
-  if (autoClaimSlot) {
-    try {
-      // Check if user already has a slot
-      const { data: existingSlots } = await supabase
-        .from('party_slots')
-        .select('id')
-        .eq('game_id', gameId)
-        .eq('claimed_by', user.id);
-
-      if (!existingSlots || existingSlots.length === 0) {
-        const { data: availableSlot } = await supabase
-          .from('party_slots')
-          .select('id')
-          .eq('game_id', gameId)
-          .eq('status', 'empty')
-          .order('index_in_party', { ascending: true })
-          .limit(1)
-          .maybeSingle();
-
-        if (availableSlot) {
-          const { error: claimError } = await supabase
-            .from('party_slots')
-            .update({ claimed_by: user.id, status: 'reserved' })
-            .eq('id', availableSlot.id)
-            .eq('status', 'empty');
-
-          if (claimError) {
-            console.warn('Failed to auto-claim slot:', claimError);
-          }
-        }
-      }
-    } catch (slotError) {
-      console.warn('Auto-claim slot failed:', slotError);
-    }
+  if (!data?.success) {
+    throw new Error(data?.error || 'Failed to join game');
   }
 
-  return gameId;
+  return data.gameId as string;
 }
 
 // Create party slots for a game
