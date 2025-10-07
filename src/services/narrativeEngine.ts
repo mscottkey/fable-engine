@@ -48,17 +48,9 @@ export async function narrateTurn(
     const lastEvent = context.recentEvents[context.recentEvents.length - 1];
 
     // Get campaign structure for beat awareness
-    const { data: game } = await supabase
-      .from('games')
-      .select('seed_id')
-      .eq('id', gameId)
-      .single();
-
-    const { data: storyOverview } = await supabase
-      .from('story_overviews')
-      .select('campaign_structure')
-      .eq('seed_id', game.seed_id)
-      .single();
+    // TODO: campaign_structure doesn't exist on story_overviews table yet
+    // Skip this query for now to avoid 400 errors
+    let campaignStructure = null;
 
     // Call edge function for secure server-side processing
     const narrativeContext: NarrativeTurnContext = {
@@ -68,8 +60,7 @@ export async function narrateTurn(
       recentEvents: context.recentEvents,
       lastEvent,
       currentBeat,
-      // TODO: campaign_structure doesn't exist on story_overviews table yet
-      campaignStructure: (storyOverview as any)?.campaign_structure
+      campaignStructure
     };
 
     const narrative = await generateNarrativeTurn(gameId, narrativeContext, playerAction, characterId);
@@ -272,20 +263,9 @@ export async function checkActTransition(
   }
 
   // Load campaign structure to check if act is complete
-  const { data: game } = await supabase
-    .from('games')
-    .select('seed_id')
-    .eq('id', gameId)
-    .single();
-
-  const { data: storyOverview } = await supabase
-    .from('story_overviews')
-    .select('campaign_structure')
-    .eq('seed_id', game.seed_id)
-    .single();
-
   // TODO: campaign_structure doesn't exist on story_overviews table yet
-  const acts = (storyOverview as any)?.campaign_structure?.acts || [];
+  // For now, skip this check
+  const acts: any[] = [];
   const currentAct = acts.find((a: any) => a.actNumber === currentState.current_act_number);
 
   if (!currentAct) return { actComplete: false };

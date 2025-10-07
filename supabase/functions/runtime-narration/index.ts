@@ -107,7 +107,7 @@ serve(async (req) => {
     const characterName = character?.pc_json?.name || 'Unknown';
 
     // Load prompts
-    const systemPrompt = await getPrompt('gm/narrate-turn/system@v1');
+    const systemPrompt = await getPrompt('gm/system@v1');
     const userTemplate = await getPrompt('gm/narrate-turn@v1');
 
     // Render user prompt with context

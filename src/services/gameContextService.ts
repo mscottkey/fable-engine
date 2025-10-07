@@ -194,14 +194,18 @@ export async function loadCurrentBeat(gameId: string) {
 
     if (gameError) throw gameError;
 
-    // Get story overview with campaign structure
+    // Get story overview for campaign structure (column not yet available in prod)
     const { data: storyOverview, error: overviewError } = await supabase
       .from('story_overviews')
-      .select('campaign_structure')
+      .select('*')
       .eq('seed_id', game.seed_id)
-      .single();
+      .maybeSingle();
 
-    if (overviewError) throw overviewError;
+    if (overviewError) {
+      // Supabase returns error when column request is invalid or row missing; treat as no campaign structure
+      console.warn('Campaign structure unavailable for story overview:', overviewError.message);
+      return null;
+    }
 
     // Extract current beat from campaign structure
     // TODO: campaign_structure doesn't exist on story_overviews table yet

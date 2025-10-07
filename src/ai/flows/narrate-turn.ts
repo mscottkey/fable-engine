@@ -71,10 +71,17 @@ export async function generateNarrativeTurn(
 
   if (error) {
     console.error('Edge function error:', error);
+    console.error('Edge function error details:', JSON.stringify(error, null, 2));
     throw new Error(`Failed to generate narrative turn: ${error.message}`);
   }
 
+  if (!data) {
+    console.error('No data returned from edge function');
+    throw new Error('No data returned from edge function');
+  }
+
   if (!data.success) {
+    console.error('Edge function returned error:', data);
     throw new Error(data.error || 'Unknown error generating narrative turn');
   }
 
