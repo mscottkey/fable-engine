@@ -16,7 +16,7 @@ export function LandingPage({ onShowAuth }: LandingPageProps) {
             <div className="flex items-center">
               <div className="flex items-center">
                 <img src="/logo.png" alt="The Narrator AI" className="w-8 h-8 mr-2" />
-                <h1 className="text-xl font-bold text-primary">RoleplAI GM</h1>
+                <h1 className="text-xl font-bold text-primary">The Narrator AI</h1>
               </div>
             </div>
             <div className="flex items-center space-x-4">
