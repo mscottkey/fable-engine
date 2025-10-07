@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 export function JoinGamePage() {
-  const { gameId } = useParams<{ gameId: string }>();
+  const { gameId } = useParams<{ gameId?: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -27,12 +27,13 @@ export function JoinGamePage() {
       
       if (!user) {
         // Store the intended destination for redirect after login
-        const returnUrl = `/join/${gameId}${codeFromUrl ? `?code=${codeFromUrl}` : ''}`;
+        const basePath = gameId ? `/join/${gameId}` : '/join';
+        const returnUrl = `${basePath}${codeFromUrl ? `?code=${codeFromUrl}` : ''}`;
         localStorage.setItem('authRedirectUrl', returnUrl);
         navigate('/auth');
         return;
       }
-      
+
       setUser(user);
       
       // If we have a code from URL, auto-join
@@ -45,16 +46,16 @@ export function JoinGamePage() {
   }, [gameId, codeFromUrl, navigate]);
 
   const handleJoinGame = async (code: string) => {
-    if (!gameId || !code) return;
+    if (!code) return;
     
     setIsLoading(true);
     try {
-      await joinGameWithCode(gameId, code);
+      const joinedGameId = await joinGameWithCode(code, { gameId });
       toast({
         title: "Joined Game!",
         description: "Welcome to the party. Redirecting to lobby...",
       });
-      navigate(`/lobby/${gameId}`);
+      navigate(`/lobby/${joinedGameId}`);
     } catch (error: any) {
       toast({
         title: "Failed to Join",

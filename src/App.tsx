@@ -302,6 +302,10 @@ function AppLayoutWrapper({ user }: { user: User | null }) {
           element={<AuthPage onBack={() => navigate('/')} />} 
         />
         <Route 
+          path="/join" 
+          element={<JoinGamePage />} 
+        />
+        <Route 
           path="/join/:gameId" 
           element={<JoinGamePage />} 
         />

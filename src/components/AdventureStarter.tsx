@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PlayCircle, Sparkles, Dice6, X, Info } from "lucide-react";
+import { PlayCircle, Sparkles, Dice6, X, Info, LogIn, Loader2 } from "lucide-react";
 import { Genre, GENRE_SCENARIOS, randomScenarioFor, type Scenario } from "@/data/genres";
 import { detectGenreFromText } from "@/data/gm-quotes";
 import { detectGenreFromKeywords } from "@/data/keywords-to-genre";
@@ -14,6 +15,7 @@ import { AIGMAvatar } from "@/components/AIGMAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { buildCampaignSeed } from "@/services/campaignBuilder";
 import { saveCampaignSeed } from "@/services/campaignService";
+import { joinGameWithCode } from "@/services/partyService";
 import { useToast } from "@/hooks/use-toast";
 import type { Genre as DatabaseGenre, CampaignSeed } from "@/types/database";
 
@@ -37,7 +39,10 @@ export function AdventureStarter({ onStartStoryBuilder }: AdventureStarterProps)
   const [hoveredGenre, setHoveredGenre] = useState<Genre | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [joinCode, setJoinCode] = useState("");
+  const [joining, setJoining] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Check initial auth state
@@ -71,6 +76,43 @@ export function AdventureStarter({ onStartStoryBuilder }: AdventureStarterProps)
       ...prev,
       [genre]: newScenario
     }));
+  };
+
+  const handleJoinExistingGame = async () => {
+    const trimmedCode = joinCode.trim().toUpperCase();
+
+    if (!trimmedCode) {
+      toast({
+        title: "Enter a Code",
+        description: "Ask your host for the game code and enter it here.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isAuthenticated) {
+      navigate(`/join?code=${trimmedCode}`);
+      return;
+    }
+
+    setJoining(true);
+    try {
+      const gameId = await joinGameWithCode(trimmedCode);
+      toast({
+        title: "Joined Game",
+        description: "Heading to the lobby to claim your character slot.",
+      });
+      setJoinCode("");
+      navigate(`/lobby/${gameId}`);
+    } catch (error: any) {
+      toast({
+        title: "Couldn't Join",
+        description: error?.message ?? 'Please double-check the game code.',
+        variant: "destructive",
+      });
+    } finally {
+      setJoining(false);
+    }
   };
 
   // Detect genre and constraints from user input
@@ -314,6 +356,38 @@ export function AdventureStarter({ onStartStoryBuilder }: AdventureStarterProps)
             Our AI gamemaster will bring your story to life.
           </p>
         </div>
+
+        {/* Join Existing Game */}
+        <Card className="max-w-2xl mx-auto border-primary/30 bg-card/60 backdrop-blur-sm">
+          <CardContent className="flex flex-col gap-4 py-6 md:flex-row md:items-center">
+            <div className="flex-1 text-center md:text-left space-y-1">
+              <h3 className="text-xl font-semibold">Join an existing session</h3>
+              <p className="text-sm text-muted-foreground">Use the code your host shared and we'll take you straight to their lobby.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              <Input
+                placeholder="Enter game code"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                maxLength={8}
+                className="font-mono text-center sm:text-left tracking-widest uppercase"
+              />
+              <Button
+                variant="outline"
+                onClick={handleJoinExistingGame}
+                disabled={joining}
+                className="whitespace-nowrap"
+              >
+                {joining ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <LogIn className="mr-2 h-4 w-4" />
+                )}
+                Join Game
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Custom Game Idea */}
         <Card className="max-w-2xl mx-auto border-border bg-card/50 backdrop-blur-sm">
