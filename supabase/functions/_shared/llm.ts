@@ -13,6 +13,8 @@ export interface LlmOptions {
   temperature?: number;
   maxTokens?: number;
   responseFormat?: 'text' | 'json';
+  enableThinking?: boolean;
+  thinkingBudget?: number;
 }
 
 export interface LlmResponse {
@@ -42,6 +44,8 @@ export async function callLlm(options: LlmOptions): Promise<LlmResponse> {
     temperature = 0.7,
     maxTokens = 4096,
     responseFormat = 'text',
+    enableThinking = false,
+    thinkingBudget = -1,
   } = options;
 
   // Convert messages to Gemini format
@@ -71,21 +75,25 @@ export async function callLlm(options: LlmOptions): Promise<LlmResponse> {
   }
 
   // Build request payload
-  const payload: any = {
-    contents,
-    generationConfig: {
-      temperature,
-      maxOutputTokens: maxTokens,
-      // Enable thinking mode for Gemini 2.5 models
-      thinkingConfig: {
-        thinkingBudget: -1  // Dynamic thinking budget
-      }
-    }
+  const generationConfig: Record<string, unknown> = {
+    temperature,
+    maxOutputTokens: maxTokens,
   };
 
-  if (responseFormat === 'json') {
-    payload.generationConfig.responseMimeType = 'application/json';
+  if (enableThinking) {
+    generationConfig.thinkingConfig = {
+      thinkingBudget,
+    };
   }
+
+  if (responseFormat === 'json') {
+    generationConfig.responseMimeType = 'application/json';
+  }
+
+  const payload: any = {
+    contents,
+    generationConfig,
+  };
 
   // Call Google AI API
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
