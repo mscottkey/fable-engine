@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useLobbyRealtime } from '@/hooks/useLobbyRealtime';
 import { getPartySlots, createGameInvite } from '@/services/partyService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,12 +8,14 @@ import { PartySlotCard } from '@/components/PartySlotCard';
 import { HostControls } from '@/components/HostControls';
 import { CharacterSeedDialog } from '@/components/CharacterSeedDialog';
 import { Users, CheckCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface LobbyPanelProps {
   gameId: string;
 }
 
 export function LobbyPanel({ gameId }: LobbyPanelProps) {
+  const { toast } = useToast();
   const [game, setGame] = useState<any>(null);
   const [slots, setSlots] = useState<any[]>([]);
   const [userMember, setUserMember] = useState<any>(null);
@@ -20,37 +23,133 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
   const [selectedSlot, setSelectedSlot] = useState<any>(null);
   const [showCharacterSeed, setShowCharacterSeed] = useState(false);
   const [autoSeedPrompted, setAutoSeedPrompted] = useState(false);
+  const [members, setMembers] = useState<any[]>([]);
+  const slotsRef = useRef<any[]>([]);
+  const membersRef = useRef<any[]>([]);
+  const initialLoadRef = useRef(true);
+
+  const getMemberName = (userId?: string | null) => {
+    if (!userId) return 'Player';
+    const member = membersRef.current.find((m: any) => m.user_id === userId);
+    return member?.profile?.display_name || 'Player';
+  };
+
+  const refreshMembers = useCallback(async (showToast = false) => {
+    if (!gameId) return;
+    const { data, error } = await supabase
+      .from('game_members')
+      .select(`
+        *,
+        profiles:profiles!game_members_user_id_fkey (display_name, avatar_url)
+      `)
+      .eq('game_id', gameId);
+
+    if (error) {
+      console.error('Failed to load members:', error);
+      return;
+    }
+
+    const mapped = (data || []).map((member: any) => ({
+      ...member,
+      profile: member.profiles || null,
+    }));
+
+    if (showToast && !initialLoadRef.current) {
+      const previous = membersRef.current;
+      const previousIds = new Set(previous.map((m: any) => m.user_id));
+      const nextIds = new Set(mapped.map((m: any) => m.user_id));
+
+      mapped.forEach((member: any) => {
+        if (!previousIds.has(member.user_id)) {
+          const name = member.profile?.display_name || 'Player';
+          toast({
+            title: `${name} joined the lobby`,
+            description: 'They can now claim a seat.'
+          });
+        }
+      });
+
+      previous.forEach((member: any) => {
+        if (!nextIds.has(member.user_id)) {
+          const name = member.profile?.display_name || 'Player';
+          toast({
+            title: `${name} left the lobby`,
+            description: 'Their seat is now available.'
+          });
+        }
+      });
+    }
+
+    membersRef.current = mapped;
+    setMembers(mapped);
+  }, [gameId, toast]);
+
+  const refreshSlots = useCallback(async (showToast = false) => {
+    if (!gameId) return;
+    try {
+      const slotsData = await getPartySlots(gameId);
+
+      if (showToast && !initialLoadRef.current) {
+        const previousMap = new Map(slotsRef.current.map((slot: any) => [slot.id, slot]));
+
+        slotsData.forEach((slot: any) => {
+          const previousSlot = previousMap.get(slot.id);
+          const previousOwner = previousSlot?.claimed_by;
+          const nextOwner = slot.claimed_by;
+
+          if (previousOwner !== nextOwner) {
+            if (nextOwner) {
+              const name = getMemberName(nextOwner) || slot.claimed_profile?.display_name || 'Player';
+              toast({
+                title: `${name} claimed a seat`,
+                description: `Seat ${slot.index_in_party + 1} is now reserved.`
+              });
+            } else if (previousOwner) {
+              const name = getMemberName(previousOwner);
+              toast({
+                title: `${name} released a seat`,
+                description: `Seat ${slot.index_in_party + 1} is available again.`
+              });
+            }
+          }
+        });
+      }
+
+      slotsRef.current = slotsData;
+      setSlots(slotsData);
+    } catch (error) {
+      console.error('Failed to load party slots:', error);
+    }
+  }, [gameId, toast]);
+
+  const loadPartySlots = useCallback(async (showToast = false) => {
+    await refreshSlots(showToast);
+  }, [refreshSlots]);
+
+  const loadGameMembers = useCallback(async (showToast = false) => {
+    await refreshMembers(showToast);
+  }, [refreshMembers]);
+
+  useLobbyRealtime({
+    gameId,
+    onSlotChange: () => refreshSlots(true),
+    onCharacterSeedChange: () => refreshSlots(false),
+    onMemberChange: () => refreshMembers(true),
+  });
 
   useEffect(() => {
-    if (!gameId) return;
-    
-    loadLobbyData();
-    
-    // Set up realtime subscription for slots
-    const subscription = supabase
-      .channel(`lobby-${gameId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'party_slots',
-          filter: `game_id=eq.${gameId}`
-        },
-        () => {
-          loadPartySlots();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    initialLoadRef.current = true;
+    slotsRef.current = [];
+    membersRef.current = [];
   }, [gameId]);
 
-  const loadLobbyData = async () => {
+  const loadLobbyData = useCallback(async () => {
+    if (!gameId) return;
+
     try {
-      // Load game data
+      const { data: userData } = await supabase.auth.getUser();
+      const userId = userData.user?.id;
+
       const { data: gameData, error: gameError } = await supabase
         .from('games')
         .select('*')
@@ -60,19 +159,16 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
       if (gameError) throw gameError;
       setGame(gameData);
 
-      // Load user membership
-      const { data: userData } = await supabase.auth.getUser();
-      if (userData.user) {
+      if (userId) {
         const { data: memberData } = await supabase
           .from('game_members')
           .select('*')
           .eq('game_id', gameId)
-          .eq('user_id', userData.user.id)
+          .eq('user_id', userId)
           .single();
-        
+
         setUserMember(memberData);
 
-        // Load or create invite code if host
         if (memberData?.role === 'host') {
           try {
             const { data: inviteData } = await supabase
@@ -80,7 +176,7 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
               .select('code')
               .eq('game_id', gameId)
               .single();
-            
+
             if (inviteData) {
               setInviteCode(inviteData.code);
             } else {
@@ -94,22 +190,17 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
         }
       }
 
-      // Load party slots
-      await loadPartySlots();
-      
+      await loadGameMembers(false);
+      await loadPartySlots(false);
+      initialLoadRef.current = false;
     } catch (error) {
       console.error('Failed to load lobby data:', error);
     }
-  };
+  }, [gameId, loadGameMembers, loadPartySlots]);
 
-  const loadPartySlots = async () => {
-    try {
-      const slotsData = await getPartySlots(gameId);
-      setSlots(slotsData);
-    } catch (error) {
-      console.error('Failed to load party slots:', error);
-    }
-  };
+  useEffect(() => {
+    loadLobbyData();
+  }, [loadLobbyData]);
 
   useEffect(() => {
     const hasClaimedSlot = slots.some(slot => slot.claimed_by === userMember?.user_id);
@@ -129,21 +220,19 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
       setShowCharacterSeed(true);
       setAutoSeedPrompted(true);
     }
-  }, [slots, userMember, autoSeedPrompted]);
+  }, [slots, userMember, autoSeedPrompted, game?.party_locked]);
 
   const openAutoSeedPromptCondition = () => {
     if (!userMember) return false;
     if (userMember.role === 'host') return false;
     if (!slots.length) return false;
     if (autoSeedPrompted) return false;
+    if (game?.party_locked) return false;
     return slots.some(slot => slot.claimed_by === userMember.user_id && (!slot.character_seeds || slot.character_seeds.length === 0));
   };
 
   const handleSlotClick = (slot: any) => {
-    // Only allow claiming empty slots if user doesn't already have one claimed
-    const userHasClaimedSlot = slots.some(s => s.claimed_by === userMember?.user_id);
-    
-    if (slot.status === 'empty' && !userHasClaimedSlot) {
+    if (slot.status === 'empty' && !userAlreadyHasSlot) {
       setSelectedSlot(slot);
       setShowCharacterSeed(true);
     } else if (slot.claimed_by === userMember?.user_id) {
@@ -161,10 +250,11 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
   };
 
   const getClaimedCount = () => {
-    return slots.filter(slot => !!slot.claimed_by).length;
+    return members.length;
   };
 
   const isHost = userMember?.role === 'host';
+  const userAlreadyHasSlot = slots.some(slot => slot.claimed_by === userMember?.user_id);
 
   if (!game) {
     return (
@@ -221,14 +311,15 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
             <h2 className="text-lg font-semibold mb-3">Party</h2>
             <div className="grid gap-3">
               {slots.map((slot) => {
-                const userHasClaimedSlot = slots.some(s => s.claimed_by === userMember?.user_id);
+                const claimedName = slot.claimed_profile?.display_name || getMemberName(slot.claimed_by);
                 return (
                   <PartySlotCard
                     key={slot.id}
                     slot={slot}
                     onClick={() => handleSlotClick(slot)}
                     isHost={isHost}
-                    userHasClaimedSlot={userHasClaimedSlot}
+                    userHasClaimedSlot={userAlreadyHasSlot}
+                    claimedByName={claimedName}
                   />
                 );
               })}
@@ -244,9 +335,9 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
         slot={selectedSlot}
         gameId={gameId}
         genre={game?.genre || 'Fantasy'}
-        onSuccess={() => {
+        onSuccess={async () => {
           setShowCharacterSeed(false);
-          loadPartySlots();
+          await loadPartySlots(false);
         }}
       />
     </div>

@@ -151,7 +151,8 @@ export async function getPartySlots(gameId: string) {
     .from('party_slots')
     .select(`
       *,
-      character_seeds (*)
+      character_seeds (*),
+      claimed_profile:profiles!party_slots_claimed_by_fkey (display_name, avatar_url)
     `)
     .eq('game_id', gameId)
     .order('index_in_party');

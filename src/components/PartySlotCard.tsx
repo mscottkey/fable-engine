@@ -11,9 +11,10 @@ interface PartySlotCardProps {
   canDelete?: boolean;
   onDelete?: () => void;
   userHasClaimedSlot?: boolean;
+  claimedByName?: string;
 }
 
-export function PartySlotCard({ slot, onClick, isHost, canDelete, onDelete, userHasClaimedSlot }: PartySlotCardProps) {
+export function PartySlotCard({ slot, onClick, isHost, canDelete, onDelete, userHasClaimedSlot, claimedByName }: PartySlotCardProps) {
   const getSlotIcon = () => {
     switch (slot.status) {
       case 'empty':
@@ -48,6 +49,12 @@ export function PartySlotCard({ slot, onClick, isHost, canDelete, onDelete, user
     if (slot.character_seeds?.[0]?.display_name) {
       return slot.character_seeds[0].display_name;
     }
+    if (slot.claimed_profile?.display_name) {
+      return slot.claimed_profile.display_name;
+    }
+    if (slot.claimed_by && claimedByName) {
+      return claimedByName;
+    }
     if (slot.status === 'reserved' && slot.claimed_by) {
       return 'Reserved Player';
     }
@@ -55,13 +62,14 @@ export function PartySlotCard({ slot, onClick, isHost, canDelete, onDelete, user
   };
 
   const getSlotDescription = () => {
+    const name = slot.claimed_profile?.display_name || claimedByName;
     switch (slot.status) {
       case 'empty':
         return 'Click to claim this slot';
       case 'reserved':
-        return 'Setting up character...';
+        return name ? `${name} is setting up a character...` : 'Setting up character...';
       case 'ready':
-        return slot.character_seeds?.[0]?.concept || 'Character ready!';
+        return slot.character_seeds?.[0]?.concept || `${name || 'Character'} ready!`;
       case 'locked':
         return 'Slot locked for character generation';
       default:

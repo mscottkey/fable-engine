@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useLobbyRealtime } from '@/hooks/useLobbyRealtime';
 import { getPartySlots, lockParty, createGameInvite, addPartySlot, deletePartySlot } from '@/services/partyService';
 import { transitionGameState, InvalidStateTransitionError } from '@/services/database/gameService';
 import { Button } from '@/components/ui/button';
@@ -25,52 +26,132 @@ export function LobbyPage() {
   const [selectedSlot, setSelectedSlot] = useState<any>(null);
   const [showCharacterSeed, setShowCharacterSeed] = useState(false);
   const [autoSeedPrompted, setAutoSeedPrompted] = useState(false);
+  const [members, setMembers] = useState<any[]>([]);
+  const slotsRef = useRef<any[]>([]);
+  const membersRef = useRef<any[]>([]);
+  const initialLoadRef = useRef(true);
+
+  const getMemberName = (userId?: string | null) => {
+    if (!userId) return 'Player';
+    const member = membersRef.current.find((m: any) => m.user_id === userId);
+    return member?.profile?.display_name || 'Player';
+  };
+
+  const refreshMembers = useCallback(async (showToast = false) => {
+    if (!gameId) return;
+    const { data, error } = await supabase
+      .from('game_members')
+      .select(`
+        *,
+        profiles:profiles!game_members_user_id_fkey (display_name, avatar_url)
+      `)
+      .eq('game_id', gameId);
+
+    if (error) {
+      console.error('Failed to load members:', error);
+      return;
+    }
+
+    const mapped = (data || []).map((member: any) => ({
+      ...member,
+      profile: member.profiles || null,
+    }));
+
+    if (showToast && !initialLoadRef.current) {
+      const previous = membersRef.current;
+      const previousIds = new Set(previous.map((m: any) => m.user_id));
+      const nextIds = new Set(mapped.map((m: any) => m.user_id));
+
+      mapped.forEach((member: any) => {
+        if (!previousIds.has(member.user_id)) {
+          const name = member.profile?.display_name || 'Player';
+          toast({
+            title: `${name} joined the lobby`,
+            description: 'They can now claim a seat.'
+          });
+        }
+      });
+
+      previous.forEach((member: any) => {
+        if (!nextIds.has(member.user_id)) {
+          const name = member.profile?.display_name || 'Player';
+          toast({
+            title: `${name} left the lobby`,
+            description: 'Their seat is now available.'
+          });
+        }
+      });
+    }
+
+    membersRef.current = mapped;
+    setMembers(mapped);
+  }, [gameId, toast]);
+
+  const refreshSlots = useCallback(async (showToast = false) => {
+    if (!gameId) return;
+    try {
+      const slotsData = await getPartySlots(gameId);
+
+      if (showToast && !initialLoadRef.current) {
+        const previousMap = new Map(slotsRef.current.map((slot: any) => [slot.id, slot]));
+
+        slotsData.forEach((slot: any) => {
+          const previousSlot = previousMap.get(slot.id);
+          const previousOwner = previousSlot?.claimed_by;
+          const nextOwner = slot.claimed_by;
+
+          if (previousOwner !== nextOwner) {
+            if (nextOwner) {
+              const name = getMemberName(nextOwner) || slot.claimed_profile?.display_name || 'Player';
+              toast({
+                title: `${name} claimed a seat`,
+                description: `Seat ${slot.index_in_party + 1} is now reserved.`
+              });
+            } else if (previousOwner) {
+              const name = getMemberName(previousOwner);
+              toast({
+                title: `${name} released a seat`,
+                description: `Seat ${slot.index_in_party + 1} is available again.`
+              });
+            }
+          }
+        });
+      }
+
+      slotsRef.current = slotsData;
+      setSlots(slotsData);
+    } catch (error) {
+      console.error('Failed to load slots:', error);
+    }
+  }, [gameId, toast]);
+
+  const loadPartySlots = useCallback(async (showToast = false) => {
+    await refreshSlots(showToast);
+  }, [refreshSlots]);
+
+  const loadGameMembers = useCallback(async (showToast = false) => {
+    await refreshMembers(showToast);
+  }, [refreshMembers]);
+
+  useLobbyRealtime({
+    gameId,
+    onSlotChange: () => refreshSlots(true),
+    onCharacterSeedChange: () => refreshSlots(false),
+    onMemberChange: () => refreshMembers(true),
+  });
 
   useEffect(() => {
-    if (!gameId) return;
-    
-    loadLobbyData();
-    
-    // Set up realtime subscription for slots
-    const subscription = supabase
-      .channel(`lobby-${gameId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'party_slots',
-          filter: `game_id=eq.${gameId}`
-        },
-        () => {
-          loadPartySlots();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'character_seeds',
-          filter: `game_id=eq.${gameId}`
-        },
-        () => {
-          loadPartySlots();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    initialLoadRef.current = true;
+    slotsRef.current = [];
+    membersRef.current = [];
   }, [gameId]);
 
-  const loadLobbyData = async () => {
+  const loadLobbyData = useCallback(async () => {
     if (!gameId) return;
-    
+
     try {
       setIsLoading(true);
-      
+
       // Get user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -131,13 +212,14 @@ export function LobbyPage() {
         if (inviteData) {
           setInviteCode(inviteData.code);
         } else {
-          // Create invite code
           const code = await createGameInvite(gameId);
           setInviteCode(code);
         }
       }
 
-      await loadPartySlots();
+      await loadGameMembers(false);
+      await loadPartySlots(false);
+      initialLoadRef.current = false;
     } catch (error: any) {
       console.error('Failed to load lobby:', error);
       toast({
@@ -148,18 +230,11 @@ export function LobbyPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [gameId, navigate, toast, loadGameMembers, loadPartySlots]);
 
-  const loadPartySlots = async () => {
-    if (!gameId) return;
-    
-    try {
-      const slotsData = await getPartySlots(gameId);
-      setSlots(slotsData);
-    } catch (error: any) {
-      console.error('Failed to load slots:', error);
-    }
-  };
+  useEffect(() => {
+    loadLobbyData();
+  }, [loadLobbyData]);
 
   useEffect(() => {
     const hasClaimedSlot = slots.some(slot => slot.claimed_by === userMember?.user_id);
@@ -214,7 +289,7 @@ export function LobbyPage() {
     
     try {
       await addPartySlot(gameId);
-      await loadPartySlots();
+      await loadPartySlots(false);
       toast({
         title: "Slot Added",
         description: "A new player slot has been added to the party.",
@@ -233,7 +308,7 @@ export function LobbyPage() {
     
     try {
       await deletePartySlot(slotId);
-      await loadPartySlots();
+      await loadPartySlots(false);
       toast({
         title: "Slot Removed",
         description: "The player slot has been removed from the party.",
@@ -248,10 +323,13 @@ export function LobbyPage() {
   };
 
   const handleSlotClick = async (slot: any) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    // Check if this is the user's slot or an empty slot they can claim
-    if (slot.status === 'empty' || slot.claimed_by === user?.id) {
+    const currentUserId = userMember?.user_id;
+    if (!currentUserId) return;
+
+    if (slot.status === 'empty' && !userAlreadyHasSlot) {
+      setSelectedSlot(slot);
+      setShowCharacterSeed(true);
+    } else if (slot.claimed_by === currentUserId) {
       setSelectedSlot(slot);
       setShowCharacterSeed(true);
     }
@@ -265,13 +343,12 @@ export function LobbyPage() {
     return slots.length;
   };
 
-  const getClaimedCount = () => {
-    return slots.filter(slot => !!slot.claimed_by).length;
-  };
-
   const canLockParty = () => {
     return userMember?.role === 'host' && getReadyCount() >= 1; // Allow locking with 1+ ready players for testing
   };
+
+  const userAlreadyHasSlot = slots.some(slot => slot.claimed_by === userMember?.user_id);
+  const joinedCount = members.length;
 
   if (isLoading) {
     return (
@@ -376,7 +453,7 @@ export function LobbyPage() {
                 </Badge>
                 <Badge variant="outline" className="flex items-center gap-1">
                   <Users className="h-3 w-3" />
-                  {getClaimedCount()}/{getTotalSlots()} Joined
+                  {joinedCount}/{getTotalSlots()} Joined
                 </Badge>
                 {userMember?.role === 'host' && (
                   <Badge variant="secondary">Host</Badge>
@@ -396,16 +473,21 @@ export function LobbyPage() {
 
         {/* Party Slots */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {slots.map((slot) => (
-            <PartySlotCard
-              key={slot.id}
-              slot={slot}
-              onClick={() => handleSlotClick(slot)}
-              isHost={userMember?.role === 'host'}
-              canDelete={userMember?.role === 'host' && slots.length > 1 && !game.party_locked}
-              onDelete={() => handleDeleteSlot(slot.id)}
-            />
-          ))}
+          {slots.map((slot) => {
+            const claimedName = slot.claimed_profile?.display_name || getMemberName(slot.claimed_by);
+            return (
+              <PartySlotCard
+                key={slot.id}
+                slot={slot}
+                onClick={() => handleSlotClick(slot)}
+                isHost={userMember?.role === 'host'}
+                canDelete={userMember?.role === 'host' && slots.length > 1 && !game.party_locked}
+                onDelete={() => handleDeleteSlot(slot.id)}
+                userHasClaimedSlot={userAlreadyHasSlot}
+                claimedByName={claimedName}
+              />
+            );
+          })}
           
           {/* Add Slot Card */}
           {userMember?.role === 'host' && !game.party_locked && slots.length < 8 && (
@@ -446,9 +528,10 @@ export function LobbyPage() {
           slot={selectedSlot}
           gameId={gameId!}
           genre={game.campaign_seeds?.genre}
-          onSuccess={() => {
+          onSuccess={async () => {
             setShowCharacterSeed(false);
-            loadPartySlots();
+            await loadPartySlots(false);
+            await loadGameMembers(false);
           }}
         />
       </div>
