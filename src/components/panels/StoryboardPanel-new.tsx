@@ -189,7 +189,7 @@ export function StoryboardPanel({ gameId }: StoryboardPanelProps) {
                               </Button>
                             )}
                           </div>
-                          <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-3 prose-strong:text-primary prose-strong:font-semibold">
+                          <div className="prose prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-p:text-foreground prose-headings:text-foreground prose-strong:text-primary prose-strong:font-semibold">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {event.narration}
                             </ReactMarkdown>
