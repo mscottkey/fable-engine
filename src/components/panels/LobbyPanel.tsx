@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { PartySlotCard } from '@/components/PartySlotCard';
 import { HostControls } from '@/components/HostControls';
 import { CharacterSeedDialog } from '@/components/CharacterSeedDialog';
-import { Users, CheckCircle, Clock } from 'lucide-react';
+import { Users, CheckCircle } from 'lucide-react';
 
 interface LobbyPanelProps {
   gameId: string;
@@ -19,6 +19,7 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
   const [inviteCode, setInviteCode] = useState<string>('');
   const [selectedSlot, setSelectedSlot] = useState<any>(null);
   const [showCharacterSeed, setShowCharacterSeed] = useState(false);
+  const [autoSeedPrompted, setAutoSeedPrompted] = useState(false);
 
   useEffect(() => {
     if (!gameId) return;
@@ -110,6 +111,34 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
     }
   };
 
+  useEffect(() => {
+    const hasClaimedSlot = slots.some(slot => slot.claimed_by === userMember?.user_id);
+    if (!hasClaimedSlot && autoSeedPrompted) {
+      setAutoSeedPrompted(false);
+    }
+  }, [slots, userMember, autoSeedPrompted]);
+
+  useEffect(() => {
+    if (!openAutoSeedPromptCondition()) {
+      return;
+    }
+
+    const mySlot = slots.find(slot => slot.claimed_by === userMember?.user_id);
+    if (mySlot) {
+      setSelectedSlot(mySlot);
+      setShowCharacterSeed(true);
+      setAutoSeedPrompted(true);
+    }
+  }, [slots, userMember, autoSeedPrompted]);
+
+  const openAutoSeedPromptCondition = () => {
+    if (!userMember) return false;
+    if (userMember.role === 'host') return false;
+    if (!slots.length) return false;
+    if (autoSeedPrompted) return false;
+    return slots.some(slot => slot.claimed_by === userMember.user_id && (!slot.character_seeds || slot.character_seeds.length === 0));
+  };
+
   const handleSlotClick = (slot: any) => {
     // Only allow claiming empty slots if user doesn't already have one claimed
     const userHasClaimedSlot = slots.some(s => s.claimed_by === userMember?.user_id);
@@ -129,6 +158,10 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
 
   const getTotalSlots = () => {
     return slots.length;
+  };
+
+  const getClaimedCount = () => {
+    return slots.filter(slot => !!slot.claimed_by).length;
   };
 
   const isHost = userMember?.role === 'host';
@@ -156,8 +189,12 @@ export function LobbyPanel({ gameId }: LobbyPanelProps) {
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="gap-1">
-                <Users className="w-3 h-3" />
+                <CheckCircle className="w-3 h-3" />
                 {getReadyCount()}/{getTotalSlots()} Ready
+              </Badge>
+              <Badge variant="outline" className="gap-1">
+                <Users className="w-3 h-3" />
+                {getClaimedCount()}/{getTotalSlots()} Joined
               </Badge>
               {getReadyCount() === getTotalSlots() && getTotalSlots() > 0 && (
                 <Badge variant="default" className="gap-1">

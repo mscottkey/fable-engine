@@ -24,6 +24,7 @@ export function LobbyPage() {
   const [inviteCode, setInviteCode] = useState<string>('');
   const [selectedSlot, setSelectedSlot] = useState<any>(null);
   const [showCharacterSeed, setShowCharacterSeed] = useState(false);
+  const [autoSeedPrompted, setAutoSeedPrompted] = useState(false);
 
   useEffect(() => {
     if (!gameId) return;
@@ -160,6 +161,35 @@ export function LobbyPage() {
     }
   };
 
+  useEffect(() => {
+    const hasClaimedSlot = slots.some(slot => slot.claimed_by === userMember?.user_id);
+    if (!hasClaimedSlot && autoSeedPrompted) {
+      setAutoSeedPrompted(false);
+    }
+  }, [slots, userMember, autoSeedPrompted]);
+
+  useEffect(() => {
+    if (!openAutoSeedPromptCondition()) {
+      return;
+    }
+
+    const mySlot = slots.find(slot => slot.claimed_by === userMember?.user_id);
+    if (mySlot) {
+      setSelectedSlot(mySlot);
+      setShowCharacterSeed(true);
+      setAutoSeedPrompted(true);
+    }
+  }, [slots, userMember, autoSeedPrompted, game?.party_locked]);
+
+  const openAutoSeedPromptCondition = () => {
+    if (!userMember) return false;
+    if (userMember.role === 'host') return false;
+    if (!slots.length) return false;
+    if (autoSeedPrompted) return false;
+    if (game?.party_locked) return false;
+    return slots.some(slot => slot.claimed_by === userMember.user_id && (!slot.character_seeds || slot.character_seeds.length === 0));
+  };
+
   const handleLockParty = async () => {
     if (!gameId) return;
     
@@ -233,6 +263,10 @@ export function LobbyPage() {
 
   const getTotalSlots = () => {
     return slots.length;
+  };
+
+  const getClaimedCount = () => {
+    return slots.filter(slot => !!slot.claimed_by).length;
   };
 
   const canLockParty = () => {
@@ -339,6 +373,10 @@ export function LobbyPage() {
                 <Badge variant="outline" className="flex items-center gap-1">
                   <CheckCircle className="h-3 w-3" />
                   {getReadyCount()}/{getTotalSlots()} Ready
+                </Badge>
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {getClaimedCount()}/{getTotalSlots()} Joined
                 </Badge>
                 {userMember?.role === 'host' && (
                   <Badge variant="secondary">Host</Badge>
