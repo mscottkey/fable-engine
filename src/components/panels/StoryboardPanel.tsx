@@ -263,7 +263,10 @@ export function StoryboardPanel({ gameId }: StoryboardPanelProps) {
                           <User className="w-4 h-4 text-accent mt-0.5" />
                           <div className="flex-1">
                             <div className="text-sm font-medium text-accent mb-1">
-                              {context.characters.find((c: any) => c.id === event.character_id)?.pc_json?.name || 'Player'}
+                              {(() => {
+                                const char = context.characters.find((c: any) => c.id === event.character_id);
+                                return char?.pc_json?.name || char?.player_name || char?.character_name || 'Player';
+                              })()}
                             </div>
                             <p className="text-sm leading-relaxed">{event.player_action}</p>
                           </div>
@@ -314,7 +317,7 @@ export function StoryboardPanel({ gameId }: StoryboardPanelProps) {
                     className="text-xs gap-1"
                   >
                     <User className="w-3 h-3" />
-                    {character.pc_json?.name || 'Character'}
+                    {character.pc_json?.name || character.player_name || character.character_name || 'Character'}
                   </Button>
                 ))}
               </div>

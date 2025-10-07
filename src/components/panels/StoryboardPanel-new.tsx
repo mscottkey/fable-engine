@@ -154,7 +154,8 @@ export function StoryboardPanel({ gameId }: StoryboardPanelProps) {
                           <div className="text-sm font-medium text-accent mb-1">
                             {(() => {
                               const char = context.characters.find((c: any) => c.id === event.character_id);
-                              return char?.pc_json?.name || char?.character_name || 'Player';
+                              // Prefer PC name from pc_json, then any player-provided display name, then legacy character_name
+                              return char?.pc_json?.name || char?.player_name || char?.character_name || 'Player';
                             })()}
                           </div>
                           <p className="text-sm leading-relaxed text-accent/80">{event.player_action}</p>

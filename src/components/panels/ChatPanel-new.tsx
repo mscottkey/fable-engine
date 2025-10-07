@@ -293,7 +293,7 @@ export function ChatPanel({ gameId }: ChatPanelProps) {
                             {charData.name || character.character_name || 'Character'}
                           </div>
                           <div className="text-xs text-muted-foreground truncate">
-                            {character.player_name || 'Player'}
+                            {character.player_name || character.pc_json?.name || character.character_name || 'Player'}
                           </div>
                           {charData.highConcept && (
                             <div className="text-xs text-muted-foreground italic truncate mt-0.5">

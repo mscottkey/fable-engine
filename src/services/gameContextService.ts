@@ -49,6 +49,28 @@ export async function loadGameContext(
 
     if (charactersError) throw charactersError;
 
+    // Enrich characters with player display name where possible
+    // Collect user_ids and seed_ids to batch-fetch profiles and character_seeds
+    const userIds = (characters || []).map((c: any) => c.user_id).filter(Boolean);
+    const seedIds = (characters || []).map((c: any) => c.seed_id).filter(Boolean);
+
+    let profilesMap: Record<string, any> = {};
+    let seedsMap: Record<string, any> = {};
+
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase.from('profiles').select('id, display_name').in('id', userIds);
+      if (profiles) {
+        profilesMap = Object.fromEntries(profiles.map((p: any) => [p.id, p]));
+      }
+    }
+
+    if (seedIds.length > 0) {
+      const { data: charSeeds } = await supabase.from('character_seeds').select('id, display_name').in('id', seedIds);
+      if (charSeeds) {
+        seedsMap = Object.fromEntries(charSeeds.map((s: any) => [s.id, s]));
+      }
+    }
+
     // Fetch factions (Phase 3)
     const { data: factions, error: factionsError } = await supabase
       .from('factions')
@@ -118,10 +140,20 @@ export async function loadGameContext(
       .limit(1)
       .maybeSingle();
 
+    // Attach player_name to character objects from profile.display_name or seed.display_name
+    const enrichedCharacters = (characters || []).map((c: any) => {
+      const profile = c.user_id ? profilesMap[c.user_id] : null;
+      const seed = c.seed_id ? seedsMap[c.seed_id] : null;
+      return {
+        ...c,
+        player_name: profile?.display_name || seed?.display_name || null
+      };
+    });
+
     return {
       game,
       storyOverview,
-      characters: characters || [],
+      characters: enrichedCharacters,
       factions,
       storyNodes,
       campaignArcs,
